@@ -10,10 +10,12 @@ function setCorsHeaders(res) {
   );
 }
 
-function cleanEnglishText(text, fallback = "Notification!") {
+function enforceEnglishScreenText(text, fallback = "Notification!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
-  return clean.length > 0 ? clean : fallback;
+  if (clean.length === 0) return fallback;
+  if (clean.length > 25) return clean.substring(0, 25);
+  return clean;
 }
 
 function getNotificationReply(app, type, content) {
@@ -21,7 +23,7 @@ function getNotificationReply(app, type, content) {
   
   if (appName.includes('whatsapp') || appName.includes('واتساب')) {
     return {
-      reply: "You got a new WhatsApp message! Check your phone 💬",
+      reply: content || "وصلتك رسالة واتساب جديدة! روح افتح الأبليكيشن شوف مين بيراذلك 💬",
       display: "WA: New Msg!",
       mood: "EXCITED"
     };
@@ -29,7 +31,7 @@ function getNotificationReply(app, type, content) {
   
   if (appName.includes('telegram') || appName.includes('تليجرام')) {
     return {
-      reply: "New message received on Telegram! 📱",
+      reply: content || "جاتلك رسالة جديدة على تليجرام! افتح شوف الإشعار 📱",
       display: "TG: New Msg!",
       mood: "EXCITED"
     };
@@ -37,15 +39,15 @@ function getNotificationReply(app, type, content) {
 
   if (appName.includes('instagram') || appName.includes('انستجرام')) {
     return {
-      reply: "New Instagram notification received! 📸",
+      reply: content || "في إشعار جديد على إنستجرام! 📸",
       display: "IG: New Notif!",
       mood: "HAPPY"
     };
   }
 
   return {
-    reply: `New notification received from ${app || 'system'}!`,
-    display: cleanEnglishText(`${app || 'App'} Notif!`, "App Notif!"),
+    reply: content || `وصلك إشعار جديد من تطبيق ${app || 'النظام'}!`,
+    display: enforceEnglishScreenText(`${app || 'App'} Notif!`, "App Notif!"),
     mood: "EXCITED"
   };
 }
@@ -66,8 +68,8 @@ module.exports = async (req, res) => {
   try {
     const notifInfo = getNotificationReply(app, type, content);
 
-    const cleanReply = cleanEnglishText(notifInfo.reply, "New notification!");
-    const englishDisplay = cleanEnglishText(notifInfo.display, "WA: New Msg!");
+    const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "WA: New Msg!");
 
     const state = recordInteraction(
       cleanReply,
