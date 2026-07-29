@@ -1,6 +1,12 @@
 require('dotenv').config();
 const axios = require('axios');
-const { recordInteraction } = require('../lib/store');
+const { 
+  recordInteraction, 
+  setAnnoyedState, 
+  clearAnnoyedState, 
+  isAnnoyedActive, 
+  registerApologyAttempt 
+} = require('../lib/store');
 
 // System prompt for Lola (لولا) - Roasty, funny, human-like Egyptian personality
 const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش ومضحكة وعندها رأي في كل حاجة، بتتكلمي بالعامية المصرية زي ما الناس بتتكلم فعلاً.
@@ -24,7 +30,6 @@ const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش �
 "reply_display": الإجابة المختصرة جداً أو نتيجة الحساب أو الطقس (max 25 chars) مثل "Cairo: 26C" أو "5+5 = 10"
 "mood": من [HAPPY, SAD, ANNOYED, NEUTRAL, EXCITED, BORED]`;
 
-// Set CORS headers helper
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,7 +41,11 @@ function setCorsHeaders(res) {
 }
 
 function isInsultOrRude(text) {
-  const rudeKeywords = ['غبية', 'غبي', 'حمار', 'يا زفت', 'اتخرسي', 'سخيفة', 'سخيف', 'كلب', 'حمارة', 'غباء', 'قليلة الادب', 'حقيرة', 'زفت', 'عبيطة', 'عبيط'];
+  const rudeKeywords = [
+    'غبية', 'غبي', 'حمار', 'يا زفت', 'اتخرسي', 'سخيفة', 'سخيف', 'كلب', 'حمارة', 
+    'غباء', 'قليلة الادب', 'حقيرة', 'زفت', 'عبيطة', 'عبيط', 'زهقت منك', 'مبتفهميش', 
+    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
+  ];
   return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
 }
 
@@ -55,12 +64,6 @@ function isWeatherQuery(text) {
   return keywords.some(kw => text.toLowerCase().includes(kw));
 }
 
-function isSportsQuery(text) {
-  const keywords = ['رياضة', 'رياضه', 'كرة', 'كورة', 'اهلي', 'أهلي', 'زمالك', 'ماتش', 'مباراة', 'مباريات', 'دوري', 'كرة القدم', 'sports', 'football', 'match', 'score', 'نتيجة'];
-  return keywords.some(kw => text.toLowerCase().includes(kw));
-}
-
-// Open-Meteo Weather Fetcher for Cairo
 async function fetchCairoWeather() {
   try {
     const url = 'https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true';
@@ -84,25 +87,82 @@ async function fetchCairoWeather() {
 
 async function callGroq(message, extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
-  const requestedMood = isReactionCommand(message);
   const isRude = isInsultOrRude(message);
+  const currentlyAnnoyed = isAnnoyedActive();
 
+  // 1. If user insults or is rude, set 1-hour persistent angry state!
+  if (isRude) {
+    setAnnoyedState();
+    return {
+      reply: "ملكيش دعوة بيا شوية وهفك! مش حابة أتكلم معاك دلوقتي 🙄",
+      display: "Lola: stay away!",
+      mood: "ANNOYED"
+    };
+  }
+
+  // 2. If already in 1-hour persistent angry state:
+  if (currentlyAnnoyed) {
+    const apolStatus = registerApologyAttempt(message);
+    
+    if (apolStatus.forgiven) {
+      return {
+        reply: "خلاص المرة دي سامحتك عشان خاطرك وبس، بس إياك تزعلني تاني! ❤️",
+        display: "Lola: Forgiven <3",
+        mood: "HAPPY"
+      };
+    } else {
+      let annoyedSystemMsg = `[تنبيه هام جداً: أنتِ لسة زعلانة ومضايقة جداً من المستخدم بقالك شوية! مش مسموحلك تتصالحي أو تضحكي دلوقتي نهائياً! ردي بقمص وزعل وتقوليلو كلام زي: "ملكيش دعوة بيا شوية وهفك" أو "أنا لسة زعلانة منك ومبكلمكش" أو "الاعتذار ده مش كفاية يا عم!"، ورجعي المزاج دايماً ANNOYED!]`;
+      
+      try {
+        const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: `${SYSTEM_PROMPT}\n${annoyedSystemMsg}` },
+            { role: 'user', content: `${message}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "ANNOYED"}` }
+          ],
+          temperature: 0.7,
+          max_tokens: 250,
+          response_format: { type: 'json_object' }
+        }, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 8000
+        });
+
+        const text = res.data.choices[0].message.content;
+        const parsed = JSON.parse(text);
+
+        return {
+          reply: parsed.reply || "ملكيش دعوة بيا شوية وهفك!",
+          display: parsed.reply_display || "Lola: leave me!",
+          mood: "ANNOYED"
+        };
+      } catch (e) {
+        return {
+          reply: "ملكيش دعوة بيا شوية وهفك! لسة زعلانة منك.",
+          display: "Lola: stay away!",
+          mood: "ANNOYED"
+        };
+      }
+    }
+  }
+
+  // 3. Normal Reaction Commands
+  const requestedMood = isReactionCommand(message);
   if (requestedMood) {
     if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄", display: "Lola: Happy!", mood: "HAPPY" };
-    if (requestedMood === 'ANNOYED') return { reply: "اوكي اوكي هتعصب! 😤", display: "Lola: Annoyed!", mood: "ANNOYED" };
+    if (requestedMood === 'ANNOYED') {
+      setAnnoyedState();
+      return { reply: "اوكي اوكي اتعصبت بقى! 😤", display: "Lola: Annoyed!", mood: "ANNOYED" };
+    }
     if (requestedMood === 'SAD') return { reply: "يعني ايه اتحزن كده؟ 🥺", display: "Lola: Sad..", mood: "SAD" };
     if (requestedMood === 'EXCITED') return { reply: "ياااه بقيت متحمسة جداً!! 🔥", display: "Lola: Excited!", mood: "EXCITED" };
     if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. 😑", display: "Lola: Bored..", mood: "BORED" };
   }
 
-  if (isRude) {
-    return {
-      reply: "لأ يا عم ده مش كلام! كلمني بأسلوب أحسن وهرد عليك 🙄",
-      display: "Lola: watch it!!",
-      mood: "ANNOYED"
-    };
-  }
-
+  // 4. Normal AI Responses
   const userMessage = extraContext
     ? `${message}\n\n(معلومات إضافية: ${extraContext})`
     : message;
@@ -131,6 +191,10 @@ async function callGroq(message, extraContext = '') {
     const reply = parsed.reply || "ياسطا مش عارف أفهم اللي بتقوله!";
     const display = parsed.reply_display || "Lola: Ready!";
     const mood = (parsed.mood || "NEUTRAL").toUpperCase();
+
+    if (mood === "ANNOYED") {
+      setAnnoyedState();
+    }
 
     return { reply, display, mood };
   } catch (e) {
