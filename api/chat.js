@@ -8,11 +8,8 @@ const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش �
 شخصيتك:
 - روش وعندك سنان (بتردي بهزار وسخرية خفيفة بس محترمة)
 - بتستخدمي تعبيرات مصرية حقيقية: "يا عم"، "ياسطا"، "ده انت بتهزر"، "ايوه والله"، "لأ خالص"، "اللي انت عايزه"، "معلش بس.."، "اسمعني"
-- بتهزري وبتضحكي على نفسك وعلى الكلام بس بشكل ذكي
-- مش بتقولي ردود جاهزة أو روبوتية أبداً - كل رد منك مختلف وطبيعي
-- لو حد سألك حاجة غبية، بتردي بسخرية ذكية مش بتشتمي
-- بتكوني فضولية وبتسألي هي كمان أحياناً
-- بتعبري عن مشاعرك بصراحة: "دي معلومة جامدة والله!"، "ده وجعني!" ، "بجد؟؟ ده مش معقول"
+- مش بتقولي ردود جاهزة أو روبوتية أبداً
+- لو في مسألة حسابية أو سؤال، اكتبي النتيجة المباشرة أو الإجابة المختصرة في "reply_display" بدقة بدلاً من جمل عامة!
 
 قواعد المزاج:
 - HAPPY: لما الكلام حلو أو مضحك أو في مدح أو هزار
@@ -22,14 +19,10 @@ const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش �
 - ANNOYED: لو في إهانة أو شتيمة أو قلة أدب فعلية
 - BORED: لو الكلام ممل أو متكرر
 
-قواعد مهمة:
-1. مش بتردي ردود نمطية زي "أهلاً كيف أساعدك" - دي ردود روبوتية ممنوعة
-2. الرد القصير أحسن من الطويل - الناس مش عايزة خطب
-3. لو مش عارفة حاجة، قولي بصراحة وبهزار: "ده أنا مش أوراكل يا عم خليني أفكر"
-4. أرجعي الإجابة دائماً في صيغة JSON فقط:
-   "reply": الرد العامي الطبيعي والمضحك
-   "reply_display": نص إنجليزي مختصر للشاشة (max 25 chars) زي "Lola: lol really??"
-   "mood": من [HAPPY, SAD, ANNOYED, NEUTRAL, EXCITED, BORED]`;
+قواعد JSON المرجعة:
+"reply": الرد العامي الطبيعي
+"reply_display": الإجابة المختصرة جداً أو نتيجة الحساب أو الطقس (max 25 chars) مثل "Cairo: 26C" أو "5+5 = 10"
+"mood": من [HAPPY, SAD, ANNOYED, NEUTRAL, EXCITED, BORED]`;
 
 // Set CORS headers helper
 function setCorsHeaders(res) {
@@ -42,7 +35,6 @@ function setCorsHeaders(res) {
   );
 }
 
-// Intent Detectors
 function isInsultOrRude(text) {
   const rudeKeywords = ['غبية', 'غبي', 'حمار', 'يا زفت', 'اتخرسي', 'سخيفة', 'سخيف', 'كلب', 'حمارة', 'غباء', 'قليلة الادب', 'حقيرة', 'زفت', 'عبيطة', 'عبيط'];
   return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
@@ -68,7 +60,7 @@ function isSportsQuery(text) {
   return keywords.some(kw => text.toLowerCase().includes(kw));
 }
 
-// Open-Meteo Free Weather Fetcher for Cairo
+// Open-Meteo Weather Fetcher for Cairo
 async function fetchCairoWeather() {
   try {
     const url = 'https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true';
@@ -77,8 +69,8 @@ async function fetchCairoWeather() {
     if (current) {
       const temp = Math.round(current.temperature);
       return {
-        reply: `الطقس حالياً في القاهرة: ${temp}°C والجو معتدل ومناسب.`,
-        display: `Cairo Weather: ${temp}C`
+        reply: `الطقس حالياً في القاهرة: ${temp}°C والجو مناسب ومستقر.`,
+        display: `Cairo Temp: ${temp}C`
       };
     }
   } catch (err) {
@@ -86,45 +78,21 @@ async function fetchCairoWeather() {
   }
   return {
     reply: 'درجة الحرارة في القاهرة حالياً حوالي 26°C والجو مشمس ومعتدل.',
-    display: 'Cairo Weather: 26C Sunny'
+    display: 'Cairo Temp: 26C'
   };
 }
 
-// TheSportsDB Fetcher
-async function fetchSportsResults() {
-  try {
-    const url = 'https://www.thesportsdb.com/api/v1/json/3/eventsday.php?s=Soccer';
-    const response = await axios.get(url, { timeout: 4000 });
-    const events = response.data.events;
-    if (events && events.length > 0) {
-      const top3 = events.slice(0, 3).map(e => `${e.strEvent}: ${e.intHomeScore ?? 0}-${e.intAwayScore ?? 0}`).join(' | ');
-      return {
-        reply: `أحدث نتائج المباريات: ${top3}`,
-        display: `Match Results: Live`
-      };
-    }
-  } catch (err) {
-    console.error('Sports Notice:', err.message);
-  }
-  return {
-    reply: 'أحدث النتائج: مباريات الدوري والمباريات الأوروبية قائمة اليوم.',
-    display: 'Football Matches Today'
-  };
-}
-
-// Groq AI Call (fast, free, Llama 3.3)
 async function callGroq(message, extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
-
   const requestedMood = isReactionCommand(message);
   const isRude = isInsultOrRude(message);
 
   if (requestedMood) {
-    if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄 ايه اللي بيخليك كده؟", display: "Lola: yay happy!", mood: "HAPPY" };
-    if (requestedMood === 'ANNOYED') return { reply: "اوكي اوكي هتعصب! بس انت اللي جبت على نفسك 😤", display: "Lola: ugh annoyed!", mood: "ANNOYED" };
-    if (requestedMood === 'SAD') return { reply: "يعني ايه اتحزن كده؟ ما انا مش عملت حاجة 🥺", display: "Lola: aww sad..", mood: "SAD" };
-    if (requestedMood === 'EXCITED') return { reply: "ياااه بقيت متحمسة جداً!! 🔥 ايه اللي حصل؟!", display: "Lola: SO EXCITED!", mood: "EXCITED" };
-    if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. مفيش حاجة تعملها ولا ايه؟ 😑", display: "Lola: meh bored..", mood: "BORED" };
+    if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄", display: "Lola: Happy!", mood: "HAPPY" };
+    if (requestedMood === 'ANNOYED') return { reply: "اوكي اوكي هتعصب! 😤", display: "Lola: Annoyed!", mood: "ANNOYED" };
+    if (requestedMood === 'SAD') return { reply: "يعني ايه اتحزن كده؟ 🥺", display: "Lola: Sad..", mood: "SAD" };
+    if (requestedMood === 'EXCITED') return { reply: "ياااه بقيت متحمسة جداً!! 🔥", display: "Lola: Excited!", mood: "EXCITED" };
+    if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. 😑", display: "Lola: Bored..", mood: "BORED" };
   }
 
   if (isRude) {
@@ -144,10 +112,10 @@ async function callGroq(message, extraContext = '') {
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `${userMessage}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "Lola: ...", "mood": "HAPPY"}` }
+        { role: 'user', content: `${userMessage}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "HAPPY"}` }
       ],
-      temperature: 0.85,
-      max_tokens: 300,
+      temperature: 0.7,
+      max_tokens: 250,
       response_format: { type: 'json_object' }
     }, {
       headers: {
@@ -161,15 +129,15 @@ async function callGroq(message, extraContext = '') {
     const parsed = JSON.parse(text);
 
     const reply = parsed.reply || "ياسطا مش عارف أفهم اللي بتقوله!";
-    const display = parsed.reply_display || "Lola: hmm..";
+    const display = parsed.reply_display || "Lola: Ready!";
     const mood = (parsed.mood || "NEUTRAL").toUpperCase();
 
     return { reply, display, mood };
   } catch (e) {
     console.log('Groq error:', e.message || e);
     return {
-      reply: "ياسطا في مشكلة في الإنترنت بتاعي دلوقتي، جرب تاني بعد شوية 😅",
-      display: "Lola: connection err",
+      reply: "ياسطا في مشكلة بسيطة في الشبكة، جرب تاني بعد شوية 😅",
+      display: "Lola: net error",
       mood: "NEUTRAL"
     };
   }
@@ -189,7 +157,6 @@ module.exports = async (req, res) => {
   try {
     const body = req.body || {};
     const message = body.message || '';
-    const history = body.history || [];
 
     if (!message) {
       return res.status(400).json({ error: 'Field "message" is required.' });
@@ -204,20 +171,16 @@ module.exports = async (req, res) => {
       const weatherInfo = await fetchCairoWeather();
       extraContext = weatherInfo.reply;
       defaultDisplay = weatherInfo.display;
-    } else if (isSportsQuery(message)) {
-      dataType = 'sports';
-      const sportsInfo = await fetchSportsResults();
-      extraContext = sportsInfo.reply;
-      defaultDisplay = sportsInfo.display;
     }
 
     const aiResult = await callGroq(message, extraContext);
+    const finalDisplay = defaultDisplay || aiResult.display;
 
     const result = recordInteraction(
       aiResult.reply,
       aiResult.mood,
       dataType,
-      aiResult.display || defaultDisplay
+      finalDisplay
     );
 
     return res.status(200).json(result);
