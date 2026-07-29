@@ -112,75 +112,67 @@ async function fetchSportsResults() {
   };
 }
 
-// Gemini REST Call using working models (gemini-flash-latest)
-async function callGemini(message, history, extraContext = '') {
-  const apiKey = process.env.GEMINI_API_KEY;
+// Groq AI Call (fast, free, Llama 3.3)
+async function callGroq(message, extraContext = '') {
+  const apiKey = process.env.GROQ_API_KEY;
 
   const requestedMood = isReactionCommand(message);
   const isRude = isInsultOrRude(message);
 
   if (requestedMood) {
-    if (requestedMood === 'HAPPY') return { reply: "حاضر! أنا مبسوطة دلوقتي وسعيدة جداً!", display: "Lola: Happy Mood!", mood: "HAPPY" };
-    if (requestedMood === 'ANNOYED') return { reply: "أنا زعلانة ومتعصبة منك دلوقتي!", display: "Lola: Angry Mood!", mood: "ANNOYED" };
-    if (requestedMood === 'SAD') return { reply: "أنا حزينة وزعلانة.. ليه كده؟", display: "Lola: Sad Mood..", mood: "SAD" };
-    if (requestedMood === 'EXCITED') return { reply: "واو! أنا متحمسة جداً وفرحانة!", display: "Lola: Excited!", mood: "EXCITED" };
-    if (requestedMood === 'BORED') return { reply: "أنا حاسة بملل وزهقانة خالص..", display: "Lola: Bored..", mood: "BORED" };
+    if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄 ايه اللي بيخليك كده؟", display: "Lola: yay happy!", mood: "HAPPY" };
+    if (requestedMood === 'ANNOYED') return { reply: "اوكي اوكي هتعصب! بس انت اللي جبت على نفسك 😤", display: "Lola: ugh annoyed!", mood: "ANNOYED" };
+    if (requestedMood === 'SAD') return { reply: "يعني ايه اتحزن كده؟ ما انا مش عملت حاجة 🥺", display: "Lola: aww sad..", mood: "SAD" };
+    if (requestedMood === 'EXCITED') return { reply: "ياااه بقيت متحمسة جداً!! 🔥 ايه اللي حصل؟!", display: "Lola: SO EXCITED!", mood: "EXCITED" };
+    if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. مفيش حاجة تعملها ولا ايه؟ 😑", display: "Lola: meh bored..", mood: "BORED" };
   }
 
   if (isRude) {
     return {
-      reply: "مش هسمحلك تتكلم معايا بقلة أدب! كلمني بأسلوب أحسن.",
-      display: "Lola: Be polite!",
+      reply: "لأ يا عم ده مش كلام! كلمني بأسلوب أحسن وهرد عليك 🙄",
+      display: "Lola: watch it!!",
       mood: "ANNOYED"
     };
   }
 
-  const promptText = `
-${SYSTEM_PROMPT}
+  const userMessage = extraContext
+    ? `${message}\n\n(معلومات إضافية: ${extraContext})`
+    : message;
 
-بيانات إضافية حقيقية إن وجدت: ${extraContext}
+  try {
+    const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: `${userMessage}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "Lola: ...", "mood": "HAPPY"}` }
+      ],
+      temperature: 0.85,
+      max_tokens: 300,
+      response_format: { type: 'json_object' }
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 8000
+    });
 
-رسالة المستخدم: "${message}"
+    const text = res.data.choices[0].message.content;
+    const parsed = JSON.parse(text);
 
-أرجع الإجابة في صيغة JSON فقط:
-{
-  "reply": "الرد العربي المباشر",
-  "reply_display": "Lola: Short English / Franco summary for TFT screen (max 25 chars)",
-  "mood": "HAPPY"
-}
-`;
+    const reply = parsed.reply || "ياسطا مش عارف أفهم اللي بتقوله!";
+    const display = parsed.reply_display || "Lola: hmm..";
+    const mood = (parsed.mood || "NEUTRAL").toUpperCase();
 
-  const models = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'];
-
-  for (const m of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
-      const res = await axios.post(url, {
-        contents: [{ parts: [{ text: promptText }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      }, { timeout: 6000 });
-
-      const text = res.data.candidates[0].content.parts[0].text;
-      const parsed = JSON.parse(text);
-
-      let reply = parsed.reply || "أهلاً بك! أنا لولا ومستعدة لمساعدتك.";
-      let display = parsed.reply_display || "Lola: Hello!";
-      const mood = (parsed.mood || "NEUTRAL").toUpperCase();
-
-      return { reply, display, mood };
-    } catch (e) {
-      console.log(`Model ${m} notice:`, e.message || e);
-      // Wait 1s before trying next model to avoid rate limit
-      await new Promise(r => setTimeout(r, 1000));
-    }
+    return { reply, display, mood };
+  } catch (e) {
+    console.log('Groq error:', e.message || e);
+    return {
+      reply: "ياسطا في مشكلة في الإنترنت بتاعي دلوقتي، جرب تاني بعد شوية 😅",
+      display: "Lola: connection err",
+      mood: "NEUTRAL"
+    };
   }
-
-  // Smart fallback
-  return {
-    reply: "أهلاً بك! أنا لولا ومستعدة لمساعدتك.",
-    display: "Lola: Ready to chat!",
-    mood: "NEUTRAL"
-  };
 }
 
 module.exports = async (req, res) => {
@@ -219,7 +211,7 @@ module.exports = async (req, res) => {
       defaultDisplay = sportsInfo.display;
     }
 
-    const aiResult = await callGemini(message, history, extraContext);
+    const aiResult = await callGroq(message, extraContext);
 
     const result = recordInteraction(
       aiResult.reply,
@@ -231,7 +223,7 @@ module.exports = async (req, res) => {
     return res.status(200).json(result);
   } catch (err) {
     console.error('Server Handler Error:', err);
-    const result = recordInteraction("أهلاً بك! أنا لولا ومستعدة لمساعدتك.", "NEUTRAL", "chat", "Lola: Ready!");
+    const result = recordInteraction("ياسطا في مشكلة بسيطة، جرب تاني!", "NEUTRAL", "chat", "Lola: oops!");
     return res.status(200).json(result);
   }
 };
