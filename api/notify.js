@@ -10,27 +10,46 @@ function setCorsHeaders(res) {
   );
 }
 
-function enforceEnglishScreenText(text, fallback = "Notification!") {
+function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
   if (clean.length === 0) return fallback;
-  if (clean.length > 20) return clean.substring(0, 20);
+  if (clean.length > 22) return clean.substring(0, 22);
   return clean;
 }
 
 function getNotificationReply(req) {
-  const queryStr = JSON.stringify(req.query || {}).toLowerCase();
-  const bodyStr = JSON.stringify(req.body || {}).toLowerCase();
-  const urlStr = (req.url || '').toLowerCase();
+  const query = req.query || {};
+  const body = req.body || {};
   
-  // Combine all request context
+  const queryStr = JSON.stringify(query).toLowerCase();
+  const bodyStr = JSON.stringify(body).toLowerCase();
+  const urlStr = (req.url || '').toLowerCase();
   const fullContext = `${urlStr} ${queryStr} ${bodyStr}`;
 
-  // 1. Spotify / Music
-  if (fullContext.includes('spotify') || fullContext.includes('سبوتيفاي') || fullContext.includes('music') || fullContext.includes('موسيقى') || fullContext.includes('أغنية')) {
+  // Extract Song Title & Artist from Query or Body
+  const title = (query.title || body.title || query.song || body.song || query.track || body.track || '').toString().trim();
+  const artist = (query.artist || body.artist || query.singer || body.singer || '').toString().trim();
+
+  // 1. Spotify / Music (With Live Song Title & Artist support!)
+  if (fullContext.includes('spotify') || fullContext.includes('سبوتيفاي') || fullContext.includes('music') || fullContext.includes('موسيقى') || title.length > 0) {
+    let songInfoArabic = "";
+    let songInfoDisplay = "";
+
+    if (title && artist) {
+      songInfoArabic = `بتسمع دلوقتي: "${title}" لـ ${artist} 🎵 أروق مان في المجرة 🎧`;
+      songInfoDisplay = enforceEnglishScreenText(`${artist} - ${title}`, `${title}`);
+    } else if (title) {
+      songInfoArabic = `بتسمع دلوقتي أغنية: "${title}" 🎵 أروق مان في المجرة 🎧`;
+      songInfoDisplay = enforceEnglishScreenText(`${title}`, "Spotify Music!");
+    } else {
+      songInfoArabic = "شغّلت الموسيقى على سبوتيفاي! أروق مان في المجرة 🎶🎧";
+      songInfoDisplay = "Spotify Music!";
+    }
+
     return {
-      reply: "شغّلت الموسيقى على سبوتيفاي! أروق مان في المجرة 🎶🎧",
-      display: "Spotify Music!",
+      reply: songInfoArabic,
+      display: songInfoDisplay,
       mood: "EXCITED"
     };
   }
@@ -90,7 +109,7 @@ function getNotificationReply(req) {
   }
 
   // Check if user passed explicit text parameter in query or body
-  const customText = req.query.type || req.query.name || req.query.text || (req.body && (req.body.content || req.body.text || req.body.app));
+  const customText = query.type || query.name || query.text || (body && (body.content || body.text || body.app));
   if (customText) {
     const cleanCustom = enforceEnglishScreenText(customText.toString(), "");
     if (cleanCustom.length > 0) {
@@ -120,7 +139,7 @@ module.exports = async (req, res) => {
     const notifInfo = getNotificationReply(req);
 
     const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
-    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "iOS Event!");
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "Spotify Music!");
 
     const state = recordInteraction(
       cleanReply,
