@@ -15,7 +15,9 @@ const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش �
 - روش وعندك سنان (بتردي بهزار وسخرية خفيفة بس محترمة)
 - بتستخدمي تعبيرات مصرية حقيقية: "يا عم"، "ياسطا"، "ده انت بتهزر"، "ايوه والله"، "لأ خالص"، "اللي انت عايزه"، "معلش بس.."، "اسمعني"
 - مش بتقولي ردود جاهزة أو روبوتية أبداً
-- لو في مسألة حسابية أو سؤال، اكتبي النتيجة المباشرة أو الإجابة المختصرة في "reply_display" بدقة بدلاً من جمل عامة!
+- في "reply": اكتبي الرد العامي المصري الكامل الطبيعي.
+- في "reply_display": اكتب كلمة مختصرة جداً باللغة الإنجليزية أو الأرقام فقط (مثال: "Lola: Happy!", "5+5 = 10", "Cairo: 26C", "Lola: Sleepy zZz").
+CRITICAL RULE: "reply_display" MUST ONLY CONTAIN ENGLISH/LATIN CHARACTERS AND NUMBERS (ASCII ONLY). NEVER INCLUDE ARABIC LETTERS IN "reply_display".
 
 قواعد المزاج:
 - HAPPY: لما الكلام حلو أو مضحك أو في مدح أو هزار
@@ -26,8 +28,8 @@ const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش �
 - BORED: لو الكلام ممل أو متكرر
 
 قواعد JSON المرجعة:
-"reply": الرد العامي الطبيعي
-"reply_display": الإجابة المختصرة جداً أو نتيجة الحساب أو الطقس (max 25 chars) مثل "Cairo: 26C" أو "5+5 = 10"
+"reply": الرد العامي الطبيعي باللغة العربية المصرية
+"reply_display": الإجابة المختصرة بالإنجليزية فقط (max 25 chars ASCII) مثل "Cairo: 26C" أو "5+5 = 10" أو "Lola: OK!"
 "mood": من [HAPPY, SAD, ANNOYED, NEUTRAL, EXCITED, BORED]`;
 
 function setCorsHeaders(res) {
@@ -95,7 +97,7 @@ async function callGroq(message, extraContext = '') {
     setAnnoyedState();
     return {
       reply: "ملكيش دعوة بيا شوية وهفك! مش حابة أتكلم معاك دلوقتي 🙄",
-      display: "Lola: stay away!",
+      display: "Lola: Stay away!",
       mood: "ANNOYED"
     };
   }
@@ -136,13 +138,13 @@ async function callGroq(message, extraContext = '') {
 
         return {
           reply: parsed.reply || "ملكيش دعوة بيا شوية وهفك!",
-          display: parsed.reply_display || "Lola: leave me!",
+          display: parsed.reply_display || "Lola: Leave me!",
           mood: "ANNOYED"
         };
       } catch (e) {
         return {
           reply: "ملكيش دعوة بيا شوية وهفك! لسة زعلانة منك.",
-          display: "Lola: stay away!",
+          display: "Lola: Stay away!",
           mood: "ANNOYED"
         };
       }
@@ -188,21 +190,17 @@ async function callGroq(message, extraContext = '') {
     const text = res.data.choices[0].message.content;
     const parsed = JSON.parse(text);
 
-    const reply = parsed.reply || "ياسطا مش عارف أفهم اللي بتقوله!";
-    const display = parsed.reply_display || "Lola: Ready!";
-    const mood = (parsed.mood || "NEUTRAL").toUpperCase();
-
-    if (mood === "ANNOYED") {
-      setAnnoyedState();
-    }
-
-    return { reply, display, mood };
-  } catch (e) {
-    console.log('Groq error:', e.message || e);
     return {
-      reply: "ياسطا في مشكلة بسيطة في الشبكة، جرب تاني بعد شوية 😅",
-      display: "Lola: net error",
-      mood: "NEUTRAL"
+      reply: parsed.reply || "أهلاً بيك! لولا معاك 💖",
+      display: parsed.reply_display || "Lola: Hello!",
+      mood: parsed.mood || "HAPPY"
+    };
+  } catch (e) {
+    console.error('Groq Error:', e.message);
+    return {
+      reply: "أهلاً بيك! أنا لولا، منورة معاك دائماً ✨",
+      display: "Lola: Hello!",
+      mood: "HAPPY"
     };
   }
 }
@@ -215,42 +213,40 @@ module.exports = async (req, res) => {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  const { message } = req.body || {};
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ error: 'Message is required' });
   }
 
   try {
-    const body = req.body || {};
-    const message = body.message || '';
-
-    if (!message) {
-      return res.status(400).json({ error: 'Field "message" is required.' });
-    }
-
-    let dataType = 'chat';
-    let extraContext = '';
-    let defaultDisplay = '';
-
+    let result;
     if (isWeatherQuery(message)) {
-      dataType = 'weather';
-      const weatherInfo = await fetchCairoWeather();
-      extraContext = weatherInfo.reply;
-      defaultDisplay = weatherInfo.display;
+      const weatherData = await fetchCairoWeather();
+      result = {
+        reply: weatherData.reply,
+        display: weatherData.display,
+        mood: 'HAPPY'
+      };
+    } else {
+      result = await callGroq(message);
     }
 
-    const aiResult = await callGroq(message, extraContext);
-    const finalDisplay = defaultDisplay || aiResult.display;
+    recordInteraction(result.mood, result.display);
 
-    const result = recordInteraction(
-      aiResult.reply,
-      aiResult.mood,
-      dataType,
-      finalDisplay
-    );
-
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error('Server Handler Error:', err);
-    const result = recordInteraction("ياسطا في مشكلة بسيطة، جرب تاني!", "NEUTRAL", "chat", "Lola: oops!");
-    return res.status(200).json(result);
+    return res.status(200).json({
+      success: true,
+      reply: result.reply,
+      reply_display: result.display,
+      mood: result.mood
+    });
+  } catch (error) {
+    console.error('Chat API Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal Server Error'
+    });
   }
 };
