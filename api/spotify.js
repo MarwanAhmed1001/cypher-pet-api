@@ -1,7 +1,11 @@
 require('dotenv').config();
 const axios = require('axios');
 const querystring = require('querystring');
-const { recordInteraction } = require('../lib/store');
+const { 
+  recordInteraction, 
+  setSpotifyRefreshToken, 
+  getSpotifyRefreshToken 
+} = require('../lib/store');
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '8c7a75e146944dcb8a29a45a6b77766c';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'd479e32b181347feb5fd2810cbd3d127';
@@ -34,10 +38,8 @@ function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
   return clean;
 }
 
-let activeRefreshToken = process.env.SPOTIFY_REFRESH_TOKEN || '';
-
 async function getSpotifyAccessToken() {
-  const refresh_token = activeRefreshToken || process.env.SPOTIFY_REFRESH_TOKEN;
+  const refresh_token = getSpotifyRefreshToken();
 
   if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token) {
     return null;
@@ -108,7 +110,14 @@ const spotifyHandler = async (req, res) => {
   const code = query.code;
   const action = query.action;
   const login = query.login;
+  const setToken = query.token;
   const redirectUri = getRedirectUri(req);
+
+  // Direct token setter helper
+  if (setToken) {
+    setSpotifyRefreshToken(setToken);
+    return res.status(200).json({ success: true, message: 'Spotify Refresh Token saved!' });
+  }
 
   // 1. Handle Login Redirect
   if (action === 'login' || login === 'true') {
@@ -150,8 +159,8 @@ const spotifyHandler = async (req, res) => {
 
       const refresh_token = response.data.refresh_token;
       if (refresh_token) {
-        activeRefreshToken = refresh_token;
-        console.log('NEW SPOTIFY REFRESH TOKEN:', refresh_token);
+        setSpotifyRefreshToken(refresh_token);
+        console.log('NEW SPOTIFY REFRESH TOKEN SAVED:', refresh_token);
         
         const html = `
           <!DOCTYPE html>
@@ -163,14 +172,14 @@ const spotifyHandler = async (req, res) => {
               body { font-family: sans-serif; background: #0d0d0d; color: #fff; text-align: center; padding: 50px; }
               .card { background: #141416; border: 1px solid #26262a; border-radius: 16px; padding: 30px; max-width: 500px; margin: auto; }
               h1 { color: #1DB954; }
-              code { background: #222; padding: 10px; border-radius: 8px; display: block; word-break: break-all; margin: 20px 0; color: #FFD700; }
+              code { background: #222; padding: 12px; border-radius: 8px; display: block; word-break: break-all; margin: 20px 0; color: #FFD700; font-size: 14px; }
             </style>
           </head>
           <body>
             <div class="card">
               <h1>✅ Spotify Connected to Cypher Pet!</h1>
               <p>تم ربط حسابك في سبوتيفاي بنجاح مع Cypher Pet 🎉</p>
-              <p>Your Refresh Token is active!</p>
+              <p>Your Refresh Token has been saved into memory!</p>
               <code>${refresh_token}</code>
             </div>
           </body>
