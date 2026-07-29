@@ -17,10 +17,10 @@ function setCorsHeaders(res) {
 }
 
 function getRedirectUri(req) {
-  // Dynamically determine matching redirect URI
-  const host = req.headers.host || 'lola-cypher-pet.vercel.app';
+  const host = (req.headers && req.headers.host) ? req.headers.host : 'lola-cypher-pet.vercel.app';
   const protocol = host.includes('localhost') ? 'http' : 'https';
-  if (req.query.uri_type === 'clean') {
+  
+  if (req.query && req.query.uri_type === 'clean') {
     return `${protocol}://${host}/api/spotify`;
   }
   return `${protocol}://${host}/api/spotify/callback`;
@@ -97,14 +97,17 @@ async function fetchCurrentlyPlayingTrack() {
   return null;
 }
 
-module.exports = async (req, res) => {
+const spotifyHandler = async (req, res) => {
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const { code, action, login } = req.query || {};
+  const query = req.query || {};
+  const code = query.code;
+  const action = query.action;
+  const login = query.login;
   const redirectUri = getRedirectUri(req);
 
   // 1. Handle Login Redirect
@@ -117,7 +120,13 @@ module.exports = async (req, res) => {
         scope: scope,
         redirect_uri: redirectUri
       });
-    return res.redirect(authUrl);
+
+    if (typeof res.redirect === 'function') {
+      return res.redirect(authUrl);
+    } else {
+      res.writeHead(302, { Location: authUrl });
+      return res.end();
+    }
   }
 
   // 2. Handle OAuth Callback Code from Spotify
@@ -144,8 +153,7 @@ module.exports = async (req, res) => {
         activeRefreshToken = refresh_token;
         console.log('NEW SPOTIFY REFRESH TOKEN:', refresh_token);
         
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.status(200).send(`
+        const html = `
           <!DOCTYPE html>
           <html>
           <head>
@@ -167,11 +175,22 @@ module.exports = async (req, res) => {
             </div>
           </body>
           </html>
-        `);
+        `;
+        if (typeof res.send === 'function') {
+          return res.status(200).send(html);
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          return res.end(html);
+        }
       }
     } catch (err) {
       console.error('Callback error:', err.message);
-      return res.status(500).send('Error linking Spotify: ' + err.message);
+      if (typeof res.send === 'function') {
+        return res.status(500).send('Error linking Spotify: ' + err.message);
+      } else {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        return res.end('Error linking Spotify: ' + err.message);
+      }
     }
   }
 
@@ -198,22 +217,44 @@ module.exports = async (req, res) => {
       displayText
     );
 
-    return res.status(200).json({
-      success: true,
-      now_playing: nowPlaying,
-      reply: replyText,
-      reply_display: displayText,
-      mood: 'EXCITED',
-      data: state
-    });
+    if (typeof res.json === 'function') {
+      return res.status(200).json({
+        success: true,
+        now_playing: nowPlaying,
+        reply: replyText,
+        reply_display: displayText,
+        mood: 'EXCITED',
+        data: state
+      });
+    } else {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        success: true,
+        now_playing: nowPlaying,
+        reply: replyText,
+        reply_display: displayText,
+        mood: 'EXCITED',
+        data: state
+      }));
+    }
   } catch (err) {
     console.error('Spotify API Error:', err);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal Server Error',
-      message: err.message
-    });
+    if (typeof res.json === 'function') {
+      return res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: err.message
+      });
+    } else {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        success: false,
+        error: 'Internal Server Error',
+        message: err.message
+      }));
+    }
   }
 };
 
+module.exports = spotifyHandler;
 module.exports.fetchCurrentlyPlayingTrack = fetchCurrentlyPlayingTrack;
