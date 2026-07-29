@@ -10,21 +10,23 @@ function setCorsHeaders(res) {
   );
 }
 
-function enforceEnglishScreenText(text, fallback = "Notification!") {
+function enforceEnglishScreenText(text, fallback = "iOS Event!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
   if (clean.length === 0) return fallback;
-  if (clean.length > 25) return clean.substring(0, 25);
+  if (clean.length > 20) return clean.substring(0, 20);
   return clean;
 }
 
-function getNotificationReply(app, type, content) {
-  const appName = (app || '').toLowerCase();
-  const typeStr = (type || '').toLowerCase();
-  const textContent = (content || '').toLowerCase();
+function getNotificationReply(reqBody) {
+  // Inspect the entire JSON payload string for keywords
+  const payloadStr = JSON.stringify(reqBody || {}).toLowerCase();
   
+  const app = (reqBody.app || reqBody.name || reqBody.action || '').toString();
+  const content = (reqBody.content || reqBody.text || reqBody.message || reqBody.type || '').toString();
+
   // 1. Charger Connected / Charging
-  if (appName.includes('charger') || appName.includes('شاحن') || typeStr.includes('charger') || textContent.includes('charger') || textContent.includes('شحن')) {
+  if (payloadStr.includes('charger') || payloadStr.includes('charging') || payloadStr.includes('شاحن') || payloadStr.includes('شحن')) {
     return {
       reply: "حبيبي تسلم! الآيفون بيتشحن دلوقتي وعينيا عليه ⚡",
       display: "Charger Plugged!",
@@ -33,7 +35,7 @@ function getNotificationReply(app, type, content) {
   }
 
   // 2. Low Battery Mode / Battery Level
-  if (appName.includes('battery') || appName.includes('بطارية') || textContent.includes('battery') || textContent.includes('بطارية')) {
+  if (payloadStr.includes('battery') || payloadStr.includes('بطارية') || payloadStr.includes('بطاريه')) {
     return {
       reply: "يا ساتر البطارية ضعيفة! حط التليفون على الشاحن بدل ما يفصل منك 🔋",
       display: "Low Battery!",
@@ -42,7 +44,7 @@ function getNotificationReply(app, type, content) {
   }
 
   // 3. Wi-Fi Connected
-  if (appName.includes('wifi') || appName.includes('واي فاي') || textContent.includes('wifi') || textContent.includes('بيت')) {
+  if (payloadStr.includes('wifi') || payloadStr.includes('wi-fi') || payloadStr.includes('واي فاي') || payloadStr.includes('شبكة')) {
     return {
       reply: "أهلاً بيك في البيت! شبكة الـ Wi-Fi اتصلت والمكان نور 🏠📶",
       display: "WiFi Connected!",
@@ -51,7 +53,7 @@ function getNotificationReply(app, type, content) {
   }
 
   // 4. Alarm Dismissed / Morning Wake Up
-  if (appName.includes('alarm') || appName.includes('منبه') || textContent.includes('alarm') || textContent.includes('منبه')) {
+  if (payloadStr.includes('alarm') || payloadStr.includes('منبه') || payloadStr.includes('صباح')) {
     return {
       reply: "صباح الفل والياسمين! صح النوم يا بطل، يومك سعيد ☀️",
       display: "Good Morning!",
@@ -60,16 +62,25 @@ function getNotificationReply(app, type, content) {
   }
 
   // 5. WhatsApp
-  if (appName.includes('whatsapp') || appName.includes('واتساب')) {
+  if (payloadStr.includes('whatsapp') || payloadStr.includes('واتساب')) {
     return {
       reply: content || "وصلتك رسالة واتساب جديدة! 💬",
       display: "WA: New Msg!",
       mood: "EXCITED"
     };
   }
-  
-  // 6. Telegram
-  if (appName.includes('telegram') || appName.includes('تليجرام')) {
+
+  // 6. SMS / Message
+  if (payloadStr.includes('sms') || payloadStr.includes('message')) {
+    return {
+      reply: content || "وصلتك رسالة نصية جديدة! 📱",
+      display: "SMS: New Msg!",
+      mood: "EXCITED"
+    };
+  }
+
+  // 7. Telegram
+  if (payloadStr.includes('telegram') || payloadStr.includes('تليجرام')) {
     return {
       reply: content || "جاتلك رسالة جديدة على تليجرام! 📱",
       display: "TG: New Msg!",
@@ -77,19 +88,19 @@ function getNotificationReply(app, type, content) {
     };
   }
 
-  // 7. Instagram
-  if (appName.includes('instagram') || appName.includes('انستجرام')) {
+  // Custom English ASCII text from payload if provided
+  let customScreenText = enforceEnglishScreenText(content || app, "");
+  if (customScreenText.length > 0 && !customScreenText.toLowerCase().includes("notif")) {
     return {
-      reply: content || "في إشعار جديد على إنستجرام! 📸",
-      display: "IG: New Notif!",
-      mood: "HAPPY"
+      reply: content || `وصلك إشعار جديد! 🔔`,
+      display: customScreenText,
+      mood: "EXCITED"
     };
   }
 
-  // Default fallback
   return {
-    reply: content || `وصلك إشعار جديد من تطبيق ${app || 'النظام'}!`,
-    display: enforceEnglishScreenText(`${app || 'App'} Notif!`, "App Notif!"),
+    reply: content || "وصلك إشعار جديد من الآيفون! 🔔",
+    display: "iOS Event!",
     mood: "EXCITED"
   };
 }
@@ -105,13 +116,13 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
   }
 
-  const { app, type, content } = req.body || {};
+  const body = req.body || {};
 
   try {
-    const notifInfo = getNotificationReply(app, type, content);
+    const notifInfo = getNotificationReply(body);
 
     const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
-    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "Notification!");
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "iOS Event!");
 
     const state = recordInteraction(
       cleanReply,
