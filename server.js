@@ -14,7 +14,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.all('/api/chat', (req, res) => chatHandler(req, res));
 app.all('/api/mood', (req, res) => moodHandler(req, res));
 app.all('/api/notify', (req, res) => notifyHandler(req, res));
-app.all('/api/spotify*', (req, res) => spotifyHandler(req, res));
+app.all('/api/spotify', (req, res) => spotifyHandler(req, res));
+app.all('/api/spotify/callback', (req, res) => spotifyHandler(req, res));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
