@@ -1,10 +1,10 @@
 /*
   ===============================================================================
-  سايفر بت - Cypher Bit (Rock Solid Color Bitmaps + 100% English Screen Display)
+  سايفر بت - Cypher Bit (Rock Solid Color Bitmaps + STRICT 100% ENGLISH DISPLAY ONLY)
   ===============================================================================
   - إيقاف الباظر وإبطال أي أصوات تصفير أو طنين عبر ledcDetachPin و pinMode(BUZZER_PIN, INPUT).
-  - الشاشة باللغة الإنجليزية الصافية 100% (English ASCII Only - 100% Clean):
-    * تم تعقيم ومنع أي حروف عربية أو يابانية أو رموز UTF-8 عشوائية لمنع انقلاب الحروف أو الرموز الغريبة.
+  - حماية حديدية 100%: منع عرض أي حرف عربي أو ياباني أو رمز عشوائي على الشاشة نهائياً.
+  - الشاشة لا تعرض إطلاقاً سوى حروف إنجليزية وأرقام نقية (Pure ASCII English Only).
   - كود النوم الذكي:
     * النوم لا يتفعل إلا بين الساعة 2:00 صباحاً و 8:00 صباحاً.
     * إذا انطفأ النور في هذه الفترة، يظل الجهاز يعمل لمدة أقصاها 30 دقيقة.
@@ -116,26 +116,57 @@ bool isNightTimeWindow() {
   return (hr >= 2 && hr < 8);
 }
 
-// Clean non-ASCII bytes to guarantee 100% ENGLISH ONLY on TFT display
-String sanitizeAsciiText(String input) {
+// STRICT Whitelist Sanitizer: ONLY allows A-Z, a-z, 0-9, space, and basic English punctuation.
+// Wipes out ALL Arabic, Japanese, unicode, or raw control bytes completely!
+String sanitizeStrictEnglish(String input, String fallback = "Lola: Ready!") {
   String clean = "";
   for (unsigned int i = 0; i < input.length(); i++) {
-    char c = input.charAt(i);
-    // Printable ASCII only (space 32 to tilde 126)
-    if (c >= 32 && c <= 126) {
-      clean += c;
+    unsigned char c = (unsigned char)input.charAt(i);
+    if ((c >= 'A' && c <= 'Z') || 
+        (c >= 'a' && c <= 'z') || 
+        (c >= '0' && c <= '9') || 
+        c == ' ' || c == ':' || c == '!' || c == '?' || 
+        c == '-' || c == '+' || c == '.' || c == '<' || c == '>') {
+      clean += (char)c;
     }
   }
   clean.trim();
-  if (clean.length() == 0) return "Lola: Ready!";
+  
+  // Ensure the string contains at least one valid English letter or number
+  bool hasAlphaNum = false;
+  for (unsigned int i = 0; i < clean.length(); i++) {
+    char c = clean.charAt(i);
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+      hasAlphaNum = true;
+      break;
+    }
+  }
+
+  if (!hasAlphaNum || clean.length() == 0) {
+    return fallback;
+  }
+  
+  if (clean.length() > 22) {
+    clean = clean.substring(0, 22);
+  }
+  
   return clean;
+}
+
+// Map mood to clean English display string
+String getMoodDefaultText(String mood) {
+  if (mood == "HAPPY")   return "Lola: Happy!";
+  if (mood == "EXCITED") return "Lola: Excited!";
+  if (mood == "ANNOYED") return "Lola: Annoyed!";
+  if (mood == "SAD")     return "Lola: Sad..";
+  if (mood == "BORED")   return "Lola: Bored..";
+  return "Lola: Ready!";
 }
 
 // FreeRTOS task for background API polling (Core 0)
 void apiPollTask(void* param) {
   vTaskDelay(2000 / portTICK_PERIOD_MS);
   for (;;) {
-    // Only poll when NOT in 5-hour deep sleep
     if (!isDeepSleeping && WiFi.status() == WL_CONNECTED) {
       fetchMoodFromAPI();
     }
@@ -178,7 +209,7 @@ void muteBuzzer() {
 }
 
 void printCentered(String text, int y, uint16_t color, int textSize = 1) {
-  String cleanText = sanitizeAsciiText(text);
+  String cleanText = sanitizeStrictEnglish(text, "Lola: Ready!");
   tft.setTextSize(textSize);
   tft.setTextColor(color);
   int charWidth = 6 * textSize;
@@ -242,7 +273,7 @@ void runDizzyShakeAnimation() {
   while (millis() - start < 1800) {
     tft.fillScreen(ST77XX_BLACK);
     drawClockTopLeft();
-    printCentered("! DIZZY / SHAKEN !", 16, ST77XX_RED, 1);
+    printCentered("DIZZY / SHAKEN!", 16, ST77XX_RED, 1);
     int offsetX = (frame % 2 == 0) ? 14 : -14;
     int cx = (160 / 2) + offsetX;
     int cy = (128 / 2) + 4;
@@ -306,8 +337,9 @@ void updateDisplayForState(int state, bool forceFullRedraw = false) {
     if (state == STATE_TOUCH) textColor = ST77XX_CYAN;
     else if (state == STATE_SOUND || state == STATE_ANNOYED) textColor = ST77XX_WHITE;
     
-    printCentered(apiDisplayText != "" ? apiDisplayText : "Lola: Ready!", 116, textColor, 1);
-    lastPrintedText = apiDisplayText;
+    String cleanText = sanitizeStrictEnglish(apiDisplayText, getMoodDefaultText(apiMood));
+    printCentered(cleanText, 116, textColor, 1);
+    lastPrintedText = cleanText;
   }
 }
 
@@ -332,20 +364,23 @@ void fetchMoodFromAPI() {
       String msgId = doc["msg_id"].as<String>();
 
       if (msgId.length() > 0 && msgId != String(pendingMsgIdBuf)) {
-        String newMood = doc["mood"].as<String>();
-        String newText = "";
+        String newMood = doc.containsKey("mood") ? doc["mood"].as<String>() : "NEUTRAL";
+        String rawText = "";
+        
         if (doc.containsKey("last_reply_display")) {
-          newText = doc["last_reply_display"].as<String>();
+          rawText = doc["last_reply_display"].as<String>();
         } else if (doc.containsKey("reply_display")) {
-          newText = doc["reply_display"].as<String>();
+          rawText = doc["reply_display"].as<String>();
         }
+
+        // Whitelist sanitize: If rawText is not pure English ASCII, default to mapped mood text
+        String cleanEnglish = sanitizeStrictEnglish(rawText, getMoodDefaultText(newMood));
 
         strncpy(pendingMsgIdBuf, msgId.c_str(), 63);
 
-        if (newText.length() > 0 && newText != apiDisplayText) {
-          String cleanText = sanitizeAsciiText(newText);
-          strncpy(pendingDisplayText, cleanText.c_str(), 63);
-          apiDisplayText = cleanText;
+        if (cleanEnglish.length() > 0 && cleanEnglish != apiDisplayText) {
+          strncpy(pendingDisplayText, cleanEnglish.c_str(), 63);
+          apiDisplayText = cleanEnglish;
           pendingDisplayUpdate = true;
         }
 
