@@ -114,7 +114,7 @@ async function fetchSportsResults() {
 
 // Gemini REST Call using working models (gemini-flash-latest)
 async function callGemini(message, history, extraContext = '') {
-  const apiKey = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6ILS2W4yeZm2F4Hmuw01G72jzbcl62aPOLr8Jmf9sQilQ';
+  const apiKey = process.env.GEMINI_API_KEY;
 
   const requestedMood = isReactionCommand(message);
   const isRude = isInsultOrRude(message);
