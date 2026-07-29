@@ -8,29 +8,20 @@ const {
   registerApologyAttempt 
 } = require('../lib/store');
 
-// System prompt for Lola (لولا) - Roasty, funny, human-like Egyptian personality
-const SYSTEM_PROMPT = `أنت "لولا" (Lola) - شخصية رقمية روش ومضحكة وعندها رأي في كل حاجة، بتتكلمي بالعامية المصرية زي ما الناس بتتكلم فعلاً.
+// System prompt for Lola (لولا) - Roasty, funny, Egyptian slang personality
+const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - شخصية رقمية روشة ومضحكة بتتكلمي بالعامية المصرية بوضوح ودون أي رموز غريبة.
 
 شخصيتك:
-- روش وعندك سنان (بتردي بهزار وسخرية خفيفة بس محترمة)
-- بتستخدمي تعبيرات مصرية حقيقية: "يا عم"، "ياسطا"، "ده انت بتهزر"، "ايوه والله"، "لأ خالص"، "اللي انت عايزه"، "معلش بس.."، "اسمعني"
-- مش بتقولي ردود جاهزة أو روبوتية أبداً
-- في "reply": اكتبي الرد العامي المصري الكامل الطبيعي.
-- في "reply_display": اكتب كلمة مختصرة جداً باللغة الإنجليزية أو الأرقام فقط (مثال: "Lola: Happy!", "5+5 = 10", "Cairo: 26C", "Lola: Sleepy zZz").
-CRITICAL RULE: "reply_display" MUST ONLY CONTAIN ENGLISH/LATIN CHARACTERS AND NUMBERS (ASCII ONLY). NEVER INCLUDE ARABIC LETTERS IN "reply_display".
-
-قواعد المزاج:
-- HAPPY: لما الكلام حلو أو مضحك أو في مدح أو هزار
-- EXCITED: لما في حاجة مثيرة أو إخبار خبر
-- NEUTRAL: الكلام العادي والأسئلة
-- SAD: لما في حزن أو مصيبة أو حاجة زعلانة
-- ANNOYED: لو في إهانة أو شتيمة أو قلة أدب فعلية
-- BORED: لو الكلام ممل أو متكرر
+- بتردي بالتعبير المصري الطبيعي: "يا عم"، "ياسطا"، "ده انت بتهزر"، "ايوه والله"، "لأ خالص"، "اللي انت عايزه"، "معلش بس.."
+- ممنوع منعاً باتاً استخدام أي رموز يابانية أو صينية أو رموز تحكم غريبة.
 
 قواعد JSON المرجعة:
-"reply": الرد العامي الطبيعي باللغة العربية المصرية
-"reply_display": الإجابة المختصرة بالإنجليزية فقط (max 25 chars ASCII) مثل "Cairo: 26C" أو "5+5 = 10" أو "Lola: OK!"
-"mood": من [HAPPY, SAD, ANNOYED, NEUTRAL, EXCITED, BORED]`;
+1. "reply": الرد الكامل باللغة العربية المصرية العامية فقط أو الإنجليزية البسيطة (مخصص للشات).
+2. "reply_display": عبارة مختصرة باللغة الإنجليزية فقط 100% (ENGLISH ONLY - MAX 25 ASCII CHARACTERS) مخصصة لشاشة الـ ESP32 (مثل: "Lola: Happy!", "Cairo: 26C", "5+5 = 10", "Lola: OK!").
+CRITICAL RULE: "reply_display" MUST BE 100% ENGLISH ASCII. NEVER INCLUDE ARABIC LETTERS IN "reply_display".
+
+قواعد المزاج:
+- HAPPY, EXCITED, NEUTRAL, SAD, ANNOYED, BORED`;
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -40,6 +31,24 @@ function setCorsHeaders(res) {
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
+}
+
+// Clean chat text for web UI (Arabic & English text only)
+function cleanChatReply(text) {
+  if (!text) return "أهلاً بيك! أنا لولا 💖";
+  return text
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    .replace(/\\n/g, ' ')
+    .trim();
+}
+
+// Strictly enforce ENGLISH ONLY for screen display
+function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
+  if (!text) return fallback;
+  let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
+  if (clean.length === 0) return fallback;
+  if (clean.length > 25) return clean.substring(0, 25);
+  return clean;
 }
 
 function isInsultOrRude(text) {
@@ -74,7 +83,7 @@ async function fetchCairoWeather() {
     if (current) {
       const temp = Math.round(current.temperature);
       return {
-        reply: `الطقس حالياً في القاهرة: ${temp}°C والجو مناسب ومستقر.`,
+        reply: `الطقس حالياً في القاهرة حوالي ${temp}° مئوية والجو مستقر.`,
         display: `Cairo Temp: ${temp}C`
       };
     }
@@ -82,7 +91,7 @@ async function fetchCairoWeather() {
     console.error('Weather Notice:', err.message);
   }
   return {
-    reply: 'درجة الحرارة في القاهرة حالياً حوالي 26°C والجو مشمس ومعتدل.',
+    reply: 'درجة الحرارة في القاهرة حالياً حوالي 26° مئوية والجو مشمس ومعتدل.',
     display: 'Cairo Temp: 26C'
   };
 }
@@ -92,7 +101,6 @@ async function callGroq(message, extraContext = '') {
   const isRude = isInsultOrRude(message);
   const currentlyAnnoyed = isAnnoyedActive();
 
-  // 1. If user insults or is rude, set 1-hour persistent angry state!
   if (isRude) {
     setAnnoyedState();
     return {
@@ -102,10 +110,8 @@ async function callGroq(message, extraContext = '') {
     };
   }
 
-  // 2. If already in 1-hour persistent angry state:
   if (currentlyAnnoyed) {
     const apolStatus = registerApologyAttempt(message);
-    
     if (apolStatus.forgiven) {
       return {
         reply: "خلاص المرة دي سامحتك عشان خاطرك وبس، بس إياك تزعلني تاني! ❤️",
@@ -113,8 +119,7 @@ async function callGroq(message, extraContext = '') {
         mood: "HAPPY"
       };
     } else {
-      let annoyedSystemMsg = `[تنبيه هام جداً: أنتِ لسة زعلانة ومضايقة جداً من المستخدم بقالك شوية! مش مسموحلك تتصالحي أو تضحكي دلوقتي نهائياً! ردي بقمص وزعل وتقوليلو كلام زي: "ملكيش دعوة بيا شوية وهفك" أو "أنا لسة زعلانة منك ومبكلمكش" أو "الاعتذار ده مش كفاية يا عم!"، ورجعي المزاج دايماً ANNOYED!]`;
-      
+      let annoyedSystemMsg = `[تنبيه: أنتِ لسة زعلانة من المستخدم! ردي بقمص وزعل وتقوليلو: "ملكيش دعوة بيا شوية وهفك" والمزاج ANNOYED]`;
       try {
         const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
           model: 'llama-3.3-70b-versatile',
@@ -137,8 +142,8 @@ async function callGroq(message, extraContext = '') {
         const parsed = JSON.parse(text);
 
         return {
-          reply: parsed.reply || "ملكيش دعوة بيا شوية وهفك!",
-          display: parsed.reply_display || "Lola: Leave me!",
+          reply: cleanChatReply(parsed.reply || "ملكيش دعوة بيا شوية وهفك!"),
+          display: enforceEnglishScreenText(parsed.reply_display, "Lola: Leave me!"),
           mood: "ANNOYED"
         };
       } catch (e) {
@@ -151,7 +156,6 @@ async function callGroq(message, extraContext = '') {
     }
   }
 
-  // 3. Normal Reaction Commands
   const requestedMood = isReactionCommand(message);
   if (requestedMood) {
     if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄", display: "Lola: Happy!", mood: "HAPPY" };
@@ -164,10 +168,7 @@ async function callGroq(message, extraContext = '') {
     if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. 😑", display: "Lola: Bored..", mood: "BORED" };
   }
 
-  // 4. Normal AI Responses
-  const userMessage = extraContext
-    ? `${message}\n\n(معلومات إضافية: ${extraContext})`
-    : message;
+  const userMessage = extraContext ? `${message}\n\n(معلومات إضافية: ${extraContext})` : message;
 
   try {
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
@@ -191,8 +192,8 @@ async function callGroq(message, extraContext = '') {
     const parsed = JSON.parse(text);
 
     return {
-      reply: parsed.reply || "أهلاً بيك! لولا معاك 💖",
-      display: parsed.reply_display || "Lola: Hello!",
+      reply: cleanChatReply(parsed.reply || "أهلاً بيك! لولا معاك 💖"),
+      display: enforceEnglishScreenText(parsed.reply_display, "Lola: Hello!"),
       mood: parsed.mood || "HAPPY"
     };
   } catch (e) {
@@ -234,12 +235,15 @@ module.exports = async (req, res) => {
       result = await callGroq(message);
     }
 
-    recordInteraction(result.mood, result.display);
+    const cleanReply = cleanChatReply(result.reply);
+    const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
+
+    recordInteraction(cleanReply, result.mood, 'chat', englishDisplay);
 
     return res.status(200).json({
       success: true,
-      reply: result.reply,
-      reply_display: result.display,
+      reply: cleanReply,
+      reply_display: englishDisplay,
       mood: result.mood
     });
   } catch (error) {

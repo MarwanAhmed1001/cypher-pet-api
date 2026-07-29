@@ -10,13 +10,20 @@ function setCorsHeaders(res) {
   );
 }
 
-// Generate fun Egyptian slang responses based on app & content
+function enforceEnglishScreenText(text, fallback = "Notification!") {
+  if (!text) return fallback;
+  let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
+  if (clean.length === 0) return fallback;
+  if (clean.length > 25) return clean.substring(0, 25);
+  return clean;
+}
+
 function getNotificationReply(app, type, content) {
   const appName = (app || '').toLowerCase();
   
   if (appName.includes('whatsapp') || appName.includes('واتساب')) {
     return {
-      reply: content || "وصلتك رسالة واتساب جديدة! روح افتح الأبليكيشن شوف مين بيراذلك 💬",
+      reply: content || "وصلتك رسالة واتساب جديدة! روح افتح الأبليكيشن شوف مين بعتلك 💬",
       display: "WA: New Msg!",
       mood: "EXCITED"
     };
@@ -32,24 +39,15 @@ function getNotificationReply(app, type, content) {
 
   if (appName.includes('instagram') || appName.includes('انستجرام')) {
     return {
-      reply: content || "في إشعار جديد على إنستجرام! حد عملك لايك أو بعتلك DMs 📸",
+      reply: content || "في إشعار جديد على إنستجرام! 📸",
       display: "IG: New Notif!",
       mood: "HAPPY"
     };
   }
 
-  if (appName.includes('facebook') || appName.includes('فيسبوك')) {
-    return {
-      reply: content || "جاتلك نوتيفيكيشن على الفيس! روح شوف مين عمل كومنت 📘",
-      display: "FB: New Notif!",
-      mood: "HAPPY"
-    };
-  }
-
-  // Default fallback for any other app
   return {
     reply: content || `وصلك إشعار جديد من تطبيق ${app || 'النظام'}!`,
-    display: `${(app || 'App').substring(0, 8)} Notif!`,
+    display: enforceEnglishScreenText(`${app || 'App'} Notif!`, "App Notif!"),
     mood: "EXCITED"
   };
 }
@@ -70,18 +68,21 @@ module.exports = async (req, res) => {
   try {
     const notifInfo = getNotificationReply(app, type, content);
 
+    const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "WA: New Msg!");
+
     const state = recordInteraction(
-      notifInfo.reply,
+      cleanReply,
       notifInfo.mood,
       'notification',
-      notifInfo.display
+      englishDisplay
     );
 
     return res.status(200).json({
       success: true,
-      message: `Notification for ${app || 'app'} processed successfully`,
-      reply: notifInfo.reply,
-      reply_display: notifInfo.display,
+      message: `Notification processed successfully`,
+      reply: cleanReply,
+      reply_display: englishDisplay,
       mood: notifInfo.mood,
       data: state
     });

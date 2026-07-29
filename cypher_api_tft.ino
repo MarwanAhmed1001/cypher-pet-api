@@ -1,14 +1,14 @@
 /*
   ===============================================================================
-  سايفر بت - Cypher Bit (Rock Solid Color Bitmaps + 100% Silent Buzzer + Smart Sleep)
+  سايفر بت - Cypher Bit (Rock Solid Color Bitmaps + 100% English Screen Display)
   ===============================================================================
   - إيقاف الباظر وإبطال أي أصوات تصفير أو طنين عبر ledcDetachPin و pinMode(BUZZER_PIN, INPUT).
-  - الفلترة التامة للنصوص: تنظيف النصوص وإلغاء الأحرف اليابانية أو الرموز العشوائية الغريبة (Clean ASCII/English Display).
+  - الشاشة باللغة الإنجليزية الصافية 100% (English ASCII Only - 100% Clean):
+    * تم تعقيم ومنع أي حروف عربية أو يابانية أو رموز UTF-8 عشوائية لمنع انقلاب الحروف أو الرموز الغريبة.
   - كود النوم الذكي:
     * النوم لا يتفعل إلا بين الساعة 2:00 صباحاً و 8:00 صباحاً.
     * إذا انطفأ النور في هذه الفترة، يظل الجهاز يعمل لمدة أقصاها 30 دقيقة.
     * بعد الـ 30 دقيقة، يدخل الجهاز في نوم عميق (5 ساعات متواصلة) يتوقف فيها عن العمل وتتوقف كل الحساسات والإشارات.
-  - المعرف الفريد للشات (String msg_id) لتأكيد تنفيذه مرة واحدة فقط.
   - التوصيلات الفيزيائية المعتمدة 100%:
     TFT_CS=15, TFT_RST=4, TFT_DC=2, TFT_MOSI=23, TFT_SCLK=18
     TOUCH=33, SHAKE=14, SOUND=34, LDR=35, BUZZER=25, VIBRATION=26
@@ -116,15 +116,17 @@ bool isNightTimeWindow() {
   return (hr >= 2 && hr < 8);
 }
 
-// Clean non-ASCII bytes to prevent Japanese Katakana or broken characters
+// Clean non-ASCII bytes to guarantee 100% ENGLISH ONLY on TFT display
 String sanitizeAsciiText(String input) {
   String clean = "";
   for (unsigned int i = 0; i < input.length(); i++) {
     char c = input.charAt(i);
+    // Printable ASCII only (space 32 to tilde 126)
     if (c >= 32 && c <= 126) {
       clean += c;
     }
   }
+  clean.trim();
   if (clean.length() == 0) return "Lola: Ready!";
   return clean;
 }
@@ -409,7 +411,7 @@ void setup() {
 void loop() {
   muteBuzzer();
 
-  // 1. Handle 5-Hour Deep Sleep Mode (ينام 5 ساعات لا يستقبل أي إشارة)
+  // 1. Handle 5-Hour Deep Sleep Mode
   if (isDeepSleeping) {
     if (millis() - deepSleepStartTime >= DEEP_SLEEP_DURATION) {
       // 5 hours finished -> Wake up!
