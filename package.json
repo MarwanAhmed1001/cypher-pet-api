@@ -1,0 +1,17 @@
+{
+  "name": "cypher-vercel-api",
+  "version": "1.0.0",
+  "description": "Cypher Digital Pet Serverless Vercel API powered by Gemini",
+  "main": "api/chat.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/chat.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1"
+  }
+}

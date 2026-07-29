@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lola - لولا</title>
+  
+  <!-- Google Fonts: Tajawal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0d0d0d;
+      --card-bg: #141416;
+      --cypher-msg-bg: #1f1f23;
+      --user-msg-bg: #C8FF4D;
+      --user-msg-text: #0d0d0d;
+      --text-main: #f1f1f1;
+      --text-muted: #8e8e93;
+      --border-color: #26262a;
+      
+      /* Mood Colors */
+      --mood-happy: #C8FF4D;
+      --mood-sad: #7A8CA3;
+      --mood-annoyed: #FF6B57;
+      --mood-neutral: #F1EDE4;
+      --mood-excited: #FFD700;
+      --mood-bored: #5A5D63;
+
+      --active-mood-color: var(--mood-annoyed);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Container layout */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-dark);
+      position: relative;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Top Bar Header */
+    .top-bar {
+      padding: 14px 18px;
+      background: rgba(20, 20, 22, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+    }
+
+    .cypher-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1a1a1e;
+      border: 2px solid var(--active-mood-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: all 0.4s ease;
+      box-shadow: 0 0 12px rgba(255, 107, 87, 0.2);
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .profile-name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--active-mood-color);
+      box-shadow: 0 0 8px var(--active-mood-color);
+      transition: background-color 0.4s ease;
+    }
+
+    .mood-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--active-mood-color);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.4s ease;
+    }
+
+    /* Chat Area */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-area::-webkit-scrollbar {
+      width: 4px;
+    }
+    .chat-area::-webkit-scrollbar-thumb {
+      background: #222;
+      border-radius: 4px;
+    }
+
+    /* Message Bubbles */
+    .message-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 85%;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fadeInMsg 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeInMsg {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-row.user {
+      align-self: flex-start;
+      flex-direction: row-reverse;
+    }
+
+    .message-row.cypher {
+      align-self: flex-end;
+    }
+
+    .msg-avatar {
+      font-size: 16px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .bubble {
+      padding: 11px 15px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.45;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .message-row.cypher .bubble {
+      background-color: var(--cypher-msg-bg);
+      color: var(--text-main);
+      border-bottom-right-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .message-row.user .bubble {
+      background-color: var(--user-msg-bg);
+      color: var(--user-msg-text);
+      font-weight: 700;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-icon {
+      margin-left: 4px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    /* Typing Indicator */
+    .typing-row {
+      display: none;
+      align-self: flex-end;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 85%;
+    }
+
+    .typing-row.active {
+      display: flex;
+      animation: fadeInMsg 0.3s forwards;
+    }
+
+    .typing-bubble {
+      background-color: var(--cypher-msg-bg);
+      padding: 12px 16px;
+      border-radius: 18px;
+      border-bottom-right-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--text-muted);
+      border-radius: 50%;
+      animation: typingPulse 1.4s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingPulse {
+      0%, 100% { transform: scale(0.8); opacity: 0.4; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* Bottom Input Bar */
+    .input-bar {
+      padding: 12px 16px 16px;
+      background: rgba(20, 20, 22, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-input {
+      width: 100%;
+      background: #1a1a1e;
+      border: 1px solid #2a2a30;
+      border-radius: 24px;
+      padding: 12px 18px;
+      color: var(--text-main);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .chat-input::placeholder {
+      color: #66666e;
+    }
+
+    .chat-input:focus {
+      border-color: var(--active-mood-color);
+      box-shadow: 0 0 10px rgba(255, 107, 87, 0.15);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: var(--user-msg-bg);
+      border: none;
+      color: var(--user-msg-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .send-btn:active {
+      transform: scale(0.92);
+    }
+
+    .send-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Top Header -->
+    <div class="top-bar">
+      <div class="cypher-profile">
+        <div class="avatar" id="headerAvatar">😠</div>
+        <div class="profile-info">
+          <div class="profile-name">لولا <span>(Lola)</span></div>
+          <div class="status-badge">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="dailyMoodText">المزاج اليومي: متضايقة</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mood-pill" id="moodPill">
+        <span id="moodEmoji">😠</span>
+        <span id="moodText">متضايقة</span>
+      </div>
+    </div>
+
+    <!-- Chat Scroll Area -->
+    <div class="chat-area" id="chatArea">
+      <!-- Default Welcome Message -->
+      <div class="message-row cypher">
+        <div class="msg-avatar">😠</div>
+        <div class="bubble" style="border-left: 3px solid #FF6B57">أهلاً.. أنا لولا. عايز إيه على الصبح؟</div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="typing-row" id="typingRow">
+        <div class="msg-avatar" id="typingAvatar">😠</div>
+        <div class="typing-bubble">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Input Bar -->
+    <div class="input-bar">
+      <div class="input-wrapper">
+        <input type="text" class="chat-input" id="chatInput" placeholder="اكتب رسالة لـ لولا..." autocomplete="off">
+      </div>
+      <button class="send-btn" id="sendBtn" aria-label="إرسال">
+        <svg viewBox="0 0 24 24">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Mood Mapping dictionary
+    const MOOD_DATA = {
+      HAPPY: { color: '#C8FF4D', emoji: '😊', name: 'سعيدة' },
+      SAD: { color: '#7A8CA3', emoji: '😢', name: 'حزينة' },
+      ANNOYED: { color: '#FF6B57', emoji: '😠', name: 'متضايقة' },
+      NEUTRAL: { color: '#F1EDE4', emoji: '😐', name: 'عادية' },
+      EXCITED: { color: '#FFD700', emoji: '🤩', name: 'متحمسة' },
+      BORED: { color: '#5A5D63', emoji: '🥱', name: 'زهقانة' }
+    };
+
+    let chatHistory = [];
+    let currentMood = 'ANNOYED';
+
+    const chatArea = document.getElementById('chatArea');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingRow = document.getElementById('typingRow');
+
+    const headerAvatar = document.getElementById('headerAvatar');
+    const typingAvatar = document.getElementById('typingAvatar');
+    const moodPill = document.getElementById('moodPill');
+    const moodEmoji = document.getElementById('moodEmoji');
+    const moodText = document.getElementById('moodText');
+    const statusDot = document.getElementById('statusDot');
+    const dailyMoodText = document.getElementById('dailyMoodText');
+
+    // Update Top Bar UI
+    function updateTopBarUI(moodKey, dailyMoodKey) {
+      const mood = MOOD_DATA[moodKey] || MOOD_DATA.ANNOYED;
+      const dailyMood = MOOD_DATA[dailyMoodKey] || mood;
+
+      currentMood = moodKey;
+
+      document.documentElement.style.setProperty('--active-mood-color', mood.color);
+
+      headerAvatar.textContent = mood.emoji;
+      typingAvatar.textContent = mood.emoji;
+
+      moodEmoji.textContent = mood.emoji;
+      moodText.textContent = mood.name;
+
+      dailyMoodText.textContent = `المزاج اليومي: ${dailyMood.name}`;
+    }
+
+    // Scroll chat to bottom
+    function scrollToBottom() {
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // Append Message to Chat
+    function appendMessage(sender, text, moodKey = 'ANNOYED', dataType = 'chat') {
+      const row = document.createElement('div');
+      row.className = `message-row ${sender}`;
+
+      const mood = MOOD_DATA[moodKey] || MOOD_DATA.ANNOYED;
+
+      let iconSpan = '';
+      if (sender === 'cypher') {
+        if (dataType === 'weather') iconSpan = '<span class="msg-icon">🌤️</span>';
+        else if (dataType === 'sports') iconSpan = '<span class="msg-icon">⚽</span>';
+      }
+
+      if (sender === 'cypher') {
+        row.innerHTML = `
+          <div class="msg-avatar">${mood.emoji}</div>
+          <div class="bubble" style="border-left: 3px solid ${mood.color}">
+            ${text}${iconSpan}
+          </div>
+        `;
+      } else {
+        row.innerHTML = `
+          <div class="bubble">${text}</div>
+        `;
+      }
+
+      // Insert before typing row
+      chatArea.insertBefore(row, typingRow);
+      scrollToBottom();
+    }
+
+    // Poll GET /api/mood every 3 seconds
+    async function pollMood() {
+      try {
+        const res = await fetch('/api/mood');
+        if (res.ok) {
+          const data = await res.json();
+          updateTopBarUI(data.mood, data.daily_mood);
+        }
+      } catch (err) {
+        console.warn('Mood polling notice:', err);
+      }
+    }
+
+    // Send Message Handler
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      chatInput.value = '';
+
+      // Append user message
+      appendMessage('user', text);
+
+      // Keep history in memory (last 10)
+      chatHistory.push({ role: 'user', content: text });
+      if (chatHistory.length > 10) chatHistory.shift();
+
+      // Show typing indicator
+      typingRow.classList.add('active');
+      scrollToBottom();
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            history: chatHistory
+          })
+        });
+
+        const data = await res.json();
+        typingRow.classList.remove('active');
+
+        if (res.ok && data.reply) {
+          appendMessage('cypher', data.reply, data.mood, data.data_type);
+          updateTopBarUI(data.mood, data.daily_mood);
+          chatHistory.push({ role: 'assistant', content: data.reply });
+          if (chatHistory.length > 10) chatHistory.shift();
+        } else {
+          appendMessage('cypher', 'مش عايزة أتكلم معاك دلوقتي، حل عني بقا!', 'ANNOYED', 'chat');
+        }
+      } catch (err) {
+        console.error('Send Error:', err);
+        typingRow.classList.remove('active');
+        appendMessage('cypher', 'أوف بقا! هو مفيش غيري تنكد عليه؟', 'ANNOYED', 'chat');
+      }
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // Start Polling every 3s
+    pollMood();
+    setInterval(pollMood, 3000);
+  </script>
+</body>
+</html>
