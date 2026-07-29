@@ -114,7 +114,7 @@ async function fetchSportsResults() {
 
 // Gemini REST Call using working models (gemini-flash-latest)
 async function callGemini(message, history, extraContext = '') {
-  const apiKey = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6IRu-t-PKpHjJUklwxJCpxKli1CU2qIi7UgSbxjaoTQBA';
+  const apiKey = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6ILS2W4yeZm2F4Hmuw01G72jzbcl62aPOLr8Jmf9sQilQ';
 
   const requestedMood = isReactionCommand(message);
   const isRude = isInsultOrRude(message);
@@ -170,6 +170,8 @@ ${SYSTEM_PROMPT}
       return { reply, display, mood };
     } catch (e) {
       console.log(`Model ${m} notice:`, e.message || e);
+      // Wait 1s before trying next model to avoid rate limit
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
