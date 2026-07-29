@@ -9,6 +9,7 @@ const {
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '8c7a75e146944dcb8a29a45a6b77766c';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'd479e32b181347feb5fd2810cbd3d127';
+const HARDCODED_REFRESH_TOKEN = 'AQCGcGhjvKHY4i-g5pGMzA57lvT0yjhx6wFIYrzK1ic5TsepK4h-KnSuVaGuvYUUeOqky2am5Eiv0iFjDTS_uBKox8-MFi4WciJXht4rM0GNcQ4IDIleZlwTNJ7NoX2ioKA';
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -39,7 +40,7 @@ function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
 }
 
 async function getSpotifyAccessToken() {
-  const refresh_token = getSpotifyRefreshToken();
+  const refresh_token = getSpotifyRefreshToken() || process.env.SPOTIFY_REFRESH_TOKEN || HARDCODED_REFRESH_TOKEN;
 
   if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token) {
     return null;
@@ -113,13 +114,11 @@ const spotifyHandler = async (req, res) => {
   const setToken = query.token;
   const redirectUri = getRedirectUri(req);
 
-  // Direct token setter helper
   if (setToken) {
     setSpotifyRefreshToken(setToken);
     return res.status(200).json({ success: true, message: 'Spotify Refresh Token saved!' });
   }
 
-  // 1. Handle Login Redirect
   if (action === 'login' || login === 'true') {
     const scope = 'user-read-currently-playing user-read-playback-state';
     const authUrl = 'https://accounts.spotify.com/authorize?' +
@@ -138,7 +137,6 @@ const spotifyHandler = async (req, res) => {
     }
   }
 
-  // 2. Handle OAuth Callback Code from Spotify
   if (code) {
     try {
       const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
@@ -203,7 +201,6 @@ const spotifyHandler = async (req, res) => {
     }
   }
 
-  // 3. Normal Currently Playing API endpoint
   try {
     const nowPlaying = await fetchCurrentlyPlayingTrack();
 
