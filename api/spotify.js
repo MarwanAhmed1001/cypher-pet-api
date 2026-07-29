@@ -5,7 +5,6 @@ const { recordInteraction } = require('../lib/store');
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '8c7a75e146944dcb8a29a45a6b77766c';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'd479e32b181347feb5fd2810cbd3d127';
-const REDIRECT_URI = 'https://lola-cypher-pet.vercel.app/api/spotify';
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -17,6 +16,16 @@ function setCorsHeaders(res) {
   );
 }
 
+function getRedirectUri(req) {
+  // Dynamically determine matching redirect URI
+  const host = req.headers.host || 'lola-cypher-pet.vercel.app';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  if (req.query.uri_type === 'clean') {
+    return `${protocol}://${host}/api/spotify`;
+  }
+  return `${protocol}://${host}/api/spotify/callback`;
+}
+
 function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
@@ -25,7 +34,6 @@ function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
   return clean;
 }
 
-// Memory cache for refresh token if set dynamically
 let activeRefreshToken = process.env.SPOTIFY_REFRESH_TOKEN || '';
 
 async function getSpotifyAccessToken() {
@@ -97,6 +105,7 @@ module.exports = async (req, res) => {
   }
 
   const { code, action, login } = req.query || {};
+  const redirectUri = getRedirectUri(req);
 
   // 1. Handle Login Redirect
   if (action === 'login' || login === 'true') {
@@ -106,7 +115,7 @@ module.exports = async (req, res) => {
         response_type: 'code',
         client_id: CLIENT_ID,
         scope: scope,
-        redirect_uri: REDIRECT_URI
+        redirect_uri: redirectUri
       });
     return res.redirect(authUrl);
   }
@@ -119,7 +128,7 @@ module.exports = async (req, res) => {
         'https://accounts.spotify.com/api/token',
         querystring.stringify({
           code: code,
-          redirect_uri: REDIRECT_URI,
+          redirect_uri: redirectUri,
           grant_type: 'authorization_code'
         }),
         {
