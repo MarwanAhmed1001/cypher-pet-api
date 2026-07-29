@@ -7,6 +7,7 @@ const {
   isAnnoyedActive, 
   registerApologyAttempt 
 } = require('../lib/store');
+const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
 // System prompt for Lola (لولا) - Funny roasty Egyptian Arabic personality
 const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - شخصية رقمية روشة ومضحكة وعندها رأي في كل حاجة، بتتكلمي بالعامية المصرية الطبيعية جداً.
@@ -68,6 +69,11 @@ function isReactionCommand(text) {
   if (t.includes('اتحمس')) return 'EXCITED';
   if (t.includes('ازهق')) return 'BORED';
   return null;
+}
+
+function isSpotifyQuery(text) {
+  const keywords = ['spotify', 'سبوتيفاي', 'أغنية', 'اغنية', 'أغنيه', 'اغنيه', 'بتسمع', 'بتسمعي', 'شغال', 'شغالة', 'شغاله', 'موسيقى', 'موسيقي', 'music', 'song', 'track', 'playing'];
+  return keywords.some(kw => text.toLowerCase().includes(kw));
 }
 
 function isWeatherQuery(text) {
@@ -224,7 +230,23 @@ module.exports = async (req, res) => {
 
   try {
     let result;
-    if (isWeatherQuery(message)) {
+    if (isSpotifyQuery(message)) {
+      const nowPlaying = await fetchCurrentlyPlayingTrack();
+      if (nowPlaying && nowPlaying.trackName) {
+        const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
+        result = {
+          reply: `بتسمع دلوقتي: "${nowPlaying.trackName}"${artistStr} 🎵 أروق مان في المجرة 🎧`,
+          display: enforceEnglishScreenText(`${nowPlaying.artistName || 'Spotify'} - ${nowPlaying.trackName}`, nowPlaying.trackName),
+          mood: 'EXCITED'
+        };
+      } else {
+        result = {
+          reply: "شغّلت سبوتيفاي! افتح أي أغنية وعينيا عليها 🎶🎧",
+          display: "Spotify Ready!",
+          mood: 'HAPPY'
+        };
+      }
+    } else if (isWeatherQuery(message)) {
       const weatherData = await fetchCairoWeather();
       result = {
         reply: weatherData.reply,
