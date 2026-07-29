@@ -26,7 +26,16 @@ function getNotificationReply(req) {
   // Combine all request context
   const fullContext = `${urlStr} ${queryStr} ${bodyStr}`;
 
-  // 1. Charger / Charging
+  // 1. Spotify / Music
+  if (fullContext.includes('spotify') || fullContext.includes('سبوتيفاي') || fullContext.includes('music') || fullContext.includes('موسيقى') || fullContext.includes('أغنية')) {
+    return {
+      reply: "شغّلت الموسيقى على سبوتيفاي! أروق مان في المجرة 🎶🎧",
+      display: "Spotify Music!",
+      mood: "EXCITED"
+    };
+  }
+
+  // 2. Charger / Charging
   if (fullContext.includes('charger') || fullContext.includes('charging') || fullContext.includes('شاحن') || fullContext.includes('شحن')) {
     return {
       reply: "حبيبي تسلم! الآيفون بيتشحن دلوقتي وعينيا عليه ⚡",
@@ -35,7 +44,7 @@ function getNotificationReply(req) {
     };
   }
 
-  // 2. Low Battery Mode / Battery Level
+  // 3. Low Battery Mode / Battery Level
   if (fullContext.includes('battery') || fullContext.includes('بطارية') || fullContext.includes('بطاريه') || fullContext.includes('low_battery') || fullContext.includes('lowpower')) {
     return {
       reply: "يا ساتر البطارية ضعيفة! حط التليفون على الشاحن بدل ما يفصل منك 🔋",
@@ -44,7 +53,7 @@ function getNotificationReply(req) {
     };
   }
 
-  // 3. Wi-Fi Connected
+  // 4. Wi-Fi Connected
   if (fullContext.includes('wifi') || fullContext.includes('wi-fi') || fullContext.includes('واي فاي') || fullContext.includes('شبكة')) {
     return {
       reply: "أهلاً بيك في البيت! شبكة الـ Wi-Fi اتصلت والمكان نور 🏠📶",
@@ -53,7 +62,7 @@ function getNotificationReply(req) {
     };
   }
 
-  // 4. Alarm Dismissed / Morning Wake Up
+  // 5. Alarm Dismissed / Morning Wake Up
   if (fullContext.includes('alarm') || fullContext.includes('منبه') || fullContext.includes('صباح') || fullContext.includes('dismiss')) {
     return {
       reply: "صباح الفل والياسمين! صح النوم يا بطل، يومك سعيد ☀️",
@@ -62,7 +71,7 @@ function getNotificationReply(req) {
     };
   }
 
-  // 5. WhatsApp
+  // 6. WhatsApp
   if (fullContext.includes('whatsapp') || fullContext.includes('واتساب')) {
     return {
       reply: "وصلتك رسالة واتساب جديدة! 💬",
@@ -71,7 +80,7 @@ function getNotificationReply(req) {
     };
   }
 
-  // 6. SMS / Text Message
+  // 7. SMS / Text Message
   if (fullContext.includes('sms') || fullContext.includes('message')) {
     return {
       reply: "وصلتك رسالة نصية جديدة! 📱",
