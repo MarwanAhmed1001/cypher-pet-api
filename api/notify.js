@@ -20,23 +20,64 @@ function enforceEnglishScreenText(text, fallback = "Notification!") {
 
 function getNotificationReply(app, type, content) {
   const appName = (app || '').toLowerCase();
+  const typeStr = (type || '').toLowerCase();
+  const textContent = (content || '').toLowerCase();
   
+  // 1. Charger Connected / Charging
+  if (appName.includes('charger') || appName.includes('شاحن') || typeStr.includes('charger') || textContent.includes('charger') || textContent.includes('شحن')) {
+    return {
+      reply: "حبيبي تسلم! الآيفون بيتشحن دلوقتي وعينيا عليه ⚡",
+      display: "Charger Plugged!",
+      mood: "EXCITED"
+    };
+  }
+
+  // 2. Low Battery Mode / Battery Level
+  if (appName.includes('battery') || appName.includes('بطارية') || textContent.includes('battery') || textContent.includes('بطارية')) {
+    return {
+      reply: "يا ساتر البطارية ضعيفة! حط التليفون على الشاحن بدل ما يفصل منك 🔋",
+      display: "Low Battery!",
+      mood: "ANNOYED"
+    };
+  }
+
+  // 3. Wi-Fi Connected
+  if (appName.includes('wifi') || appName.includes('واي فاي') || textContent.includes('wifi') || textContent.includes('بيت')) {
+    return {
+      reply: "أهلاً بيك في البيت! شبكة الـ Wi-Fi اتصلت والمكان نور 🏠📶",
+      display: "WiFi Connected!",
+      mood: "HAPPY"
+    };
+  }
+
+  // 4. Alarm Dismissed / Morning Wake Up
+  if (appName.includes('alarm') || appName.includes('منبه') || textContent.includes('alarm') || textContent.includes('منبه')) {
+    return {
+      reply: "صباح الفل والياسمين! صح النوم يا بطل، يومك سعيد ☀️",
+      display: "Good Morning!",
+      mood: "HAPPY"
+    };
+  }
+
+  // 5. WhatsApp
   if (appName.includes('whatsapp') || appName.includes('واتساب')) {
     return {
-      reply: content || "وصلتك رسالة واتساب جديدة! روح افتح الأبليكيشن شوف مين بيراذلك 💬",
+      reply: content || "وصلتك رسالة واتساب جديدة! 💬",
       display: "WA: New Msg!",
       mood: "EXCITED"
     };
   }
   
+  // 6. Telegram
   if (appName.includes('telegram') || appName.includes('تليجرام')) {
     return {
-      reply: content || "جاتلك رسالة جديدة على تليجرام! افتح شوف الإشعار 📱",
+      reply: content || "جاتلك رسالة جديدة على تليجرام! 📱",
       display: "TG: New Msg!",
       mood: "EXCITED"
     };
   }
 
+  // 7. Instagram
   if (appName.includes('instagram') || appName.includes('انستجرام')) {
     return {
       reply: content || "في إشعار جديد على إنستجرام! 📸",
@@ -45,6 +86,7 @@ function getNotificationReply(app, type, content) {
     };
   }
 
+  // Default fallback
   return {
     reply: content || `وصلك إشعار جديد من تطبيق ${app || 'النظام'}!`,
     display: enforceEnglishScreenText(`${app || 'App'} Notif!`, "App Notif!"),
@@ -69,7 +111,7 @@ module.exports = async (req, res) => {
     const notifInfo = getNotificationReply(app, type, content);
 
     const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
-    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "WA: New Msg!");
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "Notification!");
 
     const state = recordInteraction(
       cleanReply,
