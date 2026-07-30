@@ -68,9 +68,13 @@ async function getSpotifyAccessToken() {
       }
     );
 
+    if (response.data.refresh_token) {
+      setSpotifyRefreshToken(response.data.refresh_token);
+    }
+
     return response.data.access_token;
   } catch (error) {
-    console.error('Error refreshing Spotify token:', error.message);
+    console.error('Error refreshing Spotify token:', error.response?.data || error.message);
     return null;
   }
 }
@@ -97,13 +101,20 @@ async function fetchCurrentlyPlayingTrack() {
         trackName,
         artistName
       };
+    } else if (response.status === 204 || !response.data || !response.data.item) {
+      return {
+        isPlaying: false,
+        trackName: "مفيش أغنية شغالة دلوقتي على سبوتيفاي",
+        artistName: "Spotify"
+      };
     }
   } catch (error) {
-    console.error('Error fetching Spotify track:', error.message);
+    console.error('Error fetching Spotify track:', error.response?.data || error.message);
   }
 
   return null;
 }
+
 
 const spotifyHandler = async (req, res) => {
   setCorsHeaders(res);
