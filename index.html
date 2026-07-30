@@ -624,7 +624,6 @@
       </div>
 
       <div class="header-actions">
-        <button class="icon-btn" id="ttsToggleBtn" title="تشغيل/كتم الصوت التلقائي" onclick="toggleAudioOutput()">🔇</button>
         <button class="icon-btn" title="الكاميرا والتعرف على الوجه" onclick="openCameraModal()">📷</button>
         <button class="icon-btn" title="دليل الاستخدام" onclick="openGuideModal()">ℹ️</button>
         
@@ -641,10 +640,10 @@
       <div class="message-row cypher">
         <div class="msg-avatar">😐</div>
         <div class="bubble" style="border-left: 3px solid #F1EDE4">
-          <button class="speak-btn" onclick="speakText('أنا لولا. عايز إيه على الصبح؟')">🔊</button>
           أنا لولا. عايز إيه على الصبح؟
         </div>
       </div>
+
 
       <!-- Typing Indicator -->
       <div class="typing-row" id="typingRow">
@@ -1016,16 +1015,16 @@
       const mood = MOOD_DATA[moodKey] || MOOD_DATA.NEUTRAL;
 
       let imgHtml = imageSrc ? `<img src="${imageSrc}" class="bubble-image" alt="Captured Photo" />` : '';
-      let speakBtnHtml = (sender === 'cypher') ? `<button class="speak-btn" onclick="speakText('${text.replace(/'/g, "\\'")}')">🔊</button>` : '';
 
       if (sender === 'cypher') {
         row.innerHTML = `
           <div class="msg-avatar">${mood.emoji}</div>
           <div class="bubble" style="border-left: 3px solid ${mood.color}">
-            ${imgHtml}${speakBtnHtml}${text}
+            ${imgHtml}${text}
           </div>
         `;
       } else {
+
         row.innerHTML = `
           <div class="bubble">${imgHtml}${text}</div>
         `;

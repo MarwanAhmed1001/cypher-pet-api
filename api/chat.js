@@ -117,12 +117,14 @@ async function fetchCairoWeather() {
 async function callGroq(message, history = [], extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
   const isRude = isInsultOrAnnoying(message);
-  if (isRude) {
+  const isStranger = message.includes('شخص غريب') || message.includes('وجه شخص غريب') || message.includes('غريب');
+  if (isRude || isStranger) {
     setAnnoyedState();
   }
   
   const currentlyAnnoyed = isAnnoyedActive();
   const moodState = getMoodState();
+
 
   let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
   if (currentlyAnnoyed) {
