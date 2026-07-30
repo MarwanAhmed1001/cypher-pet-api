@@ -624,7 +624,7 @@
       </div>
 
       <div class="header-actions">
-        <button class="icon-btn" id="ttsToggleBtn" title="تشغيل/كتم الصوت التلقائي" onclick="toggleAudioOutput()">🔊</button>
+        <button class="icon-btn" id="ttsToggleBtn" title="تشغيل/كتم الصوت التلقائي" onclick="toggleAudioOutput()">🔇</button>
         <button class="icon-btn" title="الكاميرا والتعرف على الوجه" onclick="openCameraModal()">📷</button>
         <button class="icon-btn" title="دليل الاستخدام" onclick="openGuideModal()">ℹ️</button>
         
@@ -983,10 +983,12 @@
         if (localRes.ok) {
           const result = await localRes.json();
           typingRow.classList.remove('active');
-          if (result.is_ayane) {
-            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه أيويتي (آية) ✨]. رحبي بـ أيويتي بدلع وجملة جديدة ومختلفة تماماً كل مرة!");
+          if (result.status === 'no_face') {
+            sendMessageWithContext("📸 [لم يتم اكتشاف أي وجه في الصورة ⚠️]. ردي ببرود أن الصورة مش باين فيها وش أصلًا!");
+          } else if (result.is_ayane) {
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه أيويتي (آية) ✨]. رحبي بـ أيويتي بدلع كـ آية وجملة مبتكرة!");
           } else {
-            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه شخص غريب ⚠️]. اتفاعلي بريبة وضيق وسخرية وجملة مبتكرة مختلفة بدون تكرار!");
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه شخص غريب ⚠️]. قولي مين الغريب ده وسألي بتتفرج عليا ليه؟");
           }
           return;
         }
