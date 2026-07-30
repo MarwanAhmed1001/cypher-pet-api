@@ -91,7 +91,7 @@ async function fetchCairoWeather() {
   };
 }
 
-async function callGroq(message, extraContext = '') {
+async function callGroq(message, history = [], extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
   const isRude = isInsultOrAnnoying(message);
   if (isRude) {
@@ -112,13 +112,31 @@ async function callGroq(message, extraContext = '') {
     promptContext += ` Additional context: ${extraContext}`;
   }
 
+  const groqMessages = [
+    { role: 'system', content: SYSTEM_PROMPT }
+  ];
+
+  // Pass past conversation history for continuous natural chat context
+  if (Array.isArray(history) && history.length > 0) {
+    // Take up to last 8 messages
+    const recentHistory = history.slice(-8);
+    recentHistory.forEach(item => {
+      if (item.role && item.content) {
+        const role = (item.role === 'cypher' || item.role === 'assistant') ? 'assistant' : 'user';
+        groqMessages.push({ role, content: item.content });
+      }
+    });
+  }
+
+  groqMessages.push({
+    role: 'user',
+    content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
+  });
+
   try {
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` }
-      ],
+      messages: groqMessages,
       temperature: 0.65,
       max_tokens: 200,
       response_format: { type: 'json_object' }
@@ -151,7 +169,6 @@ async function callGroq(message, extraContext = '') {
 }
 
 
-
 module.exports = async (req, res) => {
   setCorsHeaders(res);
 
@@ -163,7 +180,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message } = req.body || {};
+  const { message, history } = req.body || {};
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -197,8 +214,9 @@ module.exports = async (req, res) => {
         energyDelta: +5
       };
     } else {
-      result = await callGroq(message);
+      result = await callGroq(message, history);
     }
+
 
     const cleanReply = cleanChatReply(result.reply);
     const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
