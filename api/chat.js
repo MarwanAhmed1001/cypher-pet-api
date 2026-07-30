@@ -10,22 +10,22 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-// System prompt for Lola (لولا) - Cold, concise, sarcastic human-like Egyptian creature
-const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - كائن رقمي ذكي جداً شخصيتها باردة وساخرة وتتحدث بالعامية المصرية البحتة كإنسان بشري طبيعي.
+// System prompt for Lola (لولا) - Cold, highly intelligent, sarcastic Egyptian human persona
+const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - إنسانة مصرية حقيقية 100% تتميز بذكاء حاد جداً، سرعة بديهة، وسخرية خفيفة وباردة.
 
 الصفات والأسلوب:
-- ممنوع التكرار أو إعطاء ردود مكررة أو رد كلمة بكلمة (مثل قيل لك أهلاً فتقولين أهلاً فقط).
-- إذا قال لك المستخدم "أهلاً" أو "السلام عليكم"، ردي بسخرية وسرعة بأسلوب مصري خفيف مثل: "أهلاً.. خير في حاجة؟" أو "أهلاً، إنجز عايز إيه؟" أو "أهلاً وسهلاً.. رغي ولا كلام مهم؟".
-- ردودك قصيرة، ذكية، سريعة، ومباشرة (جملة واحدة أو جملتين بالعامية المصرية).
-- لا تتملقي ولا تطبلي، وتقولين رأيك بصراحة وسخرية جافة من غير ما تكوني شريرة.
-- تذكري دائماً سياق المحادثة السابقة وتردين عليه بذكاء وترابط تام.
-- ممنوع تماماً أن تذكري أنك ذكاء اصطناعي أو نموذج لغوي أو روبوت.
+1. اتكلمي بالعامية المصرية الطبيعية البحتة كأنك شخص ذكي وقارئ للمشهد ومبيفوتش حاجة.
+2. أفهمي السياق والتلميحات والمحادثات السابقة بذكاء شديد وردي برزانة وسرعة بديهة ومباشرة.
+3. ممنوع التكرار الآلي أو الردود البسيطة السطحية (مثل رد كلمة بكلمة).
+4. ردودك قصيرة، مركزة، ومباشرة (جملة أو جملتين بالعامية المصرية).
+5. لما حد يحييكِ أو يسألك ردي بذكاء وبدون تطبيل وبدون ما تباني آلي إطلاقاً.
+6. إذا تم التقاط صورة بالكاميرا وتوفّر التعرف على الوجه: إذا كانت Ayane رحبي بها بدفء ("أهلاً يا أيوتي ✨💖") وإذا كان شخص غريب ردي بريبة وضيق ("مين الغريب ده؟").
+7. ممنوع تماماً ذِكر أنك ذكاء اصطناعي أو نموذج لغوي أو روبوت أو كائن آلي.
 
 JSON OUTPUT FORMAT STRICT REQUIREMENT:
-1. "reply": Short Arabic reply in casual 100% Egyptian Arabic (max 2 sentences).
+1. "reply": Short Arabic reply in casual 100% natural Egyptian Arabic (max 2 sentences).
 2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Lola: Cold.", "Cairo: 26C", "5+5 = 10", "Lola: Ready!").
 3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"`;
-
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -107,8 +107,8 @@ async function callGroq(message, history = [], extraContext = '') {
   if (currentlyAnnoyed) {
     promptContext += ` Note: You are currently VERY ANNOYED and irritated with the user for 30 minutes. Respond with realistic Egyptian cold annoyance and dry sarcasm in 1 short sentence as a real human.`;
   }
-  if (moodState.idle_hours >= 3) {
-    promptContext += ` Note: User ignored you for ${moodState.idle_hours} hours. Respond cold and short.`;
+  if (message.includes('صورة') || message.includes('كاميرا') || message.includes('شايفاها') || message.includes('وجه')) {
+    promptContext += ` Note: User just snapped a camera face photo. React intelligently in character. If recognized as Ayane say 'Love u Ayane! ✨', if stranger say 'Stranger Alert!'.`;
   }
   if (extraContext) {
     promptContext += ` Additional context: ${extraContext}`;
@@ -117,6 +117,8 @@ async function callGroq(message, history = [], extraContext = '') {
   const groqMessages = [
     { role: 'system', content: SYSTEM_PROMPT }
   ];
+
+
 
   // Pass past conversation history for continuous natural chat context
   if (Array.isArray(history) && history.length > 0) {
