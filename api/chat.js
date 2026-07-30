@@ -288,8 +288,8 @@ module.exports = async (req, res) => {
         };
       } else {
         result = {
-          reply: "مفيش حاجة شغالة دلوقتي على سبوتيفاي.",
-          display: "Spotify Ready!",
+          reply: "حساب سبوتيفاي محتاج تسجيل دخول أو إعادة ربط. اضغط هنا لإعادة الربط فوراً:\nhttps://lola-cypher-pet.vercel.app/api/spotify?action=login",
+          display: "Spotify Login",
           mood: 'NEUTRAL',
           energyDelta: 0
         };
