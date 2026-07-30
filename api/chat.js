@@ -1,3 +1,5 @@
+require('dotenv').config();
+const axios = require('axios');
 const { 
   recordInteraction, 
   setAnnoyedState, 
@@ -8,6 +10,7 @@ const {
   setCommand
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
+
 
 // System prompt for Lola (لولا) - Cold, highly intelligent, sarcastic Egyptian human persona
 const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - إنسانة مصرية حقيقية 100% تتميز بذكاء حاد جداً، سرعة بديهة، وسخرية خفيفة وباردة.

@@ -798,6 +798,16 @@
     const statusDot = document.getElementById('statusDot');
     const dailyMoodText = document.getElementById('dailyMoodText');
 
+    function playWebBuzzerAlarm() {
+      // Browser audio disabled per user request
+      return;
+    }
+
+    function speakText(text) {
+      // Browser Web Speech TTS disabled per user request
+      return;
+    }
+
     // Speech Synthesis (Text to Speech for Egyptian Arabic - Soft Female Voice)
     let availableVoices = [];
     function loadVoices() {
