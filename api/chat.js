@@ -77,11 +77,15 @@ function detectHardwareCommand(text) {
   if (lower.includes('نامي') || lower.includes('نام')) {
     return 'SLEEP';
   }
-  if (lower.includes('اتهزي') || lower.includes('اصحي') || lower.includes('اتحركي') || lower.includes('هز')) {
+  if (lower.includes('اصحي') || lower.includes('استيقظي') || lower.includes('اصحي بقى')) {
+    return 'WAKE';
+  }
+  if (lower.includes('اتهزي') || lower.includes('اتحركي') || lower.includes('هز')) {
     return 'SHAKE';
   }
   return null;
 }
+
 
 function isSpotifyQuery(text) {
   const keywords = ['spotify', 'سبوتيفاي', 'أغنية', 'اغنية', 'أغنيه', 'اغنيه', 'بتسمع', 'بتسمعي', 'شغال', 'شغالة', 'شغاله', 'موسيقى', 'موسيقي', 'music', 'song', 'track', 'playing'];
@@ -255,6 +259,13 @@ module.exports = async (req, res) => {
           mood: "SLEEP",
           energyDelta: 0
         };
+      } else if (hwCmd === 'WAKE') {
+        result = {
+          reply: "أنا صحيت خلاص.",
+          display: "Lola: Awake!",
+          mood: "NEUTRAL",
+          energyDelta: +5
+        };
       } else if (hwCmd === 'SHAKE') {
         result = {
           reply: "حاضر.. أهو.",
@@ -263,6 +274,7 @@ module.exports = async (req, res) => {
           energyDelta: +5
         };
       }
+
     } else if (isSpotifyQuery(message)) {
 
       const nowPlaying = await fetchCurrentlyPlayingTrack();
