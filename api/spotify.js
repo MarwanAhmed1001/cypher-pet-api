@@ -9,7 +9,7 @@ const {
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '8c7a75e146944dcb8a29a45a6b77766c';
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'd479e32b181347feb5fd2810cbd3d127';
-const HARDCODED_REFRESH_TOKEN = 'AQDsY1L1d5hfyfbxhbrNvcC9Q0pHvorGzBnwifcziPnlCSL7YWaWETOyG8SviTpUylhNTuDY2pb9NeXwVDGOVvezr8FKkcmqOviLf3ZaSD10xOcNf_gjTs0ukdjnE140mLo';
+const HARDCODED_REFRESH_TOKEN = 'AQDRS0tDB2_KdbbFzy05iuVr3O3aSELOyUdk2wZv3_CAvRKH2n9oeTlAOIDw-HXFju933pDftDux4LCy-9cr9X9JcGDkGeWty7FePbfsfLKMyyBZd0w79wQUe2ewMtWl4ak';
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
