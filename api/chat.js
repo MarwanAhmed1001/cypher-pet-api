@@ -63,9 +63,9 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
 
 function isInsultOrAnnoying(text) {
   const rudeKeywords = [
-    'غبية', 'غبي', 'حمار', 'يا زفت', 'اتخرسي', 'سخيفة', 'سخيف', 'كلب', 'حمارة', 
-    'غباء', 'قليلة الادب', 'حقيرة', 'زفت', 'عبيطة', 'عبيط', 'زهقت منك', 'مبتفهميش', 
-    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري', 'رغي', 'كلام فاضي'
+    'حمار', 'يا زفت', 'اتخرسي', 'كلب', 'حمارة', 
+    'قليلة الادب', 'حقيرة', 'عبيطة', 'عبيط', 
+    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
   ];
   return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
 }
@@ -126,11 +126,7 @@ async function callGroq(message, history = [], extraContext = '') {
     { role: 'system', content: SYSTEM_PROMPT }
   ];
 
-
-
-  // Pass past conversation history for continuous natural chat context
   if (Array.isArray(history) && history.length > 0) {
-    // Take up to last 8 messages
     const recentHistory = history.slice(-8);
     recentHistory.forEach(item => {
       if (item.role && item.content) {
@@ -145,7 +141,7 @@ async function callGroq(message, history = [], extraContext = '') {
     content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it'];
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
   
   for (const modelName of modelsToTry) {
     try {
@@ -153,8 +149,7 @@ async function callGroq(message, history = [], extraContext = '') {
         model: modelName,
         messages: groqMessages,
         temperature: 0.75,
-        max_tokens: 200,
-        response_format: { type: 'json_object' }
+        max_tokens: 200
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -164,10 +159,20 @@ async function callGroq(message, history = [], extraContext = '') {
       });
 
       const text = res.data.choices[0].message.content;
-      const parsed = JSON.parse(text);
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (pe) {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          parsed = { reply: text, reply_display: "Lola: Ready!", mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood };
+        }
+      }
 
       return {
-        reply: cleanChatReply(parsed.reply || "سامعاك.. كمل عايز إيه؟"),
+        reply: cleanChatReply(parsed.reply || "سامعاك.. قول كمل؟"),
         display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
         mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
         energyDelta: currentlyAnnoyed ? -5 : +10
@@ -176,6 +181,7 @@ async function callGroq(message, history = [], extraContext = '') {
       console.error(`Groq Model (${modelName}) Error:`, e.response?.data || e.message);
     }
   }
+
 
   // Dynamic Randomized Fallbacks if API is completely unreachable
   const dynamicAnnoyedFallbacks = [
