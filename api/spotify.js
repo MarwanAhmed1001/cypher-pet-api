@@ -112,9 +112,19 @@ async function fetchCurrentlyPlayingTrack() {
     }
   } catch (error) {
     console.error('Error fetching Spotify track:', error.response?.data || error.message);
+    if (error.response?.status === 403) {
+      return {
+        isConnected: true,
+        premiumRequired: true,
+        isPlaying: false,
+        trackName: "",
+        artistName: ""
+      };
+    }
     return { isConnected: false };
   }
 }
+
 
 
 

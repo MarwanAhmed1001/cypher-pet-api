@@ -286,6 +286,13 @@ module.exports = async (req, res) => {
           mood: 'NEUTRAL',
           energyDelta: +5
         };
+      } else if (spotifyStatus && spotifyStatus.premiumRequired) {
+        result = {
+          reply: "حساب سبوتيفاي مربوط بنجاح! بس Spotify بطلب اشتراك Premium نَشِط على حسابك لقراءة الأغاني الشغالة حالياً.",
+          display: "Spotify Premium",
+          mood: 'NEUTRAL',
+          energyDelta: 0
+        };
       } else if (spotifyStatus && spotifyStatus.isConnected) {
         result = {
           reply: "سبوتيفاي مربوط وشغال! بس مفيش أغنية شغالة دلوقتي.. شغّل أي أغنية على تليفونك واطلبها تاني 🎶",
