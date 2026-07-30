@@ -902,6 +902,7 @@
       voiceBanner.classList.remove('active');
     }
 
+
     // Camera Modal & Snapshot Functions
     async function openCameraModal() {
       document.getElementById('cameraModal').classList.add('active');
@@ -922,7 +923,7 @@
       }
     }
 
-    function captureAndSendPhoto() {
+    async function captureAndSendPhoto() {
       const video = document.getElementById('webcam');
       const canvas = document.getElementById('snapshotCanvas');
       const ctx = canvas.getContext('2d');
@@ -934,10 +935,31 @@
       const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
       closeCameraModal();
 
-      // Append image message in chat
-      appendMessage('user', '📸 [صورة الكاميرا - التعرف على الوجه]', imageDataUrl);
+      appendMessage('user', '📸 [جاري تحليل الوجه بموديل Ayane...]', imageDataUrl);
+      typingRow.classList.add('active');
+      scrollToBottom();
+
+      try {
+        const localRes = await fetch('http://localhost:5000/recognize_base64', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imageDataUrl })
+        });
+        if (localRes.ok) {
+          const result = await localRes.json();
+          typingRow.classList.remove('active');
+          appendMessage('cypher', result.reply, null, result.mood, 'chat');
+          updateTopBarUI(result.mood, result.mood);
+          speakText(result.reply);
+          return;
+        }
+      } catch (err) {
+        console.log('Local face service offline, falling back to API context:', err);
+      }
+
       sendMessageWithContext("لقد التقطت صورة لوجهي لكاميرتك الآن، شايفاها؟");
     }
+
 
     // Guide Modal Functions
     function openGuideModal() {
@@ -968,7 +990,7 @@
 
     // Scroll chat to bottom
     function scrollToBottom() {
-      chatArea.scrollTop = chatArea.scrollTop || chatArea.scrollHeight;
+      chatArea.scrollTop = chatArea.scrollHeight;
     }
 
     // Append Message to Chat
