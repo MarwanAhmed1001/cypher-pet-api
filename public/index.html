@@ -797,9 +797,8 @@
     const moodText = document.getElementById('moodText');
     const statusDot = document.getElementById('statusDot');
     const dailyMoodText = document.getElementById('dailyMoodText');
-    const ttsToggleBtn = document.getElementById('ttsToggleBtn');
 
-    // Speech Synthesis (Text to Speech for Egyptian Arabic)
+    // Speech Synthesis (Text to Speech for Egyptian Arabic - Soft Female Voice)
     let availableVoices = [];
     function loadVoices() {
       if ('speechSynthesis' in window) {
@@ -811,19 +810,34 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
+    function getFemaleArabicVoice() {
+      const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+      const femaleKeywords = ['salma', 'zariyah', 'laila', 'mariam', 'sama', 'female', 'سلمى', 'مريم', 'ليلى', 'عائشة'];
+      let best = voices.find(v => {
+        if (!v.lang || (!v.lang.includes('ar') && !v.lang.startsWith('ar'))) return false;
+        const name = v.name.toLowerCase();
+        return femaleKeywords.some(kw => name.includes(kw));
+      });
+      if (best) return best;
+
+      best = voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')) && v.name.toLowerCase().includes('natural'));
+      if (best) return best;
+
+      return voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
+    }
+
     function speakText(text) {
       if (!isAudioOutputEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel(); // Stop ongoing speech
+      window.speechSynthesis.cancel(); // Instant response - stop previous speech
 
-      const cleanText = text.replace(/[\u1F600-\u1F64F]/g, '');
+      const cleanText = text.replace(/[\u1F600-\u1F64F]/g, '').replace(/[*_#~]/g, '');
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'ar-EG';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.25; // Soft gentle female pitch tone
 
-      if (availableVoices.length === 0) loadVoices();
-      const arVoice = availableVoices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
-      if (arVoice) utterance.voice = arVoice;
+      const femaleVoice = getFemaleArabicVoice();
+      if (femaleVoice) utterance.voice = femaleVoice;
 
       window.speechSynthesis.speak(utterance);
     }
