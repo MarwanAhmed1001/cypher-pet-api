@@ -949,7 +949,7 @@
       const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
       closeCameraModal();
 
-      appendMessage('user', '📸 [جاري تحليل الوجه بموديل Ayane...]', imageDataUrl);
+      appendMessage('user', '📸 [جاري فحص الوجه بموديل الذكاء الاصطناعي...]', imageDataUrl);
       typingRow.classList.add('active');
       scrollToBottom();
 
@@ -962,9 +962,11 @@
         if (localRes.ok) {
           const result = await localRes.json();
           typingRow.classList.remove('active');
-          appendMessage('cypher', result.reply, null, result.mood, 'chat');
-          updateTopBarUI(result.mood, result.mood);
-          speakText(result.reply);
+          if (result.is_ayane) {
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه أيويتي (آية) ✨]. رحبي بـ أيويتي بدلع وجملة جديدة ومختلفة تماماً كل مرة!");
+          } else {
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه شخص غريب ⚠️]. اتفاعلي بريبة وضيق وسخرية وجملة مبتكرة مختلفة بدون تكرار!");
+          }
           return;
         }
       } catch (err) {
@@ -973,6 +975,7 @@
 
       sendMessageWithContext("لقد التقطت صورة لوجهي لكاميرتك الآن، شايفاها؟");
     }
+
 
 
     // Guide Modal Functions
