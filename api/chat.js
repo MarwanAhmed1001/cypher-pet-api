@@ -131,32 +131,17 @@ async function callGroq(message, extraContext = '') {
     };
   }
 
-  if (currentlyAnnoyed) {
-    const apolStatus = registerApologyAttempt(message);
-    if (apolStatus.forgiven) {
-      return {
-        reply: "ماشي، حصل خير. كمل كلامك.",
-        display: "Lola: Fine.",
-        mood: "NEUTRAL",
-        energyDelta: +10
-      };
-    } else {
-      return {
-        reply: "مش رايقلك دلوقتي.",
-        display: "Lola: Away.",
-        mood: "ANNOYED",
-        energyDelta: -5
-      };
-    }
-  }
-
   let promptContext = `Current Mood: ${moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
+  if (currentlyAnnoyed) {
+    promptContext += ` Note: You are currently ANNOYED with the user. Respond with cold annoyance or slight sarcasm in max 1 sentence.`;
+  }
   if (moodState.idle_hours >= 3) {
     promptContext += ` Note: User ignored you for ${moodState.idle_hours} hours. Respond cold and short.`;
   }
   if (extraContext) {
     promptContext += ` Additional context: ${extraContext}`;
   }
+
 
   try {
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
