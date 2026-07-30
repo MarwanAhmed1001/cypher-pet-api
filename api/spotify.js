@@ -81,7 +81,7 @@ async function getSpotifyAccessToken() {
 
 async function fetchCurrentlyPlayingTrack() {
   const accessToken = await getSpotifyAccessToken();
-  if (!accessToken) return null;
+  if (!accessToken) return { isConnected: false };
 
   try {
     const response = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
@@ -97,23 +97,25 @@ async function fetchCurrentlyPlayingTrack() {
       const isPlaying = response.data.is_playing || false;
 
       return {
+        isConnected: true,
         isPlaying,
         trackName,
         artistName
       };
-    } else if (response.status === 204 || !response.data || !response.data.item) {
+    } else {
       return {
+        isConnected: true,
         isPlaying: false,
-        trackName: "مفيش أغنية شغالة دلوقتي على سبوتيفاي",
-        artistName: "Spotify"
+        trackName: "",
+        artistName: ""
       };
     }
   } catch (error) {
     console.error('Error fetching Spotify track:', error.response?.data || error.message);
+    return { isConnected: false };
   }
-
-  return null;
 }
+
 
 
 const spotifyHandler = async (req, res) => {

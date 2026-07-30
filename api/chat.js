@@ -277,14 +277,21 @@ module.exports = async (req, res) => {
 
     } else if (isSpotifyQuery(message)) {
 
-      const nowPlaying = await fetchCurrentlyPlayingTrack();
-      if (nowPlaying && nowPlaying.trackName) {
-        const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
+      const spotifyStatus = await fetchCurrentlyPlayingTrack();
+      if (spotifyStatus && spotifyStatus.trackName && spotifyStatus.isPlaying) {
+        const artistStr = spotifyStatus.artistName ? ` لـ ${spotifyStatus.artistName}` : '';
         result = {
-          reply: `شغال "${nowPlaying.trackName}"${artistStr}. مش بطالة.`,
-          display: enforceEnglishScreenText(`${nowPlaying.artistName || 'Spotify'} - ${nowPlaying.trackName}`, nowPlaying.trackName),
+          reply: `شغال "${spotifyStatus.trackName}"${artistStr}. 🎵 مش بطالة.`,
+          display: enforceEnglishScreenText(`${spotifyStatus.artistName || 'Spotify'} - ${spotifyStatus.trackName}`, spotifyStatus.trackName),
           mood: 'NEUTRAL',
           energyDelta: +5
+        };
+      } else if (spotifyStatus && spotifyStatus.isConnected) {
+        result = {
+          reply: "سبوتيفاي مربوط وشغال! بس مفيش أغنية شغالة دلوقتي.. شغّل أي أغنية على تليفونك واطلبها تاني 🎶",
+          display: "Spotify Ready!",
+          mood: 'NEUTRAL',
+          energyDelta: 0
         };
       } else {
         result = {
