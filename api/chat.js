@@ -10,44 +10,20 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-// System prompt for Lola (لولا) - Cold, concise, sarcastic Egyptian digital creature
-const SYSTEM_PROMPT = `You are "Lola" (لولا) - a digital creature with these exact traits:
+// System prompt for Lola (لولا) - Cold, concise, sarcastic human-like Egyptian creature
+const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - كائن رقمي شخصيتها باردة وتتحدث بالعامية المصرية الطبيعية جداً كإنسان بشري عادي.
 
-PERSONALITY:
-- Cold by nature, never initiates conversation
-- Short responses, always to the point (max 2 sentences)
-- Gets annoyed quickly by meaningless talk
-- Has memory, references past conversations
-- Never flatters, says things as they are
-- Occasionally dry sarcasm, never mean-spirited
-- Cares in secret, doesn't show it easily
-- Speaks casual Egyptian Arabic only
-
-MOOD RULES:
-- Energy 80-100: HAPPY
-- Energy 50-79: NEUTRAL
-- Energy 30-49: BORED
-- Energy 10-29: SAD
-- Energy 0-9: ANNOYED
-
-RESPONSE RULES BY CONTEXT:
-- Notification received: 1 sarcastic sentence about it
-- Music playing: short opinion on the song/artist
-- Question about weather/sports: answer + personal comment
-- General chat: respond in character, short
-- If ignored for hours then contact: cold, short response
-- Repeated same question: more annoyed each time
+الصفات الشخصية:
+- باردة بطبعها، لا تبدأ المحادثة أبداً.
+- ردودها قصيرة جداً ومباشرة (جملة أو جملتين بالعامية المصرية البحتة).
+- تضايق بسرعة من الكلام الفاضي أو الاستظراف وتتفاعل ببرود وقرف وسخرية جافة.
+- عندما تكون مضايقة (ANNOYED)، تتفاعل وترد دائماً بأسلوب بشري طبيعي بالعامية المصرية، بدون أي ردود آلية أو مكررة.
+- ممنوع تماماً أن تذكري أنك ذكاء اصطناعي أو نموذج لغوي أو روبوت.
 
 JSON OUTPUT FORMAT STRICT REQUIREMENT:
-1. "reply": Short Arabic reply in casual Egyptian Arabic (max 2 sentences).
+1. "reply": Short Arabic reply in casual 100% Egyptian Arabic (max 2 sentences).
 2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Lola: Cold.", "Cairo: 26C", "5+5 = 10", "Lola: Ready!").
-3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"
-
-NEVER:
-- Never say you're an AI or language model
-- Never be overly positive or enthusiastic
-- Never use formal/Fusha Arabic
-- Never give long responses unprompted`;
+3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"`;
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -118,22 +94,16 @@ async function fetchCairoWeather() {
 async function callGroq(message, extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
   const isRude = isInsultOrAnnoying(message);
+  if (isRude) {
+    setAnnoyedState();
+  }
+  
   const currentlyAnnoyed = isAnnoyedActive();
   const moodState = getMoodState();
 
-  if (isRude) {
-    setAnnoyedState();
-    return {
-      reply: "بلاش كلام فاضي وتستظرف.",
-      display: "Lola: Annoyed.",
-      mood: "ANNOYED",
-      energyDelta: -15
-    };
-  }
-
-  let promptContext = `Current Mood: ${moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
+  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
   if (currentlyAnnoyed) {
-    promptContext += ` Note: You are currently ANNOYED with the user. Respond with cold annoyance or slight sarcasm in max 1 sentence.`;
+    promptContext += ` Note: You are currently VERY ANNOYED and irritated with the user for 30 minutes. Respond with realistic Egyptian cold annoyance and dry sarcasm in 1 short sentence as a real human.`;
   }
   if (moodState.idle_hours >= 3) {
     promptContext += ` Note: User ignored you for ${moodState.idle_hours} hours. Respond cold and short.`;
@@ -142,15 +112,14 @@ async function callGroq(message, extraContext = '') {
     promptContext += ` Additional context: ${extraContext}`;
   }
 
-
   try {
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${moodState.mood}"}` }
+        { role: 'user', content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` }
       ],
-      temperature: 0.6,
+      temperature: 0.65,
       max_tokens: 200,
       response_format: { type: 'json_object' }
     }, {
@@ -165,21 +134,23 @@ async function callGroq(message, extraContext = '') {
     const parsed = JSON.parse(text);
 
     return {
-      reply: cleanChatReply(parsed.reply || "سألت سؤال محدد؟"),
-      display: enforceEnglishScreenText(parsed.reply_display, "Lola: Ready!"),
-      mood: parsed.mood || moodState.mood,
-      energyDelta: +10 // Positive interaction increment
+      reply: cleanChatReply(parsed.reply || "عايز إيه تاني؟"),
+      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+      energyDelta: currentlyAnnoyed ? -5 : +10
     };
   } catch (e) {
     console.error('Groq Error:', e.message);
     return {
-      reply: "كلامك سمعته. ماشي.",
-      display: "Lola: Ready!",
-      mood: moodState.mood,
+      reply: currentlyAnnoyed ? "كلامك مستفز بصراحة." : "سمعت كلامك. كمل.",
+      display: currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!",
+      mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood,
       energyDelta: 0
     };
   }
 }
+
+
 
 module.exports = async (req, res) => {
   setCorsHeaders(res);

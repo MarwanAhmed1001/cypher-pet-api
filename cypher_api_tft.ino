@@ -286,7 +286,7 @@ void runDizzyShakeAnimation() {
 int getSoundAmplitudeFast() {
   unsigned int signalMax = 0;
   unsigned int signalMin = 4095;
-  for (int i = 0; i < 20; i++) {
+  for (int i = 0; i < 100; i++) {
     int sample = analogRead(SOUND_PIN);
     if (sample < 4095) {
       if (sample > signalMax) signalMax = sample;
@@ -470,10 +470,10 @@ void loop() {
                     a.acceleration.z * a.acceleration.z);
   if (mag > 22.0) shakenVal = 1;
 
-  // Sound Sensor Noise Filtering with 3-second cooldown
+  // Sound Sensor Noise Filtering with high sensitivity & 1.5s cooldown
   int soundAmp = getSoundAmplitudeFast();
   bool soundTriggered = false;
-  if (soundAmp > 1400 && (now - lastSoundTriggerTime > 3000)) {
+  if (soundAmp > 550 && (now - lastSoundTriggerTime > 1500)) {
     soundTriggered = true;
     lastSoundTriggerTime = now;
   }
