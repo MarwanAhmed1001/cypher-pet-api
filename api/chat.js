@@ -145,40 +145,61 @@ async function callGroq(message, history = [], extraContext = '') {
     content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  try {
-    const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-      model: 'llama-3.3-70b-versatile',
-      messages: groqMessages,
-      temperature: 0.65,
-      max_tokens: 200,
-      response_format: { type: 'json_object' }
-    }, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 8000
-    });
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it'];
+  
+  for (const modelName of modelsToTry) {
+    try {
+      const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+        model: modelName,
+        messages: groqMessages,
+        temperature: 0.75,
+        max_tokens: 200,
+        response_format: { type: 'json_object' }
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 6000
+      });
 
-    const text = res.data.choices[0].message.content;
-    const parsed = JSON.parse(text);
+      const text = res.data.choices[0].message.content;
+      const parsed = JSON.parse(text);
 
-    return {
-      reply: cleanChatReply(parsed.reply || "عايز إيه تاني؟"),
-      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-      energyDelta: currentlyAnnoyed ? -5 : +10
-    };
-  } catch (e) {
-    console.error('Groq Error:', e.message);
-    return {
-      reply: currentlyAnnoyed ? "كلامك مستفز بصراحة." : "سمعت كلامك. كمل.",
-      display: currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!",
-      mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood,
-      energyDelta: 0
-    };
+      return {
+        reply: cleanChatReply(parsed.reply || "سامعاك.. كمل عايز إيه؟"),
+        display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+        energyDelta: currentlyAnnoyed ? -5 : +10
+      };
+    } catch (e) {
+      console.error(`Groq Model (${modelName}) Error:`, e.response?.data || e.message);
+    }
   }
+
+  // Dynamic Randomized Fallbacks if API is completely unreachable
+  const dynamicAnnoyedFallbacks = [
+    "بصراحة كلامك مستفز ومبقتش طايقاك.",
+    "مش ناقصة نكد على الصبح، أنجز قول كلمتين مفيدين.",
+    "إيه الاستظراف ده؟ ارحمني شوية!"
+  ];
+  const dynamicNormalFallbacks = [
+    "سامعاك يا أيويتي.. كملي عايزة إيه؟",
+    "تمام، فاهماك كويس.. كمل حكايتك.",
+    "أها، وبعدين؟ قول اللي عندك."
+  ];
+
+  const fallbacks = currentlyAnnoyed ? dynamicAnnoyedFallbacks : dynamicNormalFallbacks;
+  const randomFallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+
+  return {
+    reply: randomFallback,
+    display: currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!",
+    mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood,
+    energyDelta: 0
+  };
 }
+
 
 
 module.exports = async (req, res) => {
