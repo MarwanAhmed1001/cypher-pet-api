@@ -238,27 +238,28 @@ module.exports = async (req, res) => {
       setCommand(hwCmd);
       if (hwCmd === 'ALARM') {
         result = {
-          reply: "شغّلت إنذار الباظر 3 ثواني بصوت عالي 🚨!",
-          display: "ALARM TONE!",
+          reply: "ماشي.",
+          display: "ALARM!",
           mood: "ANNOYED",
           energyDelta: -5
         };
       } else if (hwCmd === 'SLEEP') {
         result = {
-          reply: "تصبح على خير، طفيت ونمت أهو.. 💤",
-          display: "Lola: Sleeping...",
+          reply: "تصبح على خير.. 💤",
+          display: "SLEEPING...",
           mood: "SLEEP",
           energyDelta: 0
         };
       } else if (hwCmd === 'SHAKE') {
         result = {
-          reply: "أهو اتهزيت وعملت أنيميشن الحركة.. كدة ارتحت؟ 🌀",
-          display: "Lola: Shaking!",
+          reply: "حاضر.. أهو.",
+          display: "SHAKING!",
           mood: "TOUCH",
           energyDelta: +5
         };
       }
     } else if (isSpotifyQuery(message)) {
+
       const nowPlaying = await fetchCurrentlyPlayingTrack();
       if (nowPlaying && nowPlaying.trackName) {
         const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
