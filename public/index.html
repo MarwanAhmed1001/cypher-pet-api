@@ -800,6 +800,17 @@
     const ttsToggleBtn = document.getElementById('ttsToggleBtn');
 
     // Speech Synthesis (Text to Speech for Egyptian Arabic)
+    let availableVoices = [];
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
     function speakText(text) {
       if (!isAudioOutputEnabled || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel(); // Stop ongoing speech
@@ -807,12 +818,11 @@
       const cleanText = text.replace(/[\u1F600-\u1F64F]/g, '');
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'ar-EG';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
 
-      // Try to find Arabic voice
-      const voices = window.speechSynthesis.getVoices();
-      const arVoice = voices.find(v => v.lang.includes('ar'));
+      if (availableVoices.length === 0) loadVoices();
+      const arVoice = availableVoices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
       if (arVoice) utterance.voice = arVoice;
 
       window.speechSynthesis.speak(utterance);
@@ -822,6 +832,9 @@
       isAudioOutputEnabled = !isAudioOutputEnabled;
       ttsToggleBtn.textContent = isAudioOutputEnabled ? '🔊' : '🔇';
       ttsToggleBtn.classList.toggle('active', isAudioOutputEnabled);
+      if (!isAudioOutputEnabled && ('speechSynthesis' in window)) {
+        window.speechSynthesis.cancel();
+      }
     }
 
     // Speech Recognition (Speech to Text)
@@ -844,10 +857,12 @@
       };
 
       rec.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript.trim()) {
-          chatInput.value = transcript;
-          sendMessage();
+        if (event.results && event.results[0] && event.results[0][0]) {
+          const transcript = event.results[0][0].transcript;
+          if (transcript && transcript.trim()) {
+            chatInput.value = transcript.trim();
+            sendMessage();
+          }
         }
       };
 
@@ -870,13 +885,13 @@
       if (!recognition) return;
 
       if (isRecordingVoice) {
-        recognition.stop();
+        try { recognition.stop(); } catch(e){}
         stopVoiceRecording();
       } else {
         try {
           recognition.start();
         } catch (e) {
-          console.error(e);
+          console.error('Mic start error:', e);
         }
       }
     }
@@ -953,7 +968,7 @@
 
     // Scroll chat to bottom
     function scrollToBottom() {
-      chatArea.scrollTop = chatArea.scrollHeight;
+      chatArea.scrollTop = chatArea.scrollTop || chatArea.scrollHeight;
     }
 
     // Append Message to Chat
