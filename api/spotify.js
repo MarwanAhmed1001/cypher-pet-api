@@ -40,9 +40,14 @@ function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
 }
 
 async function getSpotifyAccessToken() {
-  const refresh_token = getSpotifyRefreshToken() || process.env.SPOTIFY_REFRESH_TOKEN || HARDCODED_REFRESH_TOKEN;
+  const storedToken = getSpotifyRefreshToken();
+  if (storedToken === 'UNLINKED') {
+    return null; // Explicitly unlinked
+  }
 
-  if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token) {
+  const refresh_token = storedToken || process.env.SPOTIFY_REFRESH_TOKEN || HARDCODED_REFRESH_TOKEN;
+
+  if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token || refresh_token === 'UNLINKED') {
     return null;
   }
 
@@ -113,6 +118,17 @@ const spotifyHandler = async (req, res) => {
   const login = query.login;
   const setToken = query.token;
   const redirectUri = getRedirectUri(req);
+
+  // Unlink Spotify handler
+  if (action === 'unlink' || action === 'logout' || action === 'clear') {
+    setSpotifyRefreshToken('UNLINKED');
+    if (typeof res.json === 'function') {
+      return res.status(200).json({ success: true, message: 'Spotify has been unlinked successfully!' });
+    } else {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, message: 'Spotify has been unlinked successfully!' }));
+    }
+  }
 
   if (setToken) {
     setSpotifyRefreshToken(setToken);

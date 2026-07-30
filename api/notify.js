@@ -10,7 +10,7 @@ function setCorsHeaders(res) {
   );
 }
 
-function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
+function enforceEnglishScreenText(text, fallback = "Cypher Event!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
   if (clean.length === 0) return fallback;
@@ -27,46 +27,45 @@ function getNotificationReply(req) {
   const urlStr = (req.url || '').toLowerCase();
   const fullContext = `${urlStr} ${queryStr} ${bodyStr}`;
 
-  // Extract Song Title & Artist from Query or Body
   const title = (query.title || body.title || query.song || body.song || query.track || body.track || '').toString().trim();
   const artist = (query.artist || body.artist || query.singer || body.singer || '').toString().trim();
 
-  // 1. Spotify / Music (With Live Song Title & Artist support!)
+  // 1. Spotify / Music
   if (fullContext.includes('spotify') || fullContext.includes('سبوتيفاي') || fullContext.includes('music') || fullContext.includes('موسيقى') || title.length > 0) {
     let songInfoArabic = "";
     let songInfoDisplay = "";
 
     if (title && artist) {
-      songInfoArabic = `بتسمع دلوقتي: "${title}" لـ ${artist} 🎵 أروق مان في المجرة 🎧`;
+      songInfoArabic = `بتسمع "${title}" لـ ${artist}. الذوق محتاج مراجعة.`;
       songInfoDisplay = enforceEnglishScreenText(`${artist} - ${title}`, `${title}`);
     } else if (title) {
-      songInfoArabic = `بتسمع دلوقتي أغنية: "${title}" 🎵 أروق مان في المجرة 🎧`;
+      songInfoArabic = `شغال أغنية: "${title}". تمام، كمل.`;
       songInfoDisplay = enforceEnglishScreenText(`${title}`, "Spotify Music!");
     } else {
-      songInfoArabic = "شغّلت الموسيقى على سبوتيفاي! أروق مان في المجرة 🎶🎧";
+      songInfoArabic = "شغّلت سبوتيفاي... كأن مفيش وراك حاجة تانية تعملها.";
       songInfoDisplay = "Spotify Music!";
     }
 
     return {
       reply: songInfoArabic,
       display: songInfoDisplay,
-      mood: "EXCITED"
+      mood: "NEUTRAL"
     };
   }
 
   // 2. Charger / Charging
   if (fullContext.includes('charger') || fullContext.includes('charging') || fullContext.includes('شاحن') || fullContext.includes('شحن')) {
     return {
-      reply: "حبيبي تسلم! الآيفون بيتشحن دلوقتي وعينيا عليه ⚡",
+      reply: "أخيراً افتكرت تحطه على الشاحن قبل ما يفصل.",
       display: "Charger Plugged!",
-      mood: "EXCITED"
+      mood: "NEUTRAL"
     };
   }
 
   // 3. Low Battery Mode / Battery Level
   if (fullContext.includes('battery') || fullContext.includes('بطارية') || fullContext.includes('بطاريه') || fullContext.includes('low_battery') || fullContext.includes('lowpower')) {
     return {
-      reply: "يا ساتر البطارية ضعيفة! حط التليفون على الشاحن بدل ما يفصل منك 🔋",
+      reply: "البطارية بتفوت، حط التليفون على الشاحن بدل العطلة دي.",
       display: "Low Battery!",
       mood: "ANNOYED"
     };
@@ -75,36 +74,36 @@ function getNotificationReply(req) {
   // 4. Wi-Fi Connected
   if (fullContext.includes('wifi') || fullContext.includes('wi-fi') || fullContext.includes('واي فاي') || fullContext.includes('شبكة')) {
     return {
-      reply: "أهلاً بيك في البيت! شبكة الـ Wi-Fi اتصلت والمكان نور 🏠📶",
+      reply: "اتصلت بالشبكة. اتفضل كمل رغي.",
       display: "WiFi Connected!",
-      mood: "HAPPY"
+      mood: "NEUTRAL"
     };
   }
 
   // 5. Alarm Dismissed / Morning Wake Up
   if (fullContext.includes('alarm') || fullContext.includes('منبه') || fullContext.includes('صباح') || fullContext.includes('dismiss')) {
     return {
-      reply: "صباح الفل والياسمين! صح النوم يا بطل، يومك سعيد ☀️",
-      display: "Good Morning!",
-      mood: "HAPPY"
+      reply: "صحيت؟ ياريت تكون هتسيبني في حالي.",
+      display: "Alarm Off!",
+      mood: "NEUTRAL"
     };
   }
 
   // 6. WhatsApp
   if (fullContext.includes('whatsapp') || fullContext.includes('واتساب')) {
     return {
-      reply: "وصلتك رسالة واتساب جديدة! 💬",
+      reply: "رسالة واتساب جديدة... ياترى مين بيوجع دماغه بيك.",
       display: "WA: New Msg!",
-      mood: "EXCITED"
+      mood: "NEUTRAL"
     };
   }
 
   // 7. SMS / Text Message
   if (fullContext.includes('sms') || fullContext.includes('message')) {
     return {
-      reply: "وصلتك رسالة نصية جديدة! 📱",
+      reply: "وصلتك رسالة. روح شوفها وخلصنا.",
       display: "SMS: New Msg!",
-      mood: "EXCITED"
+      mood: "NEUTRAL"
     };
   }
 
@@ -114,17 +113,17 @@ function getNotificationReply(req) {
     const cleanCustom = enforceEnglishScreenText(customText.toString(), "");
     if (cleanCustom.length > 0) {
       return {
-        reply: `وصلك إشعار جديد (${cleanCustom})! 🔔`,
+        reply: `إشعار جديد: ${cleanCustom}. مش مهم أوي يعني.`,
         display: cleanCustom,
-        mood: "EXCITED"
+        mood: "NEUTRAL"
       };
     }
   }
 
   return {
-    reply: "وصلك إشعار جديد من الآيفون! 🔔",
+    reply: "إشعار جديد وصل. تليفونك مبيسكتش.",
     display: "iOS Event!",
-    mood: "EXCITED"
+    mood: "NEUTRAL"
   };
 }
 
@@ -139,13 +138,14 @@ module.exports = async (req, res) => {
     const notifInfo = getNotificationReply(req);
 
     const cleanReply = (notifInfo.reply || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
-    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "Spotify Music!");
+    const englishDisplay = enforceEnglishScreenText(notifInfo.display, "Cypher Event!");
 
     const state = recordInteraction(
       cleanReply,
       notifInfo.mood,
       'notification',
-      englishDisplay
+      englishDisplay,
+      -2 // Notifications add slight annoyance if frequent
     );
 
     return res.status(200).json({
@@ -165,3 +165,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+

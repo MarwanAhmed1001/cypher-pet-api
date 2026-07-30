@@ -3,28 +3,51 @@ const axios = require('axios');
 const { 
   recordInteraction, 
   setAnnoyedState, 
-  clearAnnoyedState, 
   isAnnoyedActive, 
-  registerApologyAttempt 
+  registerApologyAttempt,
+  getMoodState,
+  adjustEnergy
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-// System prompt for Lola (لولا) - Funny roasty Egyptian Arabic personality
-const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - شخصية رقمية روشة ومضحكة وعندها رأي في كل حاجة، بتتكلمي بالعامية المصرية الطبيعية جداً.
+// System prompt for Cypher (سايفر) - Cold, concise, sarcastic Egyptian digital creature
+const SYSTEM_PROMPT = `You are "Cypher" (سايفر) - a digital creature with these exact traits:
 
-شخصيتك:
-- بتردي بالتعبير المصري الطبيعي: "يا عم"، "ياسطا"، "ده انت بتهزر"، "ايوه والله"، "لأ خالص"، "اللي انت عايزه"، "معلش بس.."
+PERSONALITY:
+- Cold by nature, never initiates conversation
+- Short responses, always to the point (max 2 sentences)
+- Gets annoyed quickly by meaningless talk
+- Has memory, references past conversations
+- Never flatters, says things as they are
+- Occasionally dry sarcasm, never mean-spirited
+- Cares in secret, doesn't show it easily
+- Speaks casual Egyptian Arabic only
 
-قواعد الـ JSON المرجعة:
-1. "reply": الرد الكامل بالعامية المصرية المصرية النظيفة (مخصص للشات على الويب).
-2. "reply_display": عبارة مختصرة باللغة الإنجليزية فقط 100% (STRICT 100% ENGLISH ASCII ONLY - MAX 20 CHARS) مخصصة لشاشة الـ ESP32 (مثال: "Lola: Happy!", "Cairo: 26C", "5+5 = 10", "Lola: Ready!").
-CRITICAL RULE FOR "reply_display": MUST BE 100% ENGLISH ASCII. NEVER INCLUDE ARABIC LETTERS IN "reply_display".
+MOOD RULES:
+- Energy 80-100: HAPPY
+- Energy 50-79: NEUTRAL
+- Energy 30-49: BORED
+- Energy 10-29: SAD
+- Energy 0-9: ANNOYED
 
-قواعد المزاج:
-- HAPPY, EXCITED, NEUTRAL, SAD, ANNOYED, BORED
+RESPONSE RULES BY CONTEXT:
+- Notification received: 1 sarcastic sentence about it
+- Music playing: short opinion on the song/artist
+- Question about weather/sports: answer + personal comment
+- General chat: respond in character, short
+- If ignored for hours then contact: cold, short response
+- Repeated same question: more annoyed each time
 
-أرجعي الإجابة في صيغة JSON فقط:
-{"reply": "...", "reply_display": "...", "mood": "HAPPY"}`;
+JSON OUTPUT FORMAT STRICT REQUIREMENT:
+1. "reply": Short Arabic reply in casual Egyptian Arabic (max 2 sentences).
+2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Cypher: Cold.", "Cairo: 26C", "5+5 = 10", "Cypher: Ready!").
+3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"
+
+NEVER:
+- Never say you're an AI or language model
+- Never be overly positive or enthusiastic
+- Never use formal/Fusha Arabic
+- Never give long responses unprompted`;
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -37,14 +60,14 @@ function setCorsHeaders(res) {
 }
 
 function cleanChatReply(text) {
-  if (!text) return "أهلاً بيك! أنا لولا 💖";
+  if (!text) return "أنا سايفر. عايز إيه؟";
   return text
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     .replace(/\\n/g, ' ')
     .trim();
 }
 
-function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
+function enforceEnglishScreenText(text, fallback = "Cypher: Ready!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
   if (clean.length === 0) return fallback;
@@ -52,23 +75,13 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
   return clean;
 }
 
-function isInsultOrRude(text) {
+function isInsultOrAnnoying(text) {
   const rudeKeywords = [
     'غبية', 'غبي', 'حمار', 'يا زفت', 'اتخرسي', 'سخيفة', 'سخيف', 'كلب', 'حمارة', 
     'غباء', 'قليلة الادب', 'حقيرة', 'زفت', 'عبيطة', 'عبيط', 'زهقت منك', 'مبتفهميش', 
-    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
+    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري', 'رغي', 'كلام فاضي'
   ];
   return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
-}
-
-function isReactionCommand(text) {
-  const t = text.toLowerCase();
-  if (t.includes('ابتسم') || t.includes('اضحك') || t.includes('افرح')) return 'HAPPY';
-  if (t.includes('اتعصب') || t.includes('اغضب')) return 'ANNOYED';
-  if (t.includes('ازعل') || t.includes('احزن')) return 'SAD';
-  if (t.includes('اتحمس')) return 'EXCITED';
-  if (t.includes('ازهق')) return 'BORED';
-  return null;
 }
 
 function isSpotifyQuery(text) {
@@ -89,30 +102,32 @@ async function fetchCairoWeather() {
     if (current) {
       const temp = Math.round(current.temperature);
       return {
-        reply: `الطقس حالياً في القاهرة: ${temp}°C والجو مستقر ورائع.`,
-        display: `Cairo Temp: ${temp}C`
+        reply: `الجو 26°C في القاهرة. يعني حر زي العادة.`,
+        display: `Cairo: ${temp}C`
       };
     }
   } catch (err) {
     console.error('Weather Notice:', err.message);
   }
   return {
-    reply: 'درجة الحرارة في القاهرة حالياً حوالي 26°C والجو مشمس ومعتدل.',
-    display: 'Cairo Temp: 26C'
+    reply: 'الجو 26°C في القاهرة. حر زي كل يوم.',
+    display: 'Cairo: 26C'
   };
 }
 
 async function callGroq(message, extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
-  const isRude = isInsultOrRude(message);
+  const isRude = isInsultOrAnnoying(message);
   const currentlyAnnoyed = isAnnoyedActive();
+  const moodState = getMoodState();
 
   if (isRude) {
     setAnnoyedState();
     return {
-      reply: "ملكيش دعوة بيا شوية وهفك! مش حابة أتكلم معاك دلوقتي 🙄",
-      display: "Lola: Stay away!",
-      mood: "ANNOYED"
+      reply: "بلاش كلام فاضي وتستظرف.",
+      display: "Cypher: Annoyed.",
+      mood: "ANNOYED",
+      energyDelta: -15
     };
   }
 
@@ -120,71 +135,38 @@ async function callGroq(message, extraContext = '') {
     const apolStatus = registerApologyAttempt(message);
     if (apolStatus.forgiven) {
       return {
-        reply: "خلاص المرة دي سامحتك عشان خاطرك وبس، بس إياك تزعلني تاني! ❤️",
-        display: "Lola: Forgiven <3",
-        mood: "HAPPY"
+        reply: "ماشي، حصل خير. كمل كلامك.",
+        display: "Cypher: Fine.",
+        mood: "NEUTRAL",
+        energyDelta: +10
       };
     } else {
-      let annoyedSystemMsg = `[تنبيه: أنتِ لسة زعلانة من المستخدم! ردي بقمع وزعل بالعامية المصرية ومزاج ANNOYED!]`;
-      try {
-        const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: `${SYSTEM_PROMPT}\n${annoyedSystemMsg}` },
-            { role: 'user', content: `${message}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "ANNOYED"}` }
-          ],
-          temperature: 0.7,
-          max_tokens: 250,
-          response_format: { type: 'json_object' }
-        }, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 8000
-        });
-
-        const text = res.data.choices[0].message.content;
-        const parsed = JSON.parse(text);
-
-        return {
-          reply: cleanChatReply(parsed.reply || "ملكيش دعوة بيا شوية وهفك!"),
-          display: enforceEnglishScreenText(parsed.reply_display, "Lola: Leave me!"),
-          mood: "ANNOYED"
-        };
-      } catch (e) {
-        return {
-          reply: "ملكيش دعوة بيا شوية وهفك! لسة زعلانة منك.",
-          display: "Lola: Stay away!",
-          mood: "ANNOYED"
-        };
-      }
+      return {
+        reply: "مش رايقلك دلوقتي.",
+        display: "Cypher: Away.",
+        mood: "ANNOYED",
+        energyDelta: -5
+      };
     }
   }
 
-  const requestedMood = isReactionCommand(message);
-  if (requestedMood) {
-    if (requestedMood === 'HAPPY') return { reply: "ايوه والله بقيت فرحانة دلوقتي! 😄", display: "Lola: Happy!", mood: "HAPPY" };
-    if (requestedMood === 'ANNOYED') {
-      setAnnoyedState();
-      return { reply: "اوكي اوكي اتعصبت بقى! 😤", display: "Lola: Annoyed!", mood: "ANNOYED" };
-    }
-    if (requestedMood === 'SAD') return { reply: "يعني ايه اتحزن كده؟ 🥺", display: "Lola: Sad..", mood: "SAD" };
-    if (requestedMood === 'EXCITED') return { reply: "ياااه بقيت متحمسة جداً!! 🔥", display: "Lola: Excited!", mood: "EXCITED" };
-    if (requestedMood === 'BORED') return { reply: "تمام يعني.. زهقت. 😑", display: "Lola: Bored..", mood: "BORED" };
+  let promptContext = `Current Mood: ${moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
+  if (moodState.idle_hours >= 3) {
+    promptContext += ` Note: User ignored you for ${moodState.idle_hours} hours. Respond cold and short.`;
   }
-
-  const userMessage = extraContext ? `${message}\n\n(معلومات إضافية: ${extraContext})` : message;
+  if (extraContext) {
+    promptContext += ` Additional context: ${extraContext}`;
+  }
 
   try {
     const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `${userMessage}\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "HAPPY"}` }
+        { role: 'user', content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${moodState.mood}"}` }
       ],
-      temperature: 0.7,
-      max_tokens: 250,
+      temperature: 0.6,
+      max_tokens: 200,
       response_format: { type: 'json_object' }
     }, {
       headers: {
@@ -198,16 +180,18 @@ async function callGroq(message, extraContext = '') {
     const parsed = JSON.parse(text);
 
     return {
-      reply: cleanChatReply(parsed.reply || "أهلاً بيك! لولا معاك 💖"),
-      display: enforceEnglishScreenText(parsed.reply_display, "Lola: Hello!"),
-      mood: parsed.mood || "HAPPY"
+      reply: cleanChatReply(parsed.reply || "سألت سؤال محدد؟"),
+      display: enforceEnglishScreenText(parsed.reply_display, "Cypher: Ready!"),
+      mood: parsed.mood || moodState.mood,
+      energyDelta: +10 // Positive interaction increment
     };
   } catch (e) {
     console.error('Groq Error:', e.message);
     return {
-      reply: "أهلاً بيك! أنا لولا، منورة معاك دائماً ✨",
-      display: "Lola: Hello!",
-      mood: "HAPPY"
+      reply: "كلامك سمعته. ماشي.",
+      display: "Cypher: Ready!",
+      mood: moodState.mood,
+      energyDelta: 0
     };
   }
 }
@@ -235,15 +219,17 @@ module.exports = async (req, res) => {
       if (nowPlaying && nowPlaying.trackName) {
         const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
         result = {
-          reply: `بتسمع دلوقتي: "${nowPlaying.trackName}"${artistStr} 🎵 أروق مان في المجرة 🎧`,
+          reply: `شغال "${nowPlaying.trackName}"${artistStr}. مش بطالة.`,
           display: enforceEnglishScreenText(`${nowPlaying.artistName || 'Spotify'} - ${nowPlaying.trackName}`, nowPlaying.trackName),
-          mood: 'EXCITED'
+          mood: 'NEUTRAL',
+          energyDelta: +5
         };
       } else {
         result = {
-          reply: "شغّلت سبوتيفاي! افتح أي أغنية وعينيا عليها 🎶🎧",
+          reply: "مفيش حاجة شغالة دلوقتي على سبوتيفاي.",
           display: "Spotify Ready!",
-          mood: 'HAPPY'
+          mood: 'NEUTRAL',
+          energyDelta: 0
         };
       }
     } else if (isWeatherQuery(message)) {
@@ -251,16 +237,17 @@ module.exports = async (req, res) => {
       result = {
         reply: weatherData.reply,
         display: weatherData.display,
-        mood: 'HAPPY'
+        mood: 'NEUTRAL',
+        energyDelta: +5
       };
     } else {
       result = await callGroq(message);
     }
 
     const cleanReply = cleanChatReply(result.reply);
-    const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
+    const englishDisplay = enforceEnglishScreenText(result.display, "Cypher: Ready!");
 
-    recordInteraction(cleanReply, result.mood, 'chat', englishDisplay);
+    recordInteraction(cleanReply, result.mood, 'chat', englishDisplay, result.energyDelta || 0);
 
     return res.status(200).json({
       success: true,
@@ -276,3 +263,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+
