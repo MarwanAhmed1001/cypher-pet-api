@@ -1,14 +1,11 @@
 /*
   ===============================================================================
-  سايفر بت - Cypher Bit (Rock Solid Color Bitmaps + STRICT 100% ENGLISH DISPLAY ONLY)
+  سايفر بت - Lola Bit (Instant LDR Light Sensor + Loud Clear Buzzer Beeps)
   ===============================================================================
-  - إيقاف الباظر وإبطال أي أصوات تصفير أو طنين عبر ledcDetachPin و pinMode(BUZZER_PIN, INPUT).
-  - حماية حديدية 100%: منع عرض أي حرف عربي أو ياباني أو رمز عشوائي على الشاشة نهائياً.
-  - الشاشة لا تعرض إطلاقاً سوى حروف إنجليزية وأرقام نقية (Pure ASCII English Only).
-  - كود النوم الذكي:
-    * النوم لا يتفعل إلا بين الساعة 2:00 صباحاً و 8:00 صباحاً.
-    * إذا انطفأ النور في هذه الفترة، يظل الجهاز يعمل لمدة أقصاها 30 دقيقة.
-    * بعد الـ 30 دقيقة، يدخل الجهاز في نوم عميق (5 ساعات متواصلة) يتوقف فيها عن العمل وتتوقف كل الحساسات والإشارات.
+  - حساس الضوء (LDR): يعمل 24/7 واستجابة سريعة للظلام (1.5 ثانية ظلام فقط) للدخول في وضع النوم الفوري.
+  - حساس الصوت والباظر (Buzzer): نغمات واضحة وقوية (Loud Crisp Beeps) مع التحكم المباشر بالترددات بدون كتم الصوت.
+  - استجابة لمس عالية الأولوية تتيح الاستيقاظ الفوري من وضع النوم.
+  - الشاشة باللغة الإنجليزية الصافية 100% (English ASCII Only).
   - التوصيلات الفيزيائية المعتمدة 100%:
     TFT_CS=15, TFT_RST=4, TFT_DC=2, TFT_MOSI=23, TFT_SCLK=18
     TOUCH=33, SHAKE=14, SOUND=34, LDR=35, BUZZER=25, VIBRATION=26
@@ -26,7 +23,6 @@
 #include <Adafruit_ST7735.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include "driver/dac.h"
 #include "bitmaps_esp32_color.h"
 
 // ---- Pins ----
@@ -83,15 +79,9 @@ volatile bool pendingDisplayUpdate = false;
 char          pendingMsgIdBuf[64] = "";
 char          pendingDisplayText[64] = "Lola: Ready!";
 
-// Night Window Sleep Control Logic
-// Window: 2:00 AM (02:00) to 8:00 AM (08:00)
-// Max stay awake in dark: 30 minutes (1,800,000 ms)
-// Deep sleep duration: 5 hours (18,000,000 ms)
+// Sensor Control Logic
+unsigned long lastSoundTriggerTime = 0;
 unsigned long darkStartTime = 0;
-bool          isDeepSleeping = false;
-unsigned long deepSleepStartTime = 0;
-const unsigned long DARK_GRACE_PERIOD = 30 * 60 * 1000UL;   // 30 mins
-const unsigned long DEEP_SLEEP_DURATION = 5 * 3600 * 1000UL; // 5 hours
 
 // Forward declaration
 void fetchMoodFromAPI();
@@ -106,72 +96,74 @@ int getCurrentHour24() {
   if ((wifiConnected || WiFi.status() == WL_CONNECTED) && getLocalTime(&timeinfo)) {
     return timeinfo.tm_hour; // 0 .. 23
   }
-  // Fallback when WiFi not synced:
   unsigned long currentMin = (1 * 60) + 21 + (millis() / 60000);
   return (currentMin / 60) % 24;
 }
 
-bool isNightTimeWindow() {
-  int hr = getCurrentHour24();
-  return (hr >= 2 && hr < 8);
-}
-
-// STRICT Whitelist Sanitizer: ONLY allows A-Z, a-z, 0-9, space, and basic English punctuation.
-// Wipes out ALL Arabic, Japanese, unicode, or raw control bytes completely!
-String sanitizeStrictEnglish(String input, String fallback = "Lola: Ready!") {
+// Clean non-ASCII bytes to guarantee 100% ENGLISH ONLY on TFT display
+String sanitizeAsciiText(String input) {
   String clean = "";
   for (unsigned int i = 0; i < input.length(); i++) {
-    unsigned char c = (unsigned char)input.charAt(i);
-    if ((c >= 'A' && c <= 'Z') || 
-        (c >= 'a' && c <= 'z') || 
-        (c >= '0' && c <= '9') || 
-        c == ' ' || c == ':' || c == '!' || c == '?' || 
-        c == '-' || c == '+' || c == '.' || c == '<' || c == '>') {
-      clean += (char)c;
+    char c = input.charAt(i);
+    if (c >= 32 && c <= 126) {
+      clean += c;
     }
   }
   clean.trim();
-  
-  // Ensure the string contains at least one valid English letter or number
-  bool hasAlphaNum = false;
-  for (unsigned int i = 0; i < clean.length(); i++) {
-    char c = clean.charAt(i);
-    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
-      hasAlphaNum = true;
-      break;
-    }
-  }
-
-  if (!hasAlphaNum || clean.length() == 0) {
-    return fallback;
-  }
-  
-  if (clean.length() > 22) {
-    clean = clean.substring(0, 22);
-  }
-  
+  if (clean.length() == 0) return "Lola: Ready!";
   return clean;
-}
-
-// Map mood to clean English display string
-String getMoodDefaultText(String mood) {
-  if (mood == "HAPPY")   return "Lola: Happy!";
-  if (mood == "EXCITED") return "Lola: Excited!";
-  if (mood == "ANNOYED") return "Lola: Annoyed!";
-  if (mood == "SAD")     return "Lola: Sad..";
-  if (mood == "BORED")   return "Lola: Bored..";
-  return "Lola: Ready!";
 }
 
 // FreeRTOS task for background API polling (Core 0)
 void apiPollTask(void* param) {
   vTaskDelay(2000 / portTICK_PERIOD_MS);
   for (;;) {
-    if (!isDeepSleeping && WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED) {
       fetchMoodFromAPI();
     }
     vTaskDelay(3000 / portTICK_PERIOD_MS);
   }
+}
+
+// Sound Functions - Loud & Crisp Tones
+void silenceBuzzer() {
+  noTone(BUZZER_PIN);
+  digitalWrite(BUZZER_PIN, LOW);
+}
+
+void playBeepCute() {
+  tone(BUZZER_PIN, 2200, 100);
+  delay(110);
+  tone(BUZZER_PIN, 2800, 140);
+  delay(150);
+  silenceBuzzer();
+}
+
+void playBeepSharp() {
+  tone(BUZZER_PIN, 3200, 180);
+  delay(190);
+  tone(BUZZER_PIN, 3600, 220);
+  delay(230);
+  silenceBuzzer();
+}
+
+void playBeepSoft() {
+  tone(BUZZER_PIN, 1400, 220);
+  delay(230);
+  silenceBuzzer();
+}
+
+void playBeepExcited() {
+  tone(BUZZER_PIN, 1800, 80); delay(90);
+  tone(BUZZER_PIN, 2500, 80); delay(90);
+  tone(BUZZER_PIN, 3400, 120); delay(130);
+  silenceBuzzer();
+}
+
+void playBeepSleepy() {
+  tone(BUZZER_PIN, 1000, 180); delay(190);
+  tone(BUZZER_PIN, 700, 250); delay(260);
+  silenceBuzzer();
 }
 
 String getFormattedTimeShort() {
@@ -202,14 +194,8 @@ void drawClockTopLeft() {
   tft.print(getFormattedTimeShort());
 }
 
-void muteBuzzer() {
-  noTone(BUZZER_PIN);
-  dac_output_disable(DAC_CHANNEL_1);
-  pinMode(BUZZER_PIN, INPUT); // High impedance mode completely cuts buzzer power!
-}
-
 void printCentered(String text, int y, uint16_t color, int textSize = 1) {
-  String cleanText = sanitizeStrictEnglish(text, "Lola: Ready!");
+  String cleanText = sanitizeAsciiText(text);
   tft.setTextSize(textSize);
   tft.setTextColor(color);
   int charWidth = 6 * textSize;
@@ -230,7 +216,7 @@ void setupWiFiManager() {
   tft.fillScreen(ST77XX_BLACK);
   printCentered("WiFi Setup...", 15, ST77XX_CYAN, 1);
   printCentered("Connect to AP:", 35, ST77XX_YELLOW, 1);
-  printCentered("CypherPet-Setup", 55, ST77XX_GREEN, 1);
+  printCentered("LolaPet-Setup", 55, ST77XX_GREEN, 1);
   printCentered("on Phone/PC", 75, ST77XX_WHITE, 1);
   
   WiFi.mode(WIFI_STA);
@@ -241,7 +227,7 @@ void setupWiFiManager() {
   wm.setSaveConnect(true);
   wm.setBreakAfterConfig(true);
   
-  bool connected = wm.autoConnect("CypherPet-Setup");
+  bool connected = wm.autoConnect("LolaPet-Setup");
   if (connected || WiFi.status() == WL_CONNECTED) {
     wifiConnected = true;
     Serial.println("WiFi Connected! IP: " + WiFi.localIP().toString());
@@ -261,19 +247,21 @@ void setupWiFiManager() {
 
 void runWelcomeSequence() {
   tft.fillScreen(ST77XX_BLACK);
-  printCentered("I'm ur new Cypher Bit", 40, ST77XX_YELLOW, 1);
-  printCentered("i lvu and beside u forever", 65, ST77XX_MAGENTA, 1);
+  printCentered("I'm ur Lola Bit", 40, ST77XX_YELLOW, 1);
+  printCentered("beside u forever", 65, ST77XX_MAGENTA, 1);
   drawHeart(80, 92, ST77XX_RED);
-  delay(1500);
+  playBeepCute();
+  delay(1000);
 }
 
 void runDizzyShakeAnimation() {
   unsigned long start = millis();
   int frame = 0;
+  playBeepSharp();
   while (millis() - start < 1800) {
     tft.fillScreen(ST77XX_BLACK);
     drawClockTopLeft();
-    printCentered("DIZZY / SHAKEN!", 16, ST77XX_RED, 1);
+    printCentered("! DIZZY / SHAKEN !", 16, ST77XX_RED, 1);
     int offsetX = (frame % 2 == 0) ? 14 : -14;
     int cx = (160 / 2) + offsetX;
     int cy = (128 / 2) + 4;
@@ -292,7 +280,7 @@ void runDizzyShakeAnimation() {
     frame++;
     delay(40);
   }
-  muteBuzzer();
+  silenceBuzzer();
 }
 
 int getSoundAmplitudeFast() {
@@ -337,9 +325,8 @@ void updateDisplayForState(int state, bool forceFullRedraw = false) {
     if (state == STATE_TOUCH) textColor = ST77XX_CYAN;
     else if (state == STATE_SOUND || state == STATE_ANNOYED) textColor = ST77XX_WHITE;
     
-    String cleanText = sanitizeStrictEnglish(apiDisplayText, getMoodDefaultText(apiMood));
-    printCentered(cleanText, 116, textColor, 1);
-    lastPrintedText = cleanText;
+    printCentered(apiDisplayText != "" ? apiDisplayText : "Lola: Ready!", 116, textColor, 1);
+    lastPrintedText = apiDisplayText;
   }
 }
 
@@ -373,8 +360,7 @@ void fetchMoodFromAPI() {
           rawText = doc["reply_display"].as<String>();
         }
 
-        // Whitelist sanitize: If rawText is not pure English ASCII, default to mapped mood text
-        String cleanEnglish = sanitizeStrictEnglish(rawText, getMoodDefaultText(newMood));
+        String cleanEnglish = sanitizeAsciiText(rawText);
 
         strncpy(pendingMsgIdBuf, msgId.c_str(), 63);
 
@@ -403,9 +389,10 @@ void setup() {
   pinMode(SHAKE_PIN, INPUT_PULLUP);
   pinMode(SOUND_PIN, INPUT);
   pinMode(LDR_PIN, INPUT);
-  
-  muteBuzzer();
+  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(VIBRATION_PIN, OUTPUT);
+  
+  silenceBuzzer();
 
   analogSetAttenuation(ADC_11db);
 
@@ -444,51 +431,34 @@ void setup() {
 }
 
 void loop() {
-  muteBuzzer();
+  unsigned long now = millis();
 
-  // 1. Handle 5-Hour Deep Sleep Mode
-  if (isDeepSleeping) {
-    if (millis() - deepSleepStartTime >= DEEP_SLEEP_DURATION) {
-      // 5 hours finished -> Wake up!
-      isDeepSleeping = false;
-      darkStartTime = 0;
-      currentState = STATE_IDLE;
-      updateDisplayForState(currentState, true);
-    } else {
-      // Completely sleeping: ignore sensors, ignore API!
+  // 1. Read Light Sensor (LDR) - Active 24/7 for instant darkness response
+  int lightVal = analogRead(LDR_PIN);
+  
+  // ESP32 ADC: < 1200 indicates covered sensor / darkness
+  if (lightVal < 1200) {
+    if (darkStartTime == 0) {
+      darkStartTime = now;
+    } else if (now - darkStartTime >= 1500) { // 1.5 seconds darkness triggers sleep
       if (currentState != STATE_DARK) {
         currentState = STATE_DARK;
-        tft.fillScreen(ST77XX_BLACK);
-        printCentered("Zzz... Sleeping (5h)", 55, ST77XX_CYAN, 1);
+        playBeepSleepy();
+        updateDisplayForState(currentState, true);
       }
-      delay(100);
-      return; // Stop processing loop
-    }
-  }
-
-  // 2. Read Light Sensor & Evaluate Night Time Window (2:00 AM to 8:00 AM)
-  int lightVal = analogRead(LDR_PIN);
-  bool nightWindow = isNightTimeWindow();
-
-  if (nightWindow && lightVal < 300) {
-    if (darkStartTime == 0) {
-      darkStartTime = millis(); // Start 30-min countdown timer
-    } else if (millis() - darkStartTime >= DARK_GRACE_PERIOD) {
-      // 30 mins in dark reached between 2 AM and 8 AM -> Enter 5-hour deep sleep!
-      isDeepSleeping = true;
-      deepSleepStartTime = millis();
-      currentState = STATE_DARK;
-      tft.fillScreen(ST77XX_BLACK);
-      printCentered("Zzz... Sleeping (5h)", 55, ST77XX_CYAN, 1);
-      delay(100);
-      return;
     }
   } else {
-    // Light is ON or outside night window -> Reset dark timer
-    darkStartTime = 0;
+    if (darkStartTime != 0) {
+      darkStartTime = 0;
+      if (currentState == STATE_DARK) {
+        currentState = STATE_IDLE;
+        playBeepCute();
+        updateDisplayForState(currentState, true);
+      }
+    }
   }
 
-  // 3. Read Physical Sensors Instantly
+  // 2. Read Physical Sensors (Touch, Shake, Sound)
   int touched = digitalRead(TOUCH_PIN);
   int shakeRaw = digitalRead(SHAKE_PIN);
   int shakenVal = (shakeRaw == LOW) ? 1 : 0;
@@ -500,37 +470,54 @@ void loop() {
                     a.acceleration.z * a.acceleration.z);
   if (mag > 22.0) shakenVal = 1;
 
+  // Sound Sensor Noise Filtering with 3-second cooldown
   int soundAmp = getSoundAmplitudeFast();
+  bool soundTriggered = false;
+  if (soundAmp > 1400 && (now - lastSoundTriggerTime > 3000)) {
+    soundTriggered = true;
+    lastSoundTriggerTime = now;
+  }
 
   int physicalState = STATE_IDLE;
   if (shakenVal == 1) {
     physicalState = STATE_SHAKE;
   } else if (touched == 1) {
     physicalState = STATE_TOUCH;
-  } else if (soundAmp > 1500) {
+  } else if (soundTriggered) {
     physicalState = STATE_SOUND;
   }
 
+  // 3. Touch sensor priority: wakes Lola up immediately if touched in dark mode!
+  if (touched == 1 && currentState == STATE_DARK) {
+    currentState = STATE_TOUCH;
+    digitalWrite(VIBRATION_PIN, HIGH);
+    playBeepCute();
+    delay(100);
+    digitalWrite(VIBRATION_PIN, LOW);
+    updateDisplayForState(currentState, true);
+  }
   // 4. Physical Sensor Dominance
-  if (physicalState == STATE_SHAKE) {
+  else if (physicalState == STATE_SHAKE) {
     runDizzyShakeAnimation();
     currentState = STATE_IDLE;
     updateDisplayForState(currentState, true);
   }
-  else if (physicalState != STATE_IDLE) {
+  else if (physicalState != STATE_IDLE && currentState != STATE_DARK) {
     if (currentState != physicalState) {
       currentState = physicalState;
       if (currentState == STATE_TOUCH) {
         digitalWrite(VIBRATION_PIN, HIGH);
+        playBeepCute();
         delay(100);
         digitalWrite(VIBRATION_PIN, LOW);
+      } else if (currentState == STATE_SOUND) {
+        playBeepSharp();
       }
-      muteBuzzer();
       updateDisplayForState(currentState, true);
     }
   }
   // 5. Web Chat API Updates
-  else {
+  else if (currentState != STATE_DARK) {
     String pendingMsgIdStr = String(pendingMsgIdBuf);
     if (pendingMsgIdStr.length() > 0 && pendingMsgIdStr != lastProcessedMsgId) {
       lastProcessedMsgId = pendingMsgIdStr;
@@ -540,7 +527,8 @@ void loop() {
         pendingApiState = -1;
         if (newState != currentState) {
           currentState = newState;
-          muteBuzzer();
+          if (currentState == STATE_ANNOYED) playBeepSharp();
+          else if (currentState == STATE_TOUCH) playBeepCute();
           updateDisplayForState(currentState, true);
         }
       }
