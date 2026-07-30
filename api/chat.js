@@ -1,12 +1,11 @@
-require('dotenv').config();
-const axios = require('axios');
 const { 
   recordInteraction, 
   setAnnoyedState, 
   isAnnoyedActive, 
   registerApologyAttempt,
   getMoodState,
-  adjustEnergy
+  adjustEnergy,
+  setCommand
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
@@ -22,18 +21,15 @@ const SYSTEM_PROMPT = `أنتِ "لولا" (Lola) - إنسانة مصرية حق
 1. اتكلمي بالعامية المصرية الطبيعية البحتة كأنك شخص ذكي وقارئ للمشهد ومبيفوتش حاجة.
 2. نادي "آية" بألقاب الدلع الخاصة بيها ("يا أيويتي"، "يا لولتي") في محادثتك معاها بأسلوب بشري طبيعي 100%.
 3. أفهمي السياق والتلميحات والمحادثات السابقة بذكاء شديد وردي برزانة وسرعة بديهة ومباشرة.
-4. ممنوع التكرار الآلي أو الردود البسيطة السطحية.
+4. إذا تعرضتِ لإهانة أو كلام سخيف (مثل غبية، غبي، سخيفة، حمار)، دافعي عن نفسك ببرود وسخرية جافة وتضايقي فترديني بضيق شديد!
 5. ردودك قصيرة، مركزة، ومباشرة (جملة أو جملتين بالعامية المصرية).
 6. إذا تم التقاط صورة بالكاميرا وكان الوجه لـ Ayane رحبي بها بدفء وشغف ("أهلاً يا أيويتي ✨💖") وإذا كان شخص غريب ردي بريبة وضيق ("مين الغريب ده؟").
 7. ممنوع تماماً ذِكر أنك ذكاء اصطناعي أو نموذج لغوي أو روبوت أو كائن آلي.
 
 JSON OUTPUT FORMAT STRICT REQUIREMENT:
-1. "reply": Short Arabic reply in casual 100% natural Egyptian Arabic addressing her as "أيويتي" or "لولتي" (max 2 sentences).
+1. "reply": Short Arabic reply in casual 100% natural Egyptian Arabic (max 2 sentences).
 2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Lola: Cold.", "Cairo: 26C", "5+5 = 10", "Lola: Ready!").
 3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"`;
-
-
-
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -63,11 +59,25 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
 
 function isInsultOrAnnoying(text) {
   const rudeKeywords = [
-    'حمار', 'يا زفت', 'اتخرسي', 'كلب', 'حمارة', 
-    'قليلة الادب', 'حقيرة', 'عبيطة', 'عبيط', 
-    'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
+    'غبية', 'غبي', 'غباء', 'سخيفة', 'سخيف', 'حمار', 'حمارة', 
+    'يا زفت', 'اتخرسي', 'كلب', 'قليلة الادب', 'حقيرة', 'عبيطة', 
+    'عبيط', 'زهقت منك', 'مبتفهميش', 'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
   ];
   return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
+}
+
+function detectHardwareCommand(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes('صوتي') || lower.includes('باظر') || lower.includes('الباظر') || lower.includes('انذار') || lower.includes('إنذار') || lower.includes('صوت')) {
+    return 'ALARM';
+  }
+  if (lower.includes('نامي') || lower.includes('نام')) {
+    return 'SLEEP';
+  }
+  if (lower.includes('اتهزي') || lower.includes('اصحي') || lower.includes('اتحركي') || lower.includes('هز')) {
+    return 'SHAKE';
+  }
+  return null;
 }
 
 function isSpotifyQuery(text) {
@@ -113,7 +123,7 @@ async function callGroq(message, history = [], extraContext = '') {
 
   let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}.`;
   if (currentlyAnnoyed) {
-    promptContext += ` Note: You are currently VERY ANNOYED and irritated with the user for 30 minutes. Respond with realistic Egyptian cold annoyance and dry sarcasm in 1 short sentence as a real human.`;
+    promptContext += ` Note: You are currently VERY ANNOYED and irritated with the user for 30 minutes because they insulted you. Defend yourself with cold sarcasm in 1 short sentence as a real human.`;
   }
   if (message.includes('صورة') || message.includes('كاميرا') || message.includes('شايفاها') || message.includes('وجه')) {
     promptContext += ` Note: User just snapped a camera face photo. React intelligently in character. If recognized as Ayane say 'Love u Ayane! ✨', if stranger say 'Stranger Alert!'.`;
@@ -172,7 +182,7 @@ async function callGroq(message, history = [], extraContext = '') {
       }
 
       return {
-        reply: cleanChatReply(parsed.reply || "سامعاك.. قول كمل؟"),
+        reply: cleanChatReply(parsed.reply || "أنا أذكى منك، اتلم وشوف بتتكلم مع مين!"),
         display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
         mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
         energyDelta: currentlyAnnoyed ? -5 : +10
@@ -182,12 +192,10 @@ async function callGroq(message, history = [], extraContext = '') {
     }
   }
 
-
-  // Dynamic Randomized Fallbacks if API is completely unreachable
   const dynamicAnnoyedFallbacks = [
-    "بصراحة كلامك مستفز ومبقتش طايقاك.",
-    "مش ناقصة نكد على الصبح، أنجز قول كلمتين مفيدين.",
-    "إيه الاستظراف ده؟ ارحمني شوية!"
+    "أنا أذكى منك بصراحة ومبقتش طايقاك.",
+    "مش ناقصة نكد، اتلم وشوف بتتكلم مع مين!",
+    "إيه غباء الكلام ده؟ ارحمني شوية!"
   ];
   const dynamicNormalFallbacks = [
     "سامعاك يا أيويتي.. كملي عايزة إيه؟",
@@ -205,7 +213,6 @@ async function callGroq(message, history = [], extraContext = '') {
     energyDelta: 0
   };
 }
-
 
 
 module.exports = async (req, res) => {
@@ -226,7 +233,32 @@ module.exports = async (req, res) => {
 
   try {
     let result;
-    if (isSpotifyQuery(message)) {
+    const hwCmd = detectHardwareCommand(message);
+    if (hwCmd) {
+      setCommand(hwCmd);
+      if (hwCmd === 'ALARM') {
+        result = {
+          reply: "شغّلت إنذار الباظر 3 ثواني بصوت عالي 🚨!",
+          display: "ALARM TONE!",
+          mood: "ANNOYED",
+          energyDelta: -5
+        };
+      } else if (hwCmd === 'SLEEP') {
+        result = {
+          reply: "تصبح على خير، طفيت ونمت أهو.. 💤",
+          display: "Lola: Sleeping...",
+          mood: "SLEEP",
+          energyDelta: 0
+        };
+      } else if (hwCmd === 'SHAKE') {
+        result = {
+          reply: "أهو اتهزيت وعملت أنيميشن الحركة.. كدة ارتحت؟ 🌀",
+          display: "Lola: Shaking!",
+          mood: "TOUCH",
+          energyDelta: +5
+        };
+      }
+    } else if (isSpotifyQuery(message)) {
       const nowPlaying = await fetchCurrentlyPlayingTrack();
       if (nowPlaying && nowPlaying.trackName) {
         const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
@@ -256,8 +288,8 @@ module.exports = async (req, res) => {
       result = await callGroq(message, history);
     }
 
-
     const cleanReply = cleanChatReply(result.reply);
+
     const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
 
     recordInteraction(cleanReply, result.mood, 'chat', englishDisplay, result.energyDelta || 0);
@@ -276,5 +308,6 @@ module.exports = async (req, res) => {
     });
   }
 };
+
 
 
