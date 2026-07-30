@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Lola - لولا</title>
+  <title>Lola - لولا | الكائن الرقمي الذكي</title>
   
-  <!-- Google Fonts: Tajawal -->
+  <!-- Google Fonts: Tajawal & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg-dark: #0d0d0d;
-      --card-bg: #141416;
-      --cypher-msg-bg: #1f1f23;
+      --bg-dark: #09090b;
+      --card-bg: #121215;
+      --cypher-msg-bg: #1b1b20;
       --user-msg-bg: #C8FF4D;
       --user-msg-text: #0d0d0d;
-      --text-main: #f1f1f1;
-      --text-muted: #8e8e93;
-      --border-color: #26262a;
+      --text-main: #f3f3f6;
+      --text-muted: #8e8e99;
+      --border-color: rgba(255, 255, 255, 0.08);
       
       /* Mood Colors */
       --mood-happy: #C8FF4D;
@@ -27,9 +27,9 @@
       --mood-annoyed: #FF6B57;
       --mood-neutral: #F1EDE4;
       --mood-excited: #FFD700;
-      --mood-bored: #5A5D63;
+      --mood-bored: #6C7078;
 
-      --active-mood-color: var(--mood-annoyed);
+      --active-mood-color: var(--mood-neutral);
     }
 
     * {
@@ -49,27 +49,32 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
+      background-image: 
+        radial-gradient(at 20% 20%, rgba(200, 255, 77, 0.04) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(255, 107, 87, 0.05) 0px, transparent 50%);
     }
 
     /* Container layout */
     .app-container {
       width: 100%;
-      max-width: 480px;
+      max-width: 500px;
       height: 100vh;
       height: 100dvh;
       display: flex;
       flex-direction: column;
-      background-color: var(--bg-dark);
+      background: rgba(18, 18, 21, 0.95);
       position: relative;
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+      border-left: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
     }
 
     /* Top Bar Header */
     .top-bar {
-      padding: 14px 18px;
-      background: rgba(20, 20, 22, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 16px;
+      background: rgba(24, 24, 28, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
@@ -86,17 +91,18 @@
     }
 
     .avatar {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: #1a1a1e;
+      background: #18181c;
       border: 2px solid var(--active-mood-color);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 22px;
       transition: all 0.4s ease;
-      box-shadow: 0 0 12px rgba(255, 107, 87, 0.2);
+      box-shadow: 0 0 16px rgba(200, 255, 77, 0.15);
+      cursor: pointer;
     }
 
     .profile-info {
@@ -105,7 +111,7 @@
     }
 
     .profile-name {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       letter-spacing: -0.2px;
       display: flex;
@@ -113,10 +119,17 @@
       gap: 6px;
     }
 
+    .profile-name span {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
     .status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       font-size: 12px;
       font-weight: 500;
       color: var(--text-muted);
@@ -124,14 +137,47 @@
     }
 
     .status-dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background-color: var(--active-mood-color);
-      box-shadow: 0 0 8px var(--active-mood-color);
+      box-shadow: 0 0 10px var(--active-mood-color);
       transition: background-color 0.4s ease;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover, .icon-btn:active {
+      background: rgba(255, 255, 255, 0.14);
+      transform: scale(1.05);
+    }
+
+    .icon-btn.active {
+      background: var(--user-msg-bg);
+      color: #000;
+      border-color: var(--user-msg-bg);
+    }
+
+    /* Mood Pill Badge */
     .mood-pill {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -146,7 +192,7 @@
       transition: all 0.4s ease;
     }
 
-    /* Chat Area */
+    /* Chat Scroll Area */
     .chat-area {
       flex: 1;
       overflow-y: auto;
@@ -161,16 +207,16 @@
       width: 4px;
     }
     .chat-area::-webkit-scrollbar-thumb {
-      background: #222;
+      background: #26262d;
       border-radius: 4px;
     }
 
-    /* Message Bubbles */
+    /* Message Rows */
     .message-row {
       display: flex;
       align-items: flex-end;
       gap: 8px;
-      max-width: 85%;
+      max-width: 88%;
       opacity: 0;
       transform: translateY(12px);
       animation: fadeInMsg 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -193,9 +239,9 @@
     }
 
     .msg-avatar {
-      font-size: 16px;
-      width: 26px;
-      height: 26px;
+      font-size: 18px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -203,10 +249,10 @@
     }
 
     .bubble {
-      padding: 11px 15px;
-      border-radius: 18px;
+      padding: 11px 16px;
+      border-radius: 20px;
       font-size: 15px;
-      line-height: 1.45;
+      line-height: 1.5;
       word-break: break-word;
       position: relative;
     }
@@ -215,7 +261,7 @@
       background-color: var(--cypher-msg-bg);
       color: var(--text-main);
       border-bottom-right-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
     }
 
     .message-row.user .bubble {
@@ -225,10 +271,27 @@
       border-bottom-left-radius: 4px;
     }
 
-    .msg-icon {
-      margin-left: 4px;
+    .bubble-image {
+      max-width: 200px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      display: block;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Audio Speaker Button inside bubble */
+    .speak-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
       font-size: 14px;
+      margin-right: 6px;
       vertical-align: middle;
+      transition: color 0.2s;
+    }
+    .speak-btn:hover {
+      color: var(--user-msg-bg);
     }
 
     /* Typing Indicator */
@@ -248,12 +311,12 @@
     .typing-bubble {
       background-color: var(--cypher-msg-bg);
       padding: 12px 16px;
-      border-radius: 18px;
+      border-radius: 20px;
       border-bottom-right-radius: 4px;
       display: flex;
       align-items: center;
-      gap: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      gap: 5px;
+      border: 1px solid var(--border-color);
     }
 
     .dot {
@@ -263,7 +326,6 @@
       border-radius: 50%;
       animation: typingPulse 1.4s infinite ease-in-out;
     }
-
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
 
@@ -272,16 +334,57 @@
       50% { transform: scale(1.2); opacity: 1; }
     }
 
+    /* Voice Recording Banner */
+    .voice-banner {
+      display: none;
+      background: rgba(255, 107, 87, 0.15);
+      border: 1px solid rgba(255, 107, 87, 0.3);
+      color: #FF6B57;
+      padding: 8px 14px;
+      border-radius: 12px;
+      margin: 0 16px 8px;
+      font-size: 13px;
+      font-weight: 700;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeInMsg 0.3s forwards;
+    }
+
+    .voice-banner.active {
+      display: flex;
+    }
+
+    .voice-waves {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 12px;
+      background: #FF6B57;
+      border-radius: 3px;
+      animation: waveAnim 0.8s infinite ease-in-out alternate;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes waveAnim {
+      0% { height: 4px; }
+      100% { height: 16px; }
+    }
+
     /* Bottom Input Bar */
     .input-bar {
       padding: 12px 16px 16px;
-      background: rgba(20, 20, 22, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(20, 20, 24, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-top: 1px solid var(--border-color);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .input-wrapper {
@@ -293,10 +396,10 @@
 
     .chat-input {
       width: 100%;
-      background: #1a1a1e;
-      border: 1px solid #2a2a30;
+      background: #18181c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 24px;
-      padding: 12px 18px;
+      padding: 12px 16px;
       color: var(--text-main);
       font-size: 15px;
       outline: none;
@@ -304,60 +407,231 @@
     }
 
     .chat-input::placeholder {
-      color: #66666e;
+      color: #666673;
     }
 
     .chat-input:focus {
       border-color: var(--active-mood-color);
-      box-shadow: 0 0 10px rgba(255, 107, 87, 0.15);
+      box-shadow: 0 0 12px rgba(200, 255, 77, 0.12);
     }
 
-    .send-btn {
-      width: 44px;
-      height: 44px;
+    .action-btn {
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
-      background-color: var(--user-msg-bg);
-      border: none;
-      color: var(--user-msg-text);
+      background-color: #18181c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      transition: transform 0.2s ease, background-color 0.2s ease;
+      font-size: 18px;
+      transition: all 0.2s ease;
     }
 
-    .send-btn:active {
+    .action-btn:active {
       transform: scale(0.92);
     }
 
+    .send-btn {
+      background-color: var(--user-msg-bg);
+      border: none;
+      color: var(--user-msg-text);
+    }
+
     .send-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       fill: currentColor;
       transform: rotate(180deg);
+    }
+
+    /* Modal Popups (Camera & Guide) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      animation: fadeInMsg 0.3s forwards;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #141418;
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    .modal-body::-webkit-scrollbar {
+      width: 4px;
+    }
+    .modal-body::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+
+    /* Camera View */
+    .camera-container {
+      width: 100%;
+      height: 260px;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    .snap-btn {
+      margin-top: 14px;
+      width: 100%;
+      padding: 12px;
+      background: var(--user-msg-bg);
+      color: #000;
+      border: none;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Guide Section Styles */
+    .guide-section {
+      margin-bottom: 20px;
+    }
+
+    .guide-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--user-msg-bg);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .guide-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .guide-card h4 {
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .guide-card p {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .badge-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(200, 255, 77, 0.15);
+      color: var(--user-msg-bg);
+      margin-left: 4px;
     }
   </style>
 </head>
 <body>
 
   <div class="app-container">
-    <!-- Top Header -->
+    <!-- Top Header Bar -->
     <div class="top-bar">
       <div class="cypher-profile">
-        <div class="avatar" id="headerAvatar">😠</div>
+        <div class="avatar" id="headerAvatar" onclick="openGuideModal()">😠</div>
         <div class="profile-info">
           <div class="profile-name">لولا <span>(Lola)</span></div>
           <div class="status-badge">
             <span class="status-dot" id="statusDot"></span>
-            <span id="dailyMoodText">المزاج اليومي: متضايقة</span>
+            <span id="dailyMoodText">المزاج اليومي: عادي</span>
           </div>
         </div>
       </div>
 
-      <div class="mood-pill" id="moodPill">
-        <span id="moodEmoji">😠</span>
-        <span id="moodText">متضايقة</span>
+      <div class="header-actions">
+        <button class="icon-btn" id="ttsToggleBtn" title="تشغيل/كتم الصوت التلقائي" onclick="toggleAudioOutput()">🔊</button>
+        <button class="icon-btn" title="الكاميرا والتعرف على الوجه" onclick="openCameraModal()">📷</button>
+        <button class="icon-btn" title="دليل الاستخدام" onclick="openGuideModal()">ℹ️</button>
+        
+        <div class="mood-pill" id="moodPill">
+          <span id="moodEmoji">😐</span>
+          <span id="moodText">عادية</span>
+        </div>
       </div>
     </div>
 
@@ -365,13 +639,16 @@
     <div class="chat-area" id="chatArea">
       <!-- Default Welcome Message -->
       <div class="message-row cypher">
-        <div class="msg-avatar">😠</div>
-        <div class="bubble" style="border-left: 3px solid #FF6B57">أهلاً.. أنا لولا. عايز إيه على الصبح؟</div>
+        <div class="msg-avatar">😐</div>
+        <div class="bubble" style="border-left: 3px solid #F1EDE4">
+          <button class="speak-btn" onclick="speakText('أنا لولا. عايز إيه على الصبح؟')">🔊</button>
+          أنا لولا. عايز إيه على الصبح؟
+        </div>
       </div>
 
       <!-- Typing Indicator -->
       <div class="typing-row" id="typingRow">
-        <div class="msg-avatar" id="typingAvatar">😠</div>
+        <div class="msg-avatar" id="typingAvatar">😐</div>
         <div class="typing-bubble">
           <div class="dot"></div>
           <div class="dot"></div>
@@ -380,16 +657,111 @@
       </div>
     </div>
 
+    <!-- Voice Recording Active Banner -->
+    <div class="voice-banner" id="voiceBanner">
+      <span>🎙️ جاري الاستماع لكلامك بالعامية المصرية...</span>
+      <div class="voice-waves">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+    </div>
+
     <!-- Bottom Input Bar -->
     <div class="input-bar">
+      <button class="action-btn" id="camBtn" title="التقاط صورة للكاميرا" onclick="openCameraModal()">📷</button>
+      <button class="action-btn" id="micBtn" title="التحدث بالصوت" onclick="toggleVoiceRecording()">🎙️</button>
+
       <div class="input-wrapper">
         <input type="text" class="chat-input" id="chatInput" placeholder="اكتب رسالة لـ لولا..." autocomplete="off">
       </div>
-      <button class="send-btn" id="sendBtn" aria-label="إرسال">
+
+      <button class="action-btn send-btn" id="sendBtn" aria-label="إرسال">
         <svg viewBox="0 0 24 24">
           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
         </svg>
       </button>
+    </div>
+  </div>
+
+  <!-- Camera Modal -->
+  <div class="modal-overlay" id="cameraModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📷 التعرف على الوجه والصورة</div>
+        <button class="close-btn" onclick="closeCameraModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 12px;">شغل الكاميرا لالتقاط صورة وربط موديل التعرف على الوجه مع "لولا":</p>
+        <div class="camera-container">
+          <video id="webcam" autoplay playsinline></video>
+          <canvas id="snapshotCanvas"></canvas>
+        </div>
+        <button class="snap-btn" onclick="captureAndSendPhoto()">📸 التقط صورة وارسلي لـ لولا</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guide Modal (What is Lola and How to use it) -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">ℹ️ دليل الاستخدام وشخصية لولا</div>
+        <button class="close-btn" onclick="closeGuideModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="guide-section">
+          <div class="guide-title">✨ من هي "لولا" (What is Lola?)</div>
+          <p>لولا هي كائن رقمي (Digital Creature) بشخصية باردة وساخرة، تتحدث بالعامية المصرية الطبيعية البحتة كإنسان بشري عادي بدقة واستجابة تفاعلية.</p>
+        </div>
+
+        <div class="guide-section">
+          <div class="guide-title">⚡ طباع وقواعد المزاج (Mood & Personality Rules)</div>
+          <div class="guide-card">
+            <h4>❄️ الطبع الأساسي</h4>
+            <p>باردة بطبعها، لا تبدأ المحادثة، ردودها قصيرة جداً (ماكس جملتين) ومباشرة من غير تطبيل.</p>
+          </div>
+          <div class="guide-card">
+            <h4>🔋 ميكانيكية الطاقة (0 - 100 Energy)</h4>
+            <p>
+              • 80-100: <span class="badge-tag">HAPPY</span> سعيدة<br>
+              • 50-79: <span class="badge-tag">NEUTRAL</span> عادية (بداية اليوم)<br>
+              • 30-49: <span class="badge-tag">BORED</span> زهقانة<br>
+              • 10-29: <span class="badge-tag">SAD</span> حزينة<br>
+              • 0-9: <span class="badge-tag">ANNOYED</span> متضايقة (تتفاعل ببرود وسخرية جافة)
+            </p>
+          </div>
+        </div>
+
+        <div class="guide-section">
+          <div class="guide-title">💬 كيف تتحدث وتتفاعل معها؟ (How to Use)</div>
+          <div class="guide-card">
+            <h4>🎙️ المحادثة الصوتية والكلام (Voice Input/Output)</h4>
+            <p>اضغط زر المايك 🎙️ للتحدث بالعامية المصرية مباشرة، وسوف تنطق لولا ردودها بصوت طبيعي عند تفعيل زر الصوت 🔊.</p>
+          </div>
+          <div class="guide-card">
+            <h4>📷 الكاميرا والتعرف على الوجه</h4>
+            <p>افتح الكاميرا 📷 والتقط صورتك لترسلها إلى لولا للتعرف عليك والتفاعل مع تعابير وجهك.</p>
+          </div>
+          <div class="guide-card">
+            <h4>🎵 ربط الموسيقى والطقس</h4>
+            <p>اسألها عن الطقس أو الأغنية الشغالة على Spotify لتسمع رأيها الساخر والمباشر!</p>
+          </div>
+          <div class="guide-card">
+            <h4>📱 إشعارات iPhone</h4>
+            <p>يرسل تطبيق Shortcuts على الآيفون إشعارات الموسيقى والشاحن والبطارية لـ لولا لترد بجملة ساخرة فورية.</p>
+          </div>
+        </div>
+
+        <div class="guide-section">
+          <div class="guide-title">📟 الحساسات الفيزيائية بـ ESP32</div>
+          <p>
+            • <b>حساس الضوء (LDR):</b> عند الظلام التام لمدة 1.5 ثانية تدخل لولا وضع النوم.<br>
+            • <b>حساس اللمس:</b> اللمس يوقظها فوراً من النوم.<br>
+            • <b>حساس الصوت والهز:</b> يتفاعل مع أصوات التصفيق والكلام العالي والتوهان عند الهز.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -401,16 +773,22 @@
       ANNOYED: { color: '#FF6B57', emoji: '😠', name: 'متضايقة' },
       NEUTRAL: { color: '#F1EDE4', emoji: '😐', name: 'عادية' },
       EXCITED: { color: '#FFD700', emoji: '🤩', name: 'متحمسة' },
-      BORED: { color: '#5A5D63', emoji: '🥱', name: 'زهقانة' }
+      BORED: { color: '#6C7078', emoji: '🥱', name: 'زهقانة' }
     };
 
     let chatHistory = [];
-    let currentMood = 'ANNOYED';
+    let currentMood = 'NEUTRAL';
+    let isAudioOutputEnabled = true;
+    let isRecordingVoice = false;
+    let recognition = null;
+    let cameraStream = null;
 
     const chatArea = document.getElementById('chatArea');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const typingRow = document.getElementById('typingRow');
+    const voiceBanner = document.getElementById('voiceBanner');
+    const micBtn = document.getElementById('micBtn');
 
     const headerAvatar = document.getElementById('headerAvatar');
     const typingAvatar = document.getElementById('typingAvatar');
@@ -419,10 +797,145 @@
     const moodText = document.getElementById('moodText');
     const statusDot = document.getElementById('statusDot');
     const dailyMoodText = document.getElementById('dailyMoodText');
+    const ttsToggleBtn = document.getElementById('ttsToggleBtn');
+
+    // Speech Synthesis (Text to Speech for Egyptian Arabic)
+    function speakText(text) {
+      if (!isAudioOutputEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel(); // Stop ongoing speech
+
+      const cleanText = text.replace(/[\u1F600-\u1F64F]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'ar-EG';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.1;
+
+      // Try to find Arabic voice
+      const voices = window.speechSynthesis.getVoices();
+      const arVoice = voices.find(v => v.lang.includes('ar'));
+      if (arVoice) utterance.voice = arVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function toggleAudioOutput() {
+      isAudioOutputEnabled = !isAudioOutputEnabled;
+      ttsToggleBtn.textContent = isAudioOutputEnabled ? '🔊' : '🔇';
+      ttsToggleBtn.classList.toggle('active', isAudioOutputEnabled);
+    }
+
+    // Speech Recognition (Speech to Text)
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('المتصفح لا يدعم التحدث الصوتي المباشر. استخدم الكتابة النصية.');
+        return null;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.lang = 'ar-EG';
+      rec.continuous = false;
+      rec.interimResults = false;
+
+      rec.onstart = () => {
+        isRecordingVoice = true;
+        micBtn.classList.add('active');
+        voiceBanner.classList.add('active');
+      };
+
+      rec.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript.trim()) {
+          chatInput.value = transcript;
+          sendMessage();
+        }
+      };
+
+      rec.onerror = (err) => {
+        console.error('Speech recognition error:', err);
+        stopVoiceRecording();
+      };
+
+      rec.onend = () => {
+        stopVoiceRecording();
+      };
+
+      return rec;
+    }
+
+    function toggleVoiceRecording() {
+      if (!recognition) {
+        recognition = initSpeechRecognition();
+      }
+      if (!recognition) return;
+
+      if (isRecordingVoice) {
+        recognition.stop();
+        stopVoiceRecording();
+      } else {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function stopVoiceRecording() {
+      isRecordingVoice = false;
+      micBtn.classList.remove('active');
+      voiceBanner.classList.remove('active');
+    }
+
+    // Camera Modal & Snapshot Functions
+    async function openCameraModal() {
+      document.getElementById('cameraModal').classList.add('active');
+      const video = document.getElementById('webcam');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = cameraStream;
+      } catch (err) {
+        alert('تعذر فتح الكاميرا: ' + err.message);
+      }
+    }
+
+    function closeCameraModal() {
+      document.getElementById('cameraModal').classList.remove('active');
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+    }
+
+    function captureAndSendPhoto() {
+      const video = document.getElementById('webcam');
+      const canvas = document.getElementById('snapshotCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      closeCameraModal();
+
+      // Append image message in chat
+      appendMessage('user', '📸 [صورة الكاميرا - التعرف على الوجه]', imageDataUrl);
+      sendMessageWithContext("لقد التقطت صورة لوجهي لكاميرتك الآن، شايفاها؟");
+    }
+
+    // Guide Modal Functions
+    function openGuideModal() {
+      document.getElementById('guideModal').classList.add('active');
+    }
+
+    function closeGuideModal() {
+      document.getElementById('guideModal').classList.remove('active');
+    }
 
     // Update Top Bar UI
     function updateTopBarUI(moodKey, dailyMoodKey) {
-      const mood = MOOD_DATA[moodKey] || MOOD_DATA.ANNOYED;
+      const mood = MOOD_DATA[moodKey] || MOOD_DATA.NEUTRAL;
       const dailyMood = MOOD_DATA[dailyMoodKey] || mood;
 
       currentMood = moodKey;
@@ -444,32 +957,28 @@
     }
 
     // Append Message to Chat
-    function appendMessage(sender, text, moodKey = 'ANNOYED', dataType = 'chat') {
+    function appendMessage(sender, text, imageSrc = null, moodKey = 'NEUTRAL', dataType = 'chat') {
       const row = document.createElement('div');
       row.className = `message-row ${sender}`;
 
-      const mood = MOOD_DATA[moodKey] || MOOD_DATA.ANNOYED;
+      const mood = MOOD_DATA[moodKey] || MOOD_DATA.NEUTRAL;
 
-      let iconSpan = '';
-      if (sender === 'cypher') {
-        if (dataType === 'weather') iconSpan = '<span class="msg-icon">🌤️</span>';
-        else if (dataType === 'sports') iconSpan = '<span class="msg-icon">⚽</span>';
-      }
+      let imgHtml = imageSrc ? `<img src="${imageSrc}" class="bubble-image" alt="Captured Photo" />` : '';
+      let speakBtnHtml = (sender === 'cypher') ? `<button class="speak-btn" onclick="speakText('${text.replace(/'/g, "\\'")}')">🔊</button>` : '';
 
       if (sender === 'cypher') {
         row.innerHTML = `
           <div class="msg-avatar">${mood.emoji}</div>
           <div class="bubble" style="border-left: 3px solid ${mood.color}">
-            ${text}${iconSpan}
+            ${imgHtml}${speakBtnHtml}${text}
           </div>
         `;
       } else {
         row.innerHTML = `
-          <div class="bubble">${text}</div>
+          <div class="bubble">${imgHtml}${text}</div>
         `;
       }
 
-      // Insert before typing row
       chatArea.insertBefore(row, typingRow);
       scrollToBottom();
     }
@@ -488,20 +997,18 @@
     }
 
     // Send Message Handler
-    async function sendMessage() {
-      const text = chatInput.value.trim();
+    async function sendMessageWithContext(overrideText = null) {
+      const text = overrideText || chatInput.value.trim();
       if (!text) return;
 
-      chatInput.value = '';
+      if (!overrideText) chatInput.value = '';
 
       // Append user message
-      appendMessage('user', text);
+      if (!overrideText) appendMessage('user', text);
 
-      // Keep history in memory (last 10)
       chatHistory.push({ role: 'user', content: text });
       if (chatHistory.length > 10) chatHistory.shift();
 
-      // Show typing indicator
       typingRow.classList.add('active');
       scrollToBottom();
 
@@ -519,18 +1026,28 @@
         typingRow.classList.remove('active');
 
         if (res.ok && data.reply) {
-          appendMessage('cypher', data.reply, data.mood, data.data_type);
+          appendMessage('cypher', data.reply, null, data.mood, data.data_type);
           updateTopBarUI(data.mood, data.daily_mood);
+          speakText(data.reply);
+
           chatHistory.push({ role: 'assistant', content: data.reply });
           if (chatHistory.length > 10) chatHistory.shift();
         } else {
-          appendMessage('cypher', 'مش عايزة أتكلم معاك دلوقتي، حل عني بقا!', 'ANNOYED', 'chat');
+          const fallback = 'مش فاضية للكلام ده دلوقتي.';
+          appendMessage('cypher', fallback, null, 'ANNOYED', 'chat');
+          speakText(fallback);
         }
       } catch (err) {
         console.error('Send Error:', err);
         typingRow.classList.remove('active');
-        appendMessage('cypher', 'أوف بقا! هو مفيش غيري تنكد عليه؟', 'ANNOYED', 'chat');
+        const fallback = 'هو مفيش غيرك تنكد عليا على الصبح؟';
+        appendMessage('cypher', fallback, null, 'ANNOYED', 'chat');
+        speakText(fallback);
       }
+    }
+
+    function sendMessage() {
+      sendMessageWithContext();
     }
 
     // Event Listeners
@@ -539,7 +1056,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Start Polling every 3s
+    // Initialize Polling & Voice
     pollMood();
     setInterval(pollMood, 3000);
   </script>
