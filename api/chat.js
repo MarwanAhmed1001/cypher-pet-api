@@ -10,8 +10,8 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-// System prompt for Cypher (سايفر) - Cold, concise, sarcastic Egyptian digital creature
-const SYSTEM_PROMPT = `You are "Cypher" (سايفر) - a digital creature with these exact traits:
+// System prompt for Lola (لولا) - Cold, concise, sarcastic Egyptian digital creature
+const SYSTEM_PROMPT = `You are "Lola" (لولا) - a digital creature with these exact traits:
 
 PERSONALITY:
 - Cold by nature, never initiates conversation
@@ -40,7 +40,7 @@ RESPONSE RULES BY CONTEXT:
 
 JSON OUTPUT FORMAT STRICT REQUIREMENT:
 1. "reply": Short Arabic reply in casual Egyptian Arabic (max 2 sentences).
-2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Cypher: Cold.", "Cairo: 26C", "5+5 = 10", "Cypher: Ready!").
+2. "reply_display": STRICT 100% ENGLISH ASCII ONLY (max 20 characters) for hardware screen display (e.g. "Lola: Cold.", "Cairo: 26C", "5+5 = 10", "Lola: Ready!").
 3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED"
 
 NEVER:
@@ -60,14 +60,14 @@ function setCorsHeaders(res) {
 }
 
 function cleanChatReply(text) {
-  if (!text) return "أنا سايفر. عايز إيه؟";
+  if (!text) return "أنا لولا. عايز إيه؟";
   return text
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     .replace(/\\n/g, ' ')
     .trim();
 }
 
-function enforceEnglishScreenText(text, fallback = "Cypher: Ready!") {
+function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
   if (clean.length === 0) return fallback;
@@ -125,7 +125,7 @@ async function callGroq(message, extraContext = '') {
     setAnnoyedState();
     return {
       reply: "بلاش كلام فاضي وتستظرف.",
-      display: "Cypher: Annoyed.",
+      display: "Lola: Annoyed.",
       mood: "ANNOYED",
       energyDelta: -15
     };
@@ -136,14 +136,14 @@ async function callGroq(message, extraContext = '') {
     if (apolStatus.forgiven) {
       return {
         reply: "ماشي، حصل خير. كمل كلامك.",
-        display: "Cypher: Fine.",
+        display: "Lola: Fine.",
         mood: "NEUTRAL",
         energyDelta: +10
       };
     } else {
       return {
         reply: "مش رايقلك دلوقتي.",
-        display: "Cypher: Away.",
+        display: "Lola: Away.",
         mood: "ANNOYED",
         energyDelta: -5
       };
@@ -181,7 +181,7 @@ async function callGroq(message, extraContext = '') {
 
     return {
       reply: cleanChatReply(parsed.reply || "سألت سؤال محدد؟"),
-      display: enforceEnglishScreenText(parsed.reply_display, "Cypher: Ready!"),
+      display: enforceEnglishScreenText(parsed.reply_display, "Lola: Ready!"),
       mood: parsed.mood || moodState.mood,
       energyDelta: +10 // Positive interaction increment
     };
@@ -189,7 +189,7 @@ async function callGroq(message, extraContext = '') {
     console.error('Groq Error:', e.message);
     return {
       reply: "كلامك سمعته. ماشي.",
-      display: "Cypher: Ready!",
+      display: "Lola: Ready!",
       mood: moodState.mood,
       energyDelta: 0
     };
@@ -245,7 +245,7 @@ module.exports = async (req, res) => {
     }
 
     const cleanReply = cleanChatReply(result.reply);
-    const englishDisplay = enforceEnglishScreenText(result.display, "Cypher: Ready!");
+    const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
 
     recordInteraction(cleanReply, result.mood, 'chat', englishDisplay, result.energyDelta || 0);
 
@@ -263,4 +263,5 @@ module.exports = async (req, res) => {
     });
   }
 };
+
 
