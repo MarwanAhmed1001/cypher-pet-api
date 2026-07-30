@@ -838,13 +838,10 @@
 
 
     function toggleAudioOutput() {
-      isAudioOutputEnabled = !isAudioOutputEnabled;
-      ttsToggleBtn.textContent = isAudioOutputEnabled ? '🔊' : '🔇';
-      ttsToggleBtn.classList.toggle('active', isAudioOutputEnabled);
-      if (!isAudioOutputEnabled && ('speechSynthesis' in window)) {
-        window.speechSynthesis.cancel();
-      }
+      // Disabled - no TTS button exists
+      return;
     }
+
 
     // Speech Recognition (Speech to Text)
     function initSpeechRecognition() {

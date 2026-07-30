@@ -624,7 +624,6 @@
       </div>
 
       <div class="header-actions">
-        <button class="icon-btn" id="ttsToggleBtn" title="تشغيل/كتم الصوت التلقائي" onclick="toggleAudioOutput()">🔊</button>
         <button class="icon-btn" title="الكاميرا والتعرف على الوجه" onclick="openCameraModal()">📷</button>
         <button class="icon-btn" title="دليل الاستخدام" onclick="openGuideModal()">ℹ️</button>
         
@@ -641,10 +640,10 @@
       <div class="message-row cypher">
         <div class="msg-avatar">😐</div>
         <div class="bubble" style="border-left: 3px solid #F1EDE4">
-          <button class="speak-btn" onclick="speakText('أنا لولا. عايز إيه على الصبح؟')">🔊</button>
           أنا لولا. عايز إيه على الصبح؟
         </div>
       </div>
+
 
       <!-- Typing Indicator -->
       <div class="typing-row" id="typingRow">
@@ -797,17 +796,6 @@
     const moodText = document.getElementById('moodText');
     const statusDot = document.getElementById('statusDot');
     const dailyMoodText = document.getElementById('dailyMoodText');
-
-    function playWebBuzzerAlarm() {
-      // Browser audio disabled per user request
-      return;
-    }
-
-    function speakText(text) {
-      // Browser Web Speech TTS disabled per user request
-      return;
-    }
-
     // Speech Synthesis (Text to Speech for Egyptian Arabic - Soft Female Voice)
     let availableVoices = [];
     function loadVoices() {
@@ -836,30 +824,24 @@
       return voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
     }
 
-    function speakText(text) {
-      if (!isAudioOutputEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel(); // Instant response - stop previous speech
-
-      const cleanText = text.replace(/[\u1F600-\u1F64F]/g, '').replace(/[*_#~]/g, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'ar-EG';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.25; // Soft gentle female pitch tone
-
-      const femaleVoice = getFemaleArabicVoice();
-      if (femaleVoice) utterance.voice = femaleVoice;
-
-      window.speechSynthesis.speak(utterance);
+    function playWebBuzzerAlarm() {
+      // Browser audio disabled per user request
+      return;
     }
+
+    function speakText(text) {
+      // Browser Web Speech TTS disabled per user request
+      return;
+    }
+
+
+
 
     function toggleAudioOutput() {
-      isAudioOutputEnabled = !isAudioOutputEnabled;
-      ttsToggleBtn.textContent = isAudioOutputEnabled ? '🔊' : '🔇';
-      ttsToggleBtn.classList.toggle('active', isAudioOutputEnabled);
-      if (!isAudioOutputEnabled && ('speechSynthesis' in window)) {
-        window.speechSynthesis.cancel();
-      }
+      // Disabled - no TTS button exists
+      return;
     }
+
 
     // Speech Recognition (Speech to Text)
     function initSpeechRecognition() {
@@ -959,7 +941,7 @@
       const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
       closeCameraModal();
 
-      appendMessage('user', '📸 [جاري تحليل الوجه بموديل Ayane...]', imageDataUrl);
+      appendMessage('user', '📸 [جاري فحص الوجه بموديل الذكاء الاصطناعي...]', imageDataUrl);
       typingRow.classList.add('active');
       scrollToBottom();
 
@@ -972,9 +954,13 @@
         if (localRes.ok) {
           const result = await localRes.json();
           typingRow.classList.remove('active');
-          appendMessage('cypher', result.reply, null, result.mood, 'chat');
-          updateTopBarUI(result.mood, result.mood);
-          speakText(result.reply);
+          if (result.status === 'no_face') {
+            sendMessageWithContext("📸 [لم يتم اكتشاف أي وجه في الصورة ⚠️]. ردي ببرود أن الصورة مش باين فيها وش أصلًا!");
+          } else if (result.is_ayane) {
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه أيويتي (آية) ✨]. رحبي بـ أيويتي بدلع كـ آية وجملة مبتكرة!");
+          } else {
+            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه شخص غريب ⚠️]. قولي مين الغريب ده وسألي بتتفرج عليا ليه؟");
+          }
           return;
         }
       } catch (err) {
@@ -983,6 +969,7 @@
 
       sendMessageWithContext("لقد التقطت صورة لوجهي لكاميرتك الآن، شايفاها؟");
     }
+
 
 
     // Guide Modal Functions
@@ -1025,16 +1012,16 @@
       const mood = MOOD_DATA[moodKey] || MOOD_DATA.NEUTRAL;
 
       let imgHtml = imageSrc ? `<img src="${imageSrc}" class="bubble-image" alt="Captured Photo" />` : '';
-      let speakBtnHtml = (sender === 'cypher') ? `<button class="speak-btn" onclick="speakText('${text.replace(/'/g, "\\'")}')">🔊</button>` : '';
 
       if (sender === 'cypher') {
         row.innerHTML = `
           <div class="msg-avatar">${mood.emoji}</div>
           <div class="bubble" style="border-left: 3px solid ${mood.color}">
-            ${imgHtml}${speakBtnHtml}${text}
+            ${imgHtml}${text}
           </div>
         `;
       } else {
+
         row.innerHTML = `
           <div class="bubble">${imgHtml}${text}</div>
         `;
@@ -1091,9 +1078,14 @@
           updateTopBarUI(data.mood, data.daily_mood);
           speakText(data.reply);
 
+          if (text.toLowerCase().includes('صوتي') || text.toLowerCase().includes('باظر') || text.toLowerCase().includes('انذار')) {
+            playWebBuzzerAlarm();
+          }
+
           chatHistory.push({ role: 'assistant', content: data.reply });
           if (chatHistory.length > 10) chatHistory.shift();
         } else {
+
           const fallback = 'مش فاضية للكلام ده دلوقتي.';
           appendMessage('cypher', fallback, null, 'ANNOYED', 'chat');
           speakText(fallback);
