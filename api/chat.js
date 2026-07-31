@@ -362,7 +362,7 @@ async function callGroq(message, history = [], extraContext = '') {
     content: `${promptContext}\nUser Message: "${message}"\n\nتنبيه صارم: اكتب الإجابة بلغة عامية مصرية سليمة الإملاء 100% بدون أي حروف مقطعة أو أخطاء غريبة.\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  const modelsToTry = ['llama-3.3-70b-versatile'];
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'mixtral-8x7b-32768'];
   
   for (const modelName of modelsToTry) {
     try {
@@ -370,13 +370,13 @@ async function callGroq(message, history = [], extraContext = '') {
         model: modelName,
         messages: groqMessages,
         temperature: 0.65,
-        max_tokens: 200
+        max_tokens: 150
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 9000
+        timeout: 4000
       });
 
 
