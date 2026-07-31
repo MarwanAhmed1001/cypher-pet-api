@@ -87,6 +87,37 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
   }
 
   const text = (message || '').trim();
+  const lower = text.toLowerCase();
+
+  // If user talks about betrayal / cheating / bad behavior ("خاني", "بيغشني", "غدر")
+  if (text.includes('خاني') || text.includes('بيغشني') || text.includes('غدر') || text.includes('خيانه') || text.includes('خيانة')) {
+    return {
+      reply: "استني استني! بيغشك وخانك مع صاحبتك؟! ده إيه الندالة والشر ده! أنا وباسكال جاهزين بالمقلاة (Frying Pan) نجيله فوراً! احكيلي يا أيويتي مين ده وإيه اللي حصل بالضبط! 🍳💥",
+      display: "Lola: Shocked!",
+      mood: "NEUTRAL",
+      energyDelta: +5
+    };
+  }
+
+  // If user asks about story or who she is ("قصتك", "أنت مين", "مين أنت", "احكيلي")
+  if (text.includes('قصتك') || text.includes('مين أنت') || text.includes('مين انت') || text.includes('احكيلي انت') || text.includes('احكيلي أنت')) {
+    return {
+      reply: "أنا لولا! عاشت 18 سنة في برج مخفي وسط الغابة، بتلون الحيطان وبترسم وبتحلم تشوف الفوانيس المضيئة في السماء! لحد ما خرجت واكتشفت العالم.. حابة أحكيلك عن إيه في قصتي يا أيويتي؟ 🎨👑",
+      display: "Lola: Storytime",
+      mood: "NEUTRAL",
+      energyDelta: +5
+    };
+  }
+
+  // If user mentions job or work ("جرافيك ديزاينر", "شغل", "ديزاينر")
+  if (text.includes('جرافيك') || text.includes('ديزاينر') || text.includes('شغل') || text.includes('وظيفة')) {
+    return {
+      reply: "واو! جرافيك ديزاينر؟! يعني بتعملي فن ورسم وألوان زي اللي كنت بشخبط بيها على حيطان البرج طول اليوم! احكيلي بتصممي إيه يا لولتي بحماس؟ 🎨✨",
+      display: "Lola: Amazed!",
+      mood: "HAPPY",
+      energyDelta: +10
+    };
+  }
 
   // Dynamic name extraction (e.g. "أحمد", "مروان", "سارة")
   const nameMatch = text.match(/(?:اسمه|اسمها|حد اسمه|شخص اسمه)\s+([\u0600-\u06FF]+)/);
@@ -95,10 +126,10 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
     targetName = nameMatch[1];
   }
 
-  if (targetName || text.includes('بكره') || text.includes('يكره')) {
-    const person = targetName || 'الشخص ده';
+  if (targetName || text.includes('مروان') || text.includes('بكره')) {
+    const person = targetName || (text.includes('مروان') ? 'مروان' : 'الشخص ده');
     return {
-      reply: `استني استني.. مين ${person} ده وعمل إيه ضايقك يا أيويتي؟ احكيلي إيه اللي حصل بالظبط! 🎨🌸`,
+      reply: `استني استني.. مين ${person} ده وعمل إيه ضايقك يا أيويتي؟ احكيلي إيه اللي حصل بالظبط أنا سامعاكي كلياً! 🎨🌸`,
       display: "Lola: Listening",
       mood: "NEUTRAL",
       energyDelta: +5
@@ -107,30 +138,29 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
 
   if (text.includes('اضايقي') || text.includes('زعلان') || text.includes('مضايق')) {
     return {
-      reply: "أنا مش حابة أشوفك مضايقة أبداً يا أيويتي! احكيلي إيه اللي نرفزك ومضايقك النهاردة؟ 💖✨",
+      reply: "أنا مش حابة أشوفك مضايقة أبداً يا أيويتي! احكيلي إيه اللي نرفزك ومضايقك النهاردة؟ أنا جنبك دايماً 💖✨",
       display: "Lola: Caring",
       mood: "NEUTRAL",
       energyDelta: +5
     };
   }
 
-  if (text.includes('يعني') || text.includes('ردي') || text.includes('رد')) {
+  if (text.length <= 4) {
     return {
-      reply: "أنا مركزة معاكي والله يا لولتي! كنت سرحانة بفتكر البرج وباسكال.. كملي إيه اللي نرفزك؟ 🎨🌸",
+      reply: "أنا مركزة معاكي يا لولتي والله! كملي كلامك وفهميني أكتر أنا سامعاكي بحب 💖",
       display: "Lola: Listening",
       mood: "NEUTRAL",
       energyDelta: +5
     };
   }
 
-  const cleanSnippet = text.length > 18 ? text.substring(0, 18) + "..." : text;
-  const RapunzelResponses = [
-    `سرحت ثانية وأنا برسم على الحيطة.. بتقولي إيه يا أيويتي عن "${cleanSnippet}"؟ احكيلي بالتفصيل! 🎨✨`,
-    `كنت بظبط الشوكولاتة مع Pascal.. كملي كلامك يا لولتي عن "${cleanSnippet}" أنا سامعاكي بحب 💖`,
-    `تفتكري لو جربنا نشخبط أو نكتشف حاجة جديدة عن "${cleanSnippet}"؟ كملي احكيلي إيه اللي حصل! 🌸👑`
+  const RapunzelNaturalResponses = [
+    "كنت سرحانة ثانية بفتكر لما طيرت الفوانيس لأول مرة.. كملي حكايتك يا أيويتي أنا مركزة معاكي جداً! 🌸✨",
+    "باسكال كان عمال يستخبى مني وأنا بظبط الشوكولاتة.. احكيلي يا لولتي كملي باقي الموضوع 💖",
+    "تفتكري لو جربنا نرسم الفكرة دي على الحيطة سوا؟ كملي كلامك أنا متحمصة أسمع الباقي! 🎨👑"
   ];
 
-  const choice = RapunzelResponses[Math.floor(Math.random() * RapunzelResponses.length)];
+  const choice = RapunzelNaturalResponses[Math.floor(Math.random() * RapunzelNaturalResponses.length)];
   return {
     reply: choice,
     display: "Lola: Ready!",
@@ -232,7 +262,51 @@ async function fetchCairoWeather() {
   };
 }
 
+async function callGemini(message, history = [], extraContext = '') {
+  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!geminiApiKey) return null;
+
+  const currentlyAnnoyed = isAnnoyedActive();
+  const moodState = getMoodState();
+
+  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}. User Name: Ayane (أيويتي). Your Name: Lola (لولا). Persona: Rapunzel.`;
+  if (extraContext) promptContext += ` Note: ${extraContext}`;
+
+  const contents = [
+    {
+      role: 'user',
+      parts: [{ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` }]
+    }
+  ];
+
+  try {
+    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      contents: contents,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 200,
+        responseMimeType: "application/json"
+      }
+    }, { timeout: 4500 });
+
+    const text = res.data.candidates[0].content.parts[0].text;
+    const parsed = JSON.parse(text);
+    return {
+      reply: cleanChatReply(parsed.reply),
+      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+      energyDelta: currentlyAnnoyed ? -5 : +10
+    };
+  } catch (err) {
+    console.error('Gemini API Notice:', err.message);
+    return null;
+  }
+}
+
 async function callGroq(message, history = [], extraContext = '') {
+  const geminiRes = await callGemini(message, history, extraContext);
+  if (geminiRes) return geminiRes;
+
   const apiKey = process.env.GROQ_API_KEY;
   
   // Instantly clear anger if user says friendly/apologetic phrase!
