@@ -130,6 +130,8 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
     mood: "NEUTRAL",
     energyDelta: +5
   };
+}
+
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
