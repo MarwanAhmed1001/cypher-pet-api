@@ -317,7 +317,7 @@ async function callGroq(message, history = [], extraContext = '') {
   const k1 = 'gs' + 'k_axELeqVF2fXNQk2c';
   const k2 = 'HuPiWGdyb3FYiSU54SG2';
   const k3 = 'nvofegEyfJ9Yqw09';
-  const apiKey = process.env.GROQ_API_KEY || (k1 + k2 + k3);
+  const apiKey = (k1 + k2 + k3) || process.env.GROQ_API_KEY;
   
   // Instantly clear anger if user says friendly/apologetic phrase!
   registerApologyAttempt(message);
