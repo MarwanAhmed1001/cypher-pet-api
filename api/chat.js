@@ -290,14 +290,14 @@ async function callGemini(message, history = [], extraContext = '') {
   ];
 
   try {
-    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
+    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`, {
       contents: contents,
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 150,
+        maxOutputTokens: 1000,
         responseMimeType: "application/json"
       }
-    }, { timeout: 4500 });
+    }, { timeout: 6000 });
 
     const text = res.data.candidates[0].content.parts[0].text;
     const parsed = JSON.parse(text);
