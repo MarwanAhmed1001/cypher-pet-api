@@ -276,7 +276,7 @@ async function fetchCairoWeather() {
   };
 }
 
-async function callGemini(message, history = [], extraContext = '') {
+async function callGemini(message, history = [], extraContext = '', image = null) {
   const gk1 = 'AQ.Ab8RN6J_ejt9lUEI';
   const gk2 = 'az6rDFTwqN8df_M4x2';
   const gk3 = 'wRchZcW9HXPq5Ezw';
@@ -286,13 +286,22 @@ async function callGemini(message, history = [], extraContext = '') {
   const currentlyAnnoyed = isAnnoyedActive();
   const moodState = getMoodState();
 
-  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}. User Name: Ayane (أيويتي). Your Name: Lola (لولا). Persona: Rapunzel.`;
+  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}. Your Name: Lola (لولا). Persona: Rapunzel.`;
   if (extraContext) promptContext += ` Note: ${extraContext}`;
+
+  const parts = [];
+  if (image && typeof image === 'string' && image.includes('base64,')) {
+    const b64Data = image.split('base64,')[1];
+    parts.push({ inline_data: { mime_type: 'image/jpeg', data: b64Data } });
+    promptContext += ` Note: Analyze this camera photo carefully. If the photo contains a MALE / MAN / GUY / BOY, DO NOT call him Ayane! React in character as Lola seeing a guy or stranger (e.g. 'مين الشاب ده وبتعمل إيه هنا؟'). If the photo contains a FEMALE / GIRL, recognize her as your best friend Ayane (أيويتي) and flirt with her beauty!`;
+  }
+
+  parts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` });
 
   const contents = [
     {
       role: 'user',
-      parts: [{ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` }]
+      parts: parts
     }
   ];
 
@@ -532,7 +541,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, history } = req.body || {};
+  const { message, history, image } = req.body || {};
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Message is required' });
   }
@@ -614,7 +623,14 @@ module.exports = async (req, res) => {
         energyDelta: +5
       };
     } else {
-      result = await callGroq(message, history);
+      if (image) {
+        result = await callGemini(message, history, '', image);
+        if (!result) {
+          result = await callGroq(message, history);
+        }
+      } else {
+        result = await callGroq(message, history);
+      }
     }
 
     const cleanReply = cleanChatReply(result.reply);

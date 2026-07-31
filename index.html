@@ -928,33 +928,28 @@
       const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
       closeCameraModal();
 
-      appendMessage('user', '📸 [جاري فحص الوجه بموديل الذكاء الاصطناعي...]', imageDataUrl);
+      appendMessage('user', '📸 [صورة من الكاميرا المباشرة]', imageDataUrl);
       typingRow.classList.add('active');
       scrollToBottom();
 
       try {
-        const localRes = await fetch('http://localhost:5000/recognize_base64', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: imageDataUrl })
+          body: JSON.stringify({ message: "شوفي الصورة دي من الكاميرا يا لولا، شايفاها ومين اللي في الصورة؟", image: imageDataUrl })
         });
-        if (localRes.ok) {
-          const result = await localRes.json();
-          typingRow.classList.remove('active');
-          if (result.status === 'no_face') {
-            sendMessageWithContext("📸 [لم يتم اكتشاف أي وجه في الصورة ⚠️]. ردي ببرود أن الصورة مش باين فيها وش أصلًا!");
-          } else if (result.is_ayane) {
-            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه أيويتي (آية) ✨]. رحبي بـ أيويتي بدلع كـ آية وجملة مبتكرة!");
-          } else {
-            sendMessageWithContext("📸 [النتيجة: تم التعرف على وجه شخص غريب ⚠️]. قولي مين الغريب ده وسألي بتتفرج عليا ليه؟");
-          }
-          return;
+        const data = await res.json();
+        typingRow.classList.remove('active');
+        if (data.reply) {
+          appendMessage('cypher', data.reply);
+          if (data.display) updateDisplayPill(data.display);
+          if (data.mood) updateMoodState(data.mood);
+          speakText(data.reply);
         }
       } catch (err) {
-        console.log('Local face service offline, falling back to API context:', err);
+        typingRow.classList.remove('active');
+        appendMessage('cypher', "يا خبر! تعذر فحص الصورة دلوقتي، جربي تاني يا قمر!");
       }
-
-      sendMessageWithContext("لقد التقطت صورة لوجهي لكاميرتك الآن، شايفاها؟");
     }
 
 
