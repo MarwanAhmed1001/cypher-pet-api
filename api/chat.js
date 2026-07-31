@@ -348,7 +348,7 @@ async function callGroq(message, history = [], extraContext = '') {
   ];
 
   if (Array.isArray(history) && history.length > 0) {
-    const recentHistory = history.slice(-8);
+    const recentHistory = history.slice(-2);
     recentHistory.forEach(item => {
       if (item.role && item.content) {
         const role = (item.role === 'cypher' || item.role === 'assistant') ? 'assistant' : 'user';
@@ -359,10 +359,10 @@ async function callGroq(message, history = [], extraContext = '') {
 
   groqMessages.push({
     role: 'user',
-    content: `${promptContext}\nUser Message: "${message}"\n\nتنبيه صارم: اكتب الإجابة بلغة عامية مصرية سليمة الإملاء 100% بدون أي حروف مقطعة أو أخطاء غريبة.\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
+    content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'mixtral-8x7b-32768'];
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
   
   for (const modelName of modelsToTry) {
     try {
@@ -377,7 +377,7 @@ async function callGroq(message, history = [], extraContext = '') {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 8000
+        timeout: 5000
       });
 
 
@@ -407,14 +407,7 @@ async function callGroq(message, history = [], extraContext = '') {
         energyDelta: currentlyAnnoyed ? -5 : +10
       };
     } catch (e) {
-      const errMsg = e.response?.data?.error?.message || e.message || String(e);
-      console.error(`Groq Model (${modelName}) Error:`, errMsg);
-      return {
-        reply: `DEBUG_ERROR: ${errMsg}`,
-        display: "Lola: Error",
-        mood: "NEUTRAL",
-        energyDelta: 0
-      };
+      console.error(`Groq Model (${modelName}) Error:`, e.response?.data?.error?.message || e.message);
     }
   }
 
