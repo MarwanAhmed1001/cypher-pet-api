@@ -4,6 +4,7 @@ const chatHandler = require('./api/chat');
 const moodHandler = require('./api/mood');
 const notifyHandler = require('./api/notify');
 const spotifyHandler = require('./api/spotify');
+const resetHandler = require('./api/reset');
 
 const app = express();
 const PORT = 3000;
@@ -16,6 +17,7 @@ app.all('/api/mood', (req, res) => moodHandler(req, res));
 app.all('/api/notify', (req, res) => notifyHandler(req, res));
 app.all('/api/spotify', (req, res) => spotifyHandler(req, res));
 app.all('/api/spotify/callback', (req, res) => spotifyHandler(req, res));
+app.all('/api/reset', (req, res) => resetHandler(req, res));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
