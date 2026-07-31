@@ -921,11 +921,11 @@
       const canvas = document.getElementById('snapshotCanvas');
       const ctx = canvas.getContext('2d');
 
-      canvas.width = video.videoWidth || 320;
-      canvas.height = video.videoHeight || 240;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.width = 320;
+      canvas.height = 240;
+      ctx.drawImage(video, 0, 0, 320, 240);
 
-      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.5);
       closeCameraModal();
 
       appendMessage('user', '📸 [صورة من الكاميرا المباشرة]', imageDataUrl);
