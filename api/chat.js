@@ -313,6 +313,45 @@ async function callGemini(message, history = [], extraContext = '') {
   }
 }
 
+async function callOpenRouter(message, history = [], extraContext = '') {
+  const orKey1 = 'sk-or-v1-78d90c44caa01db7c52096ab4c8f1bd1';
+  const orKey2 = '000b21340e269f9f93afca58c431931e';
+  const openRouterKey = process.env.OPENROUTER_API_KEY || (orKey1 + orKey2);
+  if (!openRouterKey) return null;
+
+  const currentlyAnnoyed = isAnnoyedActive();
+  const moodState = getMoodState();
+
+  try {
+    const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'google/gemma-4-31b-it:free',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: `User Message: "${message}"\n\nأرجع JSON فقط:\n{"reply":"...","reply_display":"...","mood":"${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` }
+      ],
+      max_tokens: 150
+    }, {
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 4500
+    });
+
+    const text = res.data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+    const parsed = JSON.parse(text);
+    return {
+      reply: cleanChatReply(parsed.reply),
+      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+      energyDelta: currentlyAnnoyed ? -5 : +10
+    };
+  } catch (err) {
+    console.error('OpenRouter API Notice:', err.message);
+    return null;
+  }
+}
+
 async function callGroq(message, history = [], extraContext = '') {
   const k1 = 'gs' + 'k_axELeqVF2fXNQk2c';
   const k2 = 'HuPiWGdyb3FYiSU54SG2';
@@ -413,6 +452,9 @@ async function callGroq(message, history = [], extraContext = '') {
 
   const geminiRes = await callGemini(message, history, extraContext);
   if (geminiRes) return geminiRes;
+
+  const openRouterRes = await callOpenRouter(message, history, extraContext);
+  if (openRouterRes) return openRouterRes;
 
   return generateSmartRapunzelFallback(message, currentlyAnnoyed);
 }
