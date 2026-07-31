@@ -89,10 +89,10 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
   const text = (message || '').trim();
   const lower = text.toLowerCase();
 
-  // If user talks about betrayal / cheating / bad behavior ("خاني", "بيغشني", "غدر")
-  if (text.includes('خاني') || text.includes('بيغشني') || text.includes('غدر') || text.includes('خيانه') || text.includes('خيانة')) {
+  // If user talks about betrayal / cheating / bad behavior ("خاني", "خانييي", "بيغشني", "غدر")
+  if (text.includes('خاني') || text.includes('خانييي') || text.includes('بيغشني') || text.includes('غدر') || text.includes('خيانه') || text.includes('خيانة')) {
     return {
-      reply: "استني استني! بيغشك وخانك مع صاحبتك؟! ده إيه الندالة والشر ده! أنا وباسكال جاهزين بالمقلاة (Frying Pan) نجيله فوراً! احكيلي يا أيويتي مين ده وإيه اللي حصل بالضبط! 🍳💥",
+      reply: "استني استني! خانك مع صاحبتك؟! ده إيه الندالة والشر ده! أنا وباسكال مجهزين المقلاة (Frying Pan) عشان نجيله فوراً! احكيلي يا أيويتي مين ده وإيه اللي حصل بالضبط! 🍳💥",
       display: "Lola: Shocked!",
       mood: "NEUTRAL",
       energyDelta: +5
@@ -352,21 +352,21 @@ async function callGroq(message, history = [], extraContext = '') {
     content: `${promptContext}\nUser Message: "${message}"\n\nتنبيه صارم: اكتب الإجابة بلغة عامية مصرية سليمة الإملاء 100% بدون أي حروف مقطعة أو أخطاء غريبة.\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+  const modelsToTry = ['llama-3.3-70b-versatile'];
   
   for (const modelName of modelsToTry) {
     try {
       const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
         model: modelName,
         messages: groqMessages,
-        temperature: 0.55,
-        max_tokens: 150
+        temperature: 0.65,
+        max_tokens: 200
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 5000
+        timeout: 9000
       });
 
 
