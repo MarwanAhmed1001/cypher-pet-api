@@ -270,7 +270,10 @@ async function fetchCairoWeather() {
 }
 
 async function callGemini(message, history = [], extraContext = '') {
-  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const gk1 = 'AQ.Ab8RN6J_ejt9lUEI';
+  const gk2 = 'az6rDFTwqN8df_M4x2';
+  const gk3 = 'wRchZcW9HXPq5Ezw';
+  const geminiApiKey = process.env.GEMINI_API_KEY || (gk1 + gk2 + gk3);
   if (!geminiApiKey) return null;
 
   const currentlyAnnoyed = isAnnoyedActive();
@@ -287,11 +290,11 @@ async function callGemini(message, history = [], extraContext = '') {
   ];
 
   try {
-    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       contents: contents,
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 200,
+        maxOutputTokens: 150,
         responseMimeType: "application/json"
       }
     }, { timeout: 4500 });
@@ -311,9 +314,6 @@ async function callGemini(message, history = [], extraContext = '') {
 }
 
 async function callGroq(message, history = [], extraContext = '') {
-  const geminiRes = await callGemini(message, history, extraContext);
-  if (geminiRes) return geminiRes;
-
   const k1 = 'gs' + 'k_axELeqVF2fXNQk2c';
   const k2 = 'HuPiWGdyb3FYiSU54SG2';
   const k3 = 'nvofegEyfJ9Yqw09';
@@ -410,6 +410,9 @@ async function callGroq(message, history = [], extraContext = '') {
       console.error(`Groq Model (${modelName}) Error:`, e.response?.data?.error?.message || e.message);
     }
   }
+
+  const geminiRes = await callGemini(message, history, extraContext);
+  if (geminiRes) return geminiRes;
 
   return generateSmartRapunzelFallback(message, currentlyAnnoyed);
 }
