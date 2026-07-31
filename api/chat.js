@@ -407,7 +407,14 @@ async function callGroq(message, history = [], extraContext = '') {
         energyDelta: currentlyAnnoyed ? -5 : +10
       };
     } catch (e) {
-      console.error(`Groq Model (${modelName}) Error:`, e.response?.data || e.message);
+      const errMsg = e.response?.data?.error?.message || e.message || String(e);
+      console.error(`Groq Model (${modelName}) Error:`, errMsg);
+      return {
+        reply: `DEBUG_ERROR: ${errMsg}`,
+        display: "Lola: Error",
+        mood: "NEUTRAL",
+        energyDelta: 0
+      };
     }
   }
 
