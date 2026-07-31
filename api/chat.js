@@ -370,7 +370,8 @@ async function callGroq(message, history = [], extraContext = '') {
         model: modelName,
         messages: groqMessages,
         temperature: 0.65,
-        max_tokens: 150
+        max_tokens: 150,
+        response_format: { type: "json_object" }
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
