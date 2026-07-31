@@ -88,10 +88,14 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
 
   const text = (message || '').trim();
 
-  // If user mentions a specific person/name like "مروان" or hate
-  if (text.includes('مروان') || text.includes('بكره') || text.includes('يكره')) {
+  // Dynamic name extraction (e.g. "أحمد", "مروان", "سارة")
+  const nameMatch = text.match(/(?:اسمه|اسمها|حد)\s+([\u0600-\u06FF]+)/);
+  const targetName = nameMatch ? nameMatch[1] : null;
+
+  if (targetName || text.includes('بكره') || text.includes('يكره')) {
+    const person = targetName || 'الشخص ده';
     return {
-      reply: "استني استني.. مين مروان ده وعمل إيه ضايقك يا أيويتي؟ احكيلي إيه اللي حصل بالظبط! 🎨🌸",
+      reply: `استني استني.. مين ${person} ده وعمل إيه ضايقك يا أيويتي؟ احكيلي إيه اللي حصل بالظبط! 🎨🌸`,
       display: "Lola: Listening",
       mood: "NEUTRAL",
       energyDelta: +5
@@ -167,12 +171,13 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
 }
 
 function isInsultOrAnnoying(text) {
-  const rudeKeywords = [
+  const lower = (text || '').toLowerCase();
+  const directInsults = [
     'غبية', 'غبي', 'غباء', 'سخيفة', 'سخيف', 'حمار', 'حمارة', 
     'يا زفت', 'اتخرسي', 'كلب', 'قليلة الادب', 'حقيرة', 'عبيطة', 
-    'عبيط', 'زهقت منك', 'مبتفهميش', 'اخرسي', 'تفه', 'انقلعي', 'بكرهك', 'غوري'
+    'عبيط', 'زهقت منك', 'مبتفهميش', 'اخرسي', 'تفه', 'انقلعي', 'غوري'
   ];
-  return rudeKeywords.some(kw => text.toLowerCase().includes(kw));
+  return directInsults.some(kw => lower.includes(kw));
 }
 
 function detectHardwareCommand(text) {
