@@ -231,6 +231,10 @@ async function fetchCairoWeather() {
 
 async function callGroq(message, history = [], extraContext = '') {
   const apiKey = process.env.GROQ_API_KEY;
+  
+  // Instantly clear anger if user says friendly/apologetic phrase!
+  registerApologyAttempt(message);
+
   const isRude = isInsultOrAnnoying(message);
   const isStranger = message.includes('شخص غريب') || message.includes('وجه شخص غريب') || message.includes('غريب');
   if (isRude || isStranger) {
