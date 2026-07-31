@@ -301,12 +301,16 @@ async function callGemini(message, history = [], extraContext = '') {
 
     const text = res.data.candidates[0].content.parts[0].text;
     const parsed = JSON.parse(text);
-    return {
-      reply: cleanChatReply(parsed.reply),
-      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-      energyDelta: currentlyAnnoyed ? -5 : +10
-    };
+    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+    if (replyText) {
+      return {
+        reply: cleanChatReply(replyText),
+        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+        energyDelta: currentlyAnnoyed ? -5 : +10
+      };
+    }
+    return null;
   } catch (err) {
     console.error('Gemini API Notice:', err.message);
     return null;
@@ -340,12 +344,16 @@ async function callOpenRouter(message, history = [], extraContext = '') {
 
     const text = res.data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
     const parsed = JSON.parse(text);
-    return {
-      reply: cleanChatReply(parsed.reply),
-      display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-      mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-      energyDelta: currentlyAnnoyed ? -5 : +10
-    };
+    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+    if (replyText) {
+      return {
+        reply: cleanChatReply(replyText),
+        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+        energyDelta: currentlyAnnoyed ? -5 : +10
+      };
+    }
+    return null;
   } catch (err) {
     console.error('OpenRouter API Notice:', err.message);
     return null;
@@ -439,12 +447,15 @@ async function callGroq(message, history = [], extraContext = '') {
         }
       }
 
-      return {
-        reply: cleanChatReply(parsed.reply || "أنا لولا! عاملة إيه يا أيويتي؟"),
-        display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-        energyDelta: currentlyAnnoyed ? -5 : +10
-      };
+      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+      if (replyText && replyText.trim().length > 0) {
+        return {
+          reply: cleanChatReply(replyText),
+          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+          energyDelta: currentlyAnnoyed ? -5 : +10
+        };
+      }
     } catch (e) {
       console.error(`Groq Model (${modelName}) Error:`, e.response?.data?.error?.message || e.message);
     }
