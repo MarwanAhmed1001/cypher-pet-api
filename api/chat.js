@@ -294,9 +294,10 @@ async function callGemini(message, history = [], extraContext = '', image = null
     const b64Data = image.split('base64,')[1];
     parts.push({ inline_data: { mime_type: 'image/jpeg', data: b64Data } });
     promptContext += ` Note: Analyze this camera photo carefully. 
-1. If the photo shows a MALE/MAN/GUY/BOY, DO NOT call him Ayane! React in character as Lola seeing a guy or stranger (e.g. 'مين الشاب ده وبتعمل إيه هنا؟').
-2. If the photo shows a FEMALE/GIRL, recognize her as your best friend Ayane (أيويتي) and flirt with her beauty!
-3. If the photo shows an object, animal, food, or room, describe what you see in character as Lola!`;
+1. If the photo shows a MALE/MAN/GUY/BOY, DO NOT call him Ayane and DO NOT flirt! React in character as Lola seeing a guy or stranger (e.g. 'مين الشاب ده وبتعمل إيه هنا؟').
+2. Flirting, romantic compliments, and calling 'أيويتي' is STRICTLY EXCLUSIVE to Ayane! If the photo shows Ayane (your best friend), flirt with her beauty!
+3. If the photo shows ANOTHER girl or female stranger, DO NOT call her Ayane and DO NOT flirt! React with curiosity: 'مين البنت الغريبة دي ومين إنتي؟ أنا صديقة آية فقط!'.
+4. If the photo shows an object, animal, food, or room, describe what you see in character as Lola!`;
   }
 
   parts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` });
