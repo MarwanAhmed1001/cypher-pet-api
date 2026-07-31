@@ -133,22 +133,20 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
 }
 
 
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-}
-
 function cleanChatReply(text) {
-  if (!text) return "أنا لولا. عايز إيه؟";
-  return text
+  if (!text) return "أنا لولا! عاملة إيه يا أيويتي؟";
+  let clean = text
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     .replace(/\\n/g, ' ')
+    .replace(/ما بتعمليش/g, 'بتعملي')
+    .replace(/ما تعملش/g, 'بتعمل')
+    .replace(/بسألتي/g, 'بسالك')
+    .replace(/بسنا/g, 'بس أنا')
+    .replace(/بيهميها/g, 'بيفرحها')
+    .replace(/بتفسحش/g, 'بتفسح')
     .trim();
+
+  return clean;
 }
 
 function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
@@ -256,25 +254,26 @@ async function callGroq(message, history = [], extraContext = '') {
 
   groqMessages.push({
     role: 'user',
-    content: `${promptContext}\nUser Message: "${message}"\n\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
+    content: `${promptContext}\nUser Message: "${message}"\n\nتنبيه صارم: اكتب الإجابة بلغة عامية مصرية سليمة الإملاء 100% بدون أي حروف مقطعة أو أخطاء غريبة.\nأرجع الإجابة في صيغة JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
   
   for (const modelName of modelsToTry) {
     try {
       const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
         model: modelName,
         messages: groqMessages,
-        temperature: 0.8,
+        temperature: 0.55,
         max_tokens: 150
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 4000
+        timeout: 5000
       });
+
 
       const text = res.data.choices[0].message.content;
       let parsed;
