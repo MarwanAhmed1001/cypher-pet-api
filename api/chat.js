@@ -376,7 +376,7 @@ async function callGroq(message, history = [], extraContext = '') {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 4000
+        timeout: 8000
       });
 
 
