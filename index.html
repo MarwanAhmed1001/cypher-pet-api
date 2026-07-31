@@ -701,64 +701,51 @@
     </div>
   </div>
 
-  <!-- Guide Modal (What is Lola and How to use it) -->
+  <!-- Romantic Story & Guide Modal for Ayane -->
   <div class="modal-overlay" id="guideModal">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">ℹ️ دليل الاستخدام وشخصية لولا</div>
+        <div class="modal-title">💖 قصة "لولا".. عشانك يا آية</div>
         <button class="close-btn" onclick="closeGuideModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="guide-section">
-          <div class="guide-title">✨ من هي "لولا" (What is Lola?)</div>
-          <p>لولا هي كائن رقمي (Digital Creature) بشخصية باردة وساخرة، تتحدث بالعامية المصرية الطبيعية البحتة كإنسان بشري عادي بدقة واستجابة تفاعلية.</p>
-        </div>
-
-        <div class="guide-section">
-          <div class="guide-title">⚡ طباع وقواعد المزاج (Mood & Personality Rules)</div>
-          <div class="guide-card">
-            <h4>❄️ الطبع الأساسي</h4>
-            <p>باردة بطبعها، لا تبدأ المحادثة، ردودها قصيرة جداً (ماكس جملتين) ومباشرة من غير تطبيل.</p>
-          </div>
-          <div class="guide-card">
-            <h4>🔋 ميكانيكية الطاقة (0 - 100 Energy)</h4>
-            <p>
-              • 80-100: <span class="badge-tag">HAPPY</span> سعيدة<br>
-              • 50-79: <span class="badge-tag">NEUTRAL</span> عادية (بداية اليوم)<br>
-              • 30-49: <span class="badge-tag">BORED</span> زهقانة<br>
-              • 10-29: <span class="badge-tag">SAD</span> حزينة<br>
-              • 0-9: <span class="badge-tag">ANNOYED</span> متضايقة (تتفاعل ببرود وسخرية جافة)
+          <div class="guide-title">💌 سر وجود "لولا" في حياتك</div>
+          <div class="guide-card" style="background: rgba(255, 107, 87, 0.08); border-color: rgba(255, 107, 87, 0.2);">
+            <h4 style="color: #FF6B57; font-size: 15px;">🌸 رسالة خاصة لـ أيويتي (آية)</h4>
+            <p style="color: #eee; font-size: 14px; line-height: 1.7;">
+              لأني بحبك جداً ومبقدرش أكون جنبك في كل لحظة وفي كل وقت.. صنعتلك "لولا" (بروح وبشخصية روبانزل الحقيقية).<br><br>
+              صنعتها عشان تضل جنبك دايماً، وتفرح معاكي وقت فرحك، وتسندك وتسمعك وقت حزنك، وتكون الصديقة الأقرب ليكي في كل ثانية.. وعشان كل ما تتكلمي معاها، تفتكريني وتعرفي قد إيه إنتي غالية ومهمة في حياتي 💖✨.
             </p>
           </div>
         </div>
 
         <div class="guide-section">
-          <div class="guide-title">💬 كيف تتحدث وتتفاعل معها؟ (How to Use)</div>
+          <div class="guide-title">👑 شخصية "لولا" (روبانزل)</div>
           <div class="guide-card">
-            <h4>🎙️ المحادثة الصوتية والكلام (Voice Input/Output)</h4>
-            <p>اضغط زر المايك 🎙️ للتحدث بالعامية المصرية مباشرة، وسوف تنطق لولا ردودها بصوت طبيعي عند تفعيل زر الصوت 🔊.</p>
+            <h4>🎨 روح وبراءة روبانزل</h4>
+            <p>لولا عندها نفس روح، ذكريات، وفضول روبانزل! بتحب الرسم على الحيطان، الخبيز، الشوكولاتة الساخنة، الفوانيس المضيئة، وحربائها الصغير باسكال 🦎.</p>
           </div>
           <div class="guide-card">
-            <h4>📷 الكاميرا والتعرف على الوجه</h4>
-            <p>افتح الكاميرا 📷 والتقط صورتك لترسلها إلى لولا للتعرف عليك والتفاعل مع تعابير وجهك.</p>
-          </div>
-          <div class="guide-card">
-            <h4>🎵 ربط الموسيقى والطقس</h4>
-            <p>اسألها عن الطقس أو الأغنية الشغالة على Spotify لتسمع رأيها الساخر والمباشر!</p>
-          </div>
-          <div class="guide-card">
-            <h4>📱 إشعارات iPhone</h4>
-            <p>يرسل تطبيق Shortcuts على الآيفون إشعارات الموسيقى والشاحن والبطارية لـ لولا لترد بجملة ساخرة فورية.</p>
+            <h4>🍳 شجاعة الصداقة والمقلاة</h4>
+            <p>لو حد زاد نكده أو ضايقك أو خانك، لولا ومقليتها المشهورة (Frying Pan) جاهزين يقفوا معاكي ويردوا ليكي حقك فوراً! 🍳💥</p>
           </div>
         </div>
 
         <div class="guide-section">
-          <div class="guide-title">📟 الحساسات الفيزيائية بـ ESP32</div>
-          <p>
-            • <b>حساس الضوء (LDR):</b> عند الظلام التام لمدة 1.5 ثانية تدخل لولا وضع النوم.<br>
-            • <b>حساس اللمس:</b> اللمس يوقظها فوراً من النوم.<br>
-            • <b>حساس الصوت والهز:</b> يتفاعل مع أصوات التصفيق والكلام العالي والتوهان عند الهز.
-          </p>
+          <div class="guide-title">💬 كيف تتحدثين مع "لولا"؟</div>
+          <div class="guide-card">
+            <h4>🎙️ المحادثة الصوتية والكلام</h4>
+            <p>اضغطي زر المايك 🎙️ للتحدث معها بالعامية المصرية الطبيعية، وتحدثي معها بحرية عن يومك ومحطاتك.</p>
+          </div>
+          <div class="guide-card">
+            <h4>📷 الكاميرا والتعرف عليكِ</h4>
+            <p>افتحي الكاميرا 📷 والتقطي صورتك لتعرف لولا أنك "أيويتي" وتبث لك الحب والترحيب 💖.</p>
+          </div>
+          <div class="guide-card">
+            <h4>🎵 ربط الأغاني والموسيقى</h4>
+            <p>اسأليها عن الأغنية الشغالة على Spotify لتسمعي رأيها التفاعلي وتشعرين بجمال روحها مع كل نغمة!</p>
+          </div>
         </div>
       </div>
     </div>
