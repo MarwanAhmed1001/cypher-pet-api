@@ -89,8 +89,11 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
   const text = (message || '').trim();
 
   // Dynamic name extraction (e.g. "أحمد", "مروان", "سارة")
-  const nameMatch = text.match(/(?:اسمه|اسمها|حد)\s+([\u0600-\u06FF]+)/);
-  const targetName = nameMatch ? nameMatch[1] : null;
+  const nameMatch = text.match(/(?:اسمه|اسمها|حد اسمه|شخص اسمه)\s+([\u0600-\u06FF]+)/);
+  let targetName = null;
+  if (nameMatch && nameMatch[1] && !['حد', 'اسمه', 'اسمها', 'شخص'].includes(nameMatch[1])) {
+    targetName = nameMatch[1];
+  }
 
   if (targetName || text.includes('بكره') || text.includes('يكره')) {
     const person = targetName || 'الشخص ده';
