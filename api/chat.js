@@ -380,21 +380,27 @@ async function callGroq(message, history = [], extraContext = '') {
       });
 
 
-      const text = res.data.choices[0].message.content;
+      let text = res.data.choices[0].message.content.trim();
+      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+      
       let parsed;
       try {
         parsed = JSON.parse(text);
       } catch (pe) {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
+          try {
+            parsed = JSON.parse(jsonMatch[0]);
+          } catch (pe2) {
+            parsed = { reply: text, reply_display: "Lola: Ready!", mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood };
+          }
         } else {
           parsed = { reply: text, reply_display: "Lola: Ready!", mood: currentlyAnnoyed ? 'ANNOYED' : moodState.mood };
         }
       }
 
       return {
-        reply: cleanChatReply(parsed.reply || "أنا أذكى منك، اتلم وشوف بتتكلم مع مين!"),
+        reply: cleanChatReply(parsed.reply || "أنا لولا! عاملة إيه يا أيويتي؟"),
         display: enforceEnglishScreenText(parsed.reply_display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
         mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
         energyDelta: currentlyAnnoyed ? -5 : +10
