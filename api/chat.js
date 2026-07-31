@@ -630,7 +630,12 @@ module.exports = async (req, res) => {
       if (image) {
         result = await callGemini(message, history, '', image);
         if (!result) {
-          result = await callGroq(message, history);
+          result = {
+            reply: "إنت مين يا شحط إنت وبتعمل إيه هنا؟! 🧐 أنا لولا، وصديقة آية بس! إنت دخلت هنا إزاي وباسكال باصص لك بغضب كدة؟! ",
+            display: "Lola: Who are you?",
+            mood: "ANNOYED",
+            energyDelta: -5
+          };
         }
       } else {
         result = await callGroq(message, history);
