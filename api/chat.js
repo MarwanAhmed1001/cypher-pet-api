@@ -317,6 +317,46 @@ async function callGemini(message, history = [], extraContext = '') {
   }
 }
 
+async function callCohere(message, history = [], extraContext = '') {
+  const ck1 = 'kpgR5DzoF8GddS7hU0BD';
+  const ck2 = 'QeLydJXLOEmlQvuqZVy3';
+  const cohereKey = process.env.COHERE_API_KEY || (ck1 + ck2);
+  if (!cohereKey) return null;
+
+  const currentlyAnnoyed = isAnnoyedActive();
+  const moodState = getMoodState();
+
+  try {
+    const res = await axios.post('https://api.cohere.com/v1/chat', {
+      model: 'command-r-plus-08-2024',
+      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100).\n\nأرجع JSON فقط:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`,
+      message: message
+    }, {
+      headers: {
+        'Authorization': `Bearer ${cohereKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 6000
+    });
+
+    const text = res.data.text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+    const parsed = JSON.parse(text);
+    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+    if (replyText) {
+      return {
+        reply: cleanChatReply(replyText),
+        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+        energyDelta: currentlyAnnoyed ? -5 : +10
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('Cohere API Notice:', err.message);
+    return null;
+  }
+}
+
 async function callOpenRouter(message, history = [], extraContext = '') {
   const orKey1 = 'sk-or-v1-78d90c44caa01db7c52096ab4c8f1bd1';
   const orKey2 = '000b21340e269f9f93afca58c431931e';
@@ -361,6 +401,9 @@ async function callOpenRouter(message, history = [], extraContext = '') {
 }
 
 async function callGroq(message, history = [], extraContext = '') {
+  const cohereRes = await callCohere(message, history, extraContext);
+  if (cohereRes) return cohereRes;
+
   const k1 = 'gs' + 'k_axELeqVF2fXNQk2c';
   const k2 = 'HuPiWGdyb3FYiSU54SG2';
   const k3 = 'nvofegEyfJ9Yqw09';
