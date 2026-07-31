@@ -1103,15 +1103,26 @@
       sendMessageWithContext();
     }
 
+    // Proactive Idle Interaction Timer (Lola initiates speech on her own!)
+    let idleTimer = null;
+    function resetIdleTimer() {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        sendMessageWithContext("[تنبيه تلقائي: أنتِ لولا/روبانزل. ابدأي كلام وتفاعل من نفسك الآن بأسلوب فضولي ومبتكر مع أيويتي (آية) واطرحي موضوع أو فكرة جديدة بفضول وحب!]");
+      }, 35000);
+    }
+
     // Event Listeners
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', () => { resetIdleTimer(); sendMessage(); });
     chatInput.addEventListener('keydown', (e) => {
+      resetIdleTimer();
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Initialize Polling & Voice
+    // Initialize Polling & Voice & Proactive Timer
     pollMood();
     setInterval(pollMood, 3000);
+    resetIdleTimer();
   </script>
 </body>
 </html>
