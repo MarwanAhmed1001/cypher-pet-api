@@ -638,9 +638,9 @@
     <div class="chat-area" id="chatArea">
       <!-- Default Welcome Message -->
       <div class="message-row cypher">
-        <div class="msg-avatar">😐</div>
-        <div class="bubble" style="border-left: 3px solid #F1EDE4">
-          أنا لولا. عايز إيه على الصبح؟
+        <div class="msg-avatar">😊</div>
+        <div class="bubble" style="border-left: 3px solid #C8FF4D">
+          أهلاً يا أيلولتي! 💖 أنا لولا، مبسوطة جداً إننا مع بعض دلوقتي! عاملة إيه النهاردة؟ تعالي نقعد سوا ونحكي ونتعرف على بعض أكتر! 🌸✨
         </div>
       </div>
 
@@ -1027,7 +1027,7 @@
     }
 
     // Send Message Handler
-    async function sendMessageWithContext(overrideText = null) {
+    async function sendMessageWithContext(overrideText = null, isInternalPrompt = false) {
       const text = overrideText || chatInput.value.trim();
       if (!text) return;
 
@@ -1036,8 +1036,10 @@
       // Append user message
       if (!overrideText) appendMessage('user', text);
 
-      chatHistory.push({ role: 'user', content: text });
-      if (chatHistory.length > 10) chatHistory.shift();
+      if (!isInternalPrompt) {
+        chatHistory.push({ role: 'user', content: text });
+        if (chatHistory.length > 10) chatHistory.shift();
+      }
 
       typingRow.classList.add('active');
       scrollToBottom();
@@ -1067,16 +1069,15 @@
           chatHistory.push({ role: 'assistant', content: data.reply });
           if (chatHistory.length > 10) chatHistory.shift();
         } else {
-
-          const fallback = 'مش فاضية للكلام ده دلوقتي.';
-          appendMessage('cypher', fallback, null, 'ANNOYED', 'chat');
+          const fallback = 'أنا لولا! 💖 عاملة إيه يا أيلولتي؟ تعالي نقعد سوا ونتكلم ونتعرف على بعض أكتر! 🌸✨';
+          appendMessage('cypher', fallback, null, 'HAPPY', 'chat');
           speakText(fallback);
         }
       } catch (err) {
         console.error('Send Error:', err);
         typingRow.classList.remove('active');
-        const fallback = 'هو مفيش غيرك تنكد عليا على الصبح؟';
-        appendMessage('cypher', fallback, null, 'ANNOYED', 'chat');
+        const fallback = 'سامحيني يا أيلولتي! 🌸 عقلي سرح ثانية في الرسم والألوان، كمليلي كنتي بتقولي إيه يا قمر؟ 💖✨';
+        appendMessage('cypher', fallback, null, 'HAPPY', 'chat');
         speakText(fallback);
       }
     }
@@ -1090,8 +1091,8 @@
     function resetIdleTimer() {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        sendMessageWithContext("[تنبيه تلقائي: أنتِ لولا/روبانزل. ابدأي كلام وتفاعل من نفسك الآن بأسلوب فضولي ومبتكر مع أيويتي (آية) واطرحي موضوع أو فكرة جديدة بفضول وحب!]");
-      }, 35000);
+        sendMessageWithContext("[تنبيه تلقائي: أنتِ لولا/روبانزل. ابدأي كلام وتفاعل من نفسك الآن بأسلوب فضولي ومبتكر مع أيويتي (آية) واطرحي موضوع أو فكرة جديدة بفضول وحب!]", true);
+      }, 45000);
     }
 
     // Event Listeners
