@@ -363,10 +363,7 @@ async function fetchCairoWeather() {
 }
 
 async function callGemini(message, history = [], extraContext = '', image = null) {
-  const gk1 = 'AQ.Ab8RN6J_ejt9lUEI';
-  const gk2 = 'az6rDFTwqN8df_M4x2';
-  const gk3 = 'wRchZcW9HXPq5Ezw';
-  const geminiApiKey = process.env.GEMINI_API_KEY || (gk1 + gk2 + gk3);
+  const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) return null;
 
   const currentlyAnnoyed = isAnnoyedActive();
@@ -438,9 +435,7 @@ async function callGemini(message, history = [], extraContext = '', image = null
 }
 
 async function callCohere(message, history = [], extraContext = '') {
-  const ck1 = 'kpgR5DzoF8GddS7hU0BD';
-  const ck2 = 'QeLydJXLOEmlQvuqZVy3';
-  const cohereKey = process.env.COHERE_API_KEY || (ck1 + ck2);
+  const cohereKey = process.env.COHERE_API_KEY;
   if (!cohereKey) return null;
 
   const currentlyAnnoyed = isAnnoyedActive();
@@ -490,9 +485,7 @@ async function callCohere(message, history = [], extraContext = '') {
 }
 
 async function callOpenRouter(message, history = [], extraContext = '') {
-  const orKey1 = 'sk-or-v1-78d90c44caa01db7c52096ab4c8f1bd1';
-  const orKey2 = '000b21340e269f9f93afca58c431931e';
-  const openRouterKey = process.env.OPENROUTER_API_KEY || (orKey1 + orKey2);
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
   if (!openRouterKey) return null;
 
   const currentlyAnnoyed = isAnnoyedActive();
@@ -549,10 +542,7 @@ async function callOpenRouter(message, history = [], extraContext = '') {
 }
 
 async function callGroq(message, history = [], extraContext = '') {
-  const k1 = 'gs' + 'k_axELeqVF2fXNQk2c';
-  const k2 = 'HuPiWGdyb3FYiSU54SG2';
-  const k3 = 'nvofegEyfJ9Yqw09';
-  const apiKey = (k1 + k2 + k3) || process.env.GROQ_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   
   // Instantly clear anger if user says friendly/apologetic phrase!
   registerApologyAttempt(message);

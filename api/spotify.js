@@ -7,9 +7,8 @@ const {
   getSpotifyRefreshToken 
 } = require('../lib/store');
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '8c7a75e146944dcb8a29a45a6b77766c';
-const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || 'd479e32b181347feb5fd2810cbd3d127';
-const HARDCODED_REFRESH_TOKEN = 'AQDRS0tDB2_KdbbFzy05iuVr3O3aSELOyUdk2wZv3_CAvRKH2n9oeTlAOIDw-HXFju933pDftDux4LCy-9cr9X9JcGDkGeWty7FePbfsfLKMyyBZd0w79wQUe2ewMtWl4ak';
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -45,7 +44,7 @@ async function getSpotifyAccessToken() {
     return null; // Explicitly unlinked
   }
 
-  const refresh_token = storedToken || process.env.SPOTIFY_REFRESH_TOKEN || HARDCODED_REFRESH_TOKEN;
+  const refresh_token = storedToken || process.env.SPOTIFY_REFRESH_TOKEN;
 
   if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token || refresh_token === 'UNLINKED') {
     return null;
