@@ -249,7 +249,7 @@ function detectHardwareCommand(text) {
   if (lower.includes('اصحي') || lower.includes('استيقظي') || lower.includes('اصحي بقى')) {
     return 'WAKE';
   }
-  if (lower.includes('اتهزي') || lower.includes('اتحركي') || lower.includes('هز')) {
+  if (lower.includes('اتهزي') || lower.includes('اتحركي') || lower.includes('هز') || lower.includes('هزي') || lower.includes('دويخي') || lower.includes('shake') || lower.includes('dizzy')) {
     return 'SHAKE';
   }
   return null;
@@ -729,8 +729,8 @@ module.exports = async (req, res) => {
           result = {
             reply: "حاضر.. أهو.",
             display: "SHAKING!",
-            mood: "TOUCH",
-            energyDelta: +5
+            mood: "SHAKE",
+            energyDelta: 0
           };
         }
 

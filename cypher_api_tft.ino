@@ -49,6 +49,8 @@
 #define EP_ZAEQ_HEIGHT 100
 #define EP_ZAALAN_WIDTH 100
 #define EP_ZAALAN_HEIGHT 100
+#define EP_SHAKEN_WIDTH 100
+#define EP_SHAKEN_HEIGHT 100
 #endif
 
 const char* API_URL = "https://lola-cypher-pet.vercel.app/api/mood";
@@ -256,28 +258,13 @@ void runWelcomeSequence() {
 
 void runDizzyShakeAnimation() {
   unsigned long start = millis();
-  int frame = 0;
   playBeepSharp();
+  tft.fillScreen(ST77XX_BLACK);
+  drawClockTopLeft();
+  printCentered("! DIZZY / SHAKEN !", 4, ST77XX_RED, 1);
+  tft.drawRGBBitmap(30, 14, (const uint16_t*)ep_shaken, EP_SHAKEN_WIDTH, EP_SHAKEN_HEIGHT);
+  printCentered("STOP SHAKING ME!", 116, ST77XX_RED, 1);
   while (millis() - start < 1800) {
-    tft.fillScreen(ST77XX_BLACK);
-    drawClockTopLeft();
-    printCentered("! DIZZY / SHAKEN !", 16, ST77XX_RED, 1);
-    int offsetX = (frame % 2 == 0) ? 14 : -14;
-    int cx = (160 / 2) + offsetX;
-    int cy = (128 / 2) + 4;
-    
-    tft.drawLine(cx - 25, cy - 14, cx - 11, cy, ST77XX_YELLOW);
-    tft.drawLine(cx - 11, cy - 14, cx - 25, cy, ST77XX_YELLOW);
-    tft.drawLine(cx + 11, cy - 14, cx + 25, cy, ST77XX_YELLOW);
-    tft.drawLine(cx + 25, cy - 14, cx + 11, cy, ST77XX_YELLOW);
-    
-    for (int x = -18; x <= 18; x++) {
-      int wy = cy + 18 + (int)(4 * sin((x + frame * 4) * 0.3));
-      tft.drawPixel(cx + x, wy, ST77XX_RED);
-      tft.drawPixel(cx + x, wy + 1, ST77XX_RED);
-    }
-    printCentered("STOP SHAKING ME!", 116, ST77XX_RED, 1);
-    frame++;
     delay(40);
   }
   silenceBuzzer();
@@ -286,7 +273,7 @@ void runDizzyShakeAnimation() {
 int getSoundAmplitudeFast() {
   unsigned int signalMax = 0;
   unsigned int signalMin = 4095;
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 20; i++) {
     int sample = analogRead(SOUND_PIN);
     if (sample < 4095) {
       if (sample > signalMax) signalMax = sample;
@@ -309,6 +296,9 @@ void updateDisplayForState(int state, bool forceFullRedraw = false) {
     } else if (state == STATE_TOUCH) {
       printCentered("<3 DALAA / PETTED <3", 4, ST77XX_MAGENTA, 1);
       tft.drawRGBBitmap(bmpX, bmpY, (const uint16_t*)ep_dalaa, EP_DALAA_WIDTH, EP_DALAA_HEIGHT);
+    } else if (state == STATE_SHAKE) {
+      printCentered("! DIZZY / SHAKEN !", 4, ST77XX_RED, 1);
+      tft.drawRGBBitmap(bmpX, bmpY, (const uint16_t*)ep_shaken, EP_SHAKEN_WIDTH, EP_SHAKEN_HEIGHT);
     } else if (state == STATE_SOUND || state == STATE_ANNOYED) {
       printCentered("! ANNOYED / ANGRY !", 4, ST77XX_RED, 1);
       tft.drawRGBBitmap(bmpX, bmpY, (const uint16_t*)ep_zaeq, EP_ZAEQ_WIDTH, EP_ZAEQ_HEIGHT);
@@ -330,6 +320,8 @@ void updateDisplayForState(int state, bool forceFullRedraw = false) {
   }
 }
 
+unsigned long softwareDarkUntil = 0;
+
 void fetchMoodFromAPI() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -345,37 +337,67 @@ void fetchMoodFromAPI() {
 
   if (httpCode == HTTP_CODE_OK) {
     String payload = http.getString();
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, payload);
-    if (!err && doc.containsKey("msg_id")) {
-      String msgId = doc["msg_id"].as<String>();
-
-      if (msgId.length() > 0 && msgId != String(pendingMsgIdBuf)) {
-        String newMood = doc.containsKey("mood") ? doc["mood"].as<String>() : "NEUTRAL";
-        String rawText = "";
-        
-        if (doc.containsKey("last_reply_display")) {
-          rawText = doc["last_reply_display"].as<String>();
-        } else if (doc.containsKey("reply_display")) {
-          rawText = doc["reply_display"].as<String>();
+    if (!err) {
+      if (doc.containsKey("command")) {
+        String cmd = doc["command"].as<String>();
+        if (cmd == "ALARM") {
+          Serial.println("[ESP32 HW] ALARM COMMAND!");
+          tone(BUZZER_PIN, 4000, 1500); // 1.5s loud sharp hardware alarm tone
+          currentState = STATE_ANNOYED;
+          pendingApiState = STATE_ANNOYED;
+        } else if (cmd == "SLEEP") {
+          Serial.println("[ESP32 HW] SLEEP COMMAND!");
+          softwareDarkUntil = millis() + 60000; // Stay dark for 60 seconds
+          currentState = STATE_DARK;
+          pendingApiState = STATE_DARK;
+        } else if (cmd == "WAKE") {
+          Serial.println("[ESP32 HW] WAKE COMMAND!");
+          softwareDarkUntil = 0;
+          darkStartTime = 0;
+          currentState = STATE_IDLE;
+          pendingApiState = STATE_IDLE;
+        } else if (cmd == "SHAKE") {
+          Serial.println("[ESP32 HW] SHAKE COMMAND!");
+          runDizzyShakeAnimation();
+          currentState = STATE_IDLE;
+          pendingApiState = STATE_IDLE;
         }
+      }
 
-        String cleanEnglish = sanitizeAsciiText(rawText);
+      if (doc.containsKey("msg_id")) {
+        String msgId = doc["msg_id"].as<String>();
 
-        strncpy(pendingMsgIdBuf, msgId.c_str(), 63);
+        if (msgId.length() > 0 && msgId != String(pendingMsgIdBuf)) {
+          String newMood = doc.containsKey("mood") ? doc["mood"].as<String>() : "NEUTRAL";
+          String rawText = "";
+          
+          if (doc.containsKey("last_reply_display")) {
+            rawText = doc["last_reply_display"].as<String>();
+          } else if (doc.containsKey("reply_display")) {
+            rawText = doc["reply_display"].as<String>();
+          }
 
-        if (cleanEnglish.length() > 0 && cleanEnglish != apiDisplayText) {
-          strncpy(pendingDisplayText, cleanEnglish.c_str(), 63);
-          apiDisplayText = cleanEnglish;
-          pendingDisplayUpdate = true;
-        }
+          String cleanEnglish = sanitizeAsciiText(rawText);
 
-        if (newMood.length() > 0) {
-          apiMood = newMood;
-          if (newMood == "ANNOYED")                      pendingApiState = STATE_ANNOYED;
-          else if (newMood == "HAPPY" || newMood == "EXCITED") pendingApiState = STATE_TOUCH;
-          else if (newMood == "SAD"   || newMood == "BORED")   pendingApiState = STATE_DARK;
-          else                                           pendingApiState = STATE_IDLE;
+          strncpy(pendingMsgIdBuf, msgId.c_str(), 63);
+
+          if (cleanEnglish.length() > 0 && cleanEnglish != apiDisplayText) {
+            strncpy(pendingDisplayText, cleanEnglish.c_str(), 63);
+            apiDisplayText = cleanEnglish;
+            pendingDisplayUpdate = true;
+          }
+
+          if (newMood.length() > 0) {
+            apiMood = newMood;
+            if (newMood == "ANNOYED")                      pendingApiState = STATE_ANNOYED;
+            else if (newMood == "SLEEP")                    pendingApiState = STATE_DARK;
+            else if (newMood == "SHAKE" || newMood == "DIZZY") pendingApiState = STATE_SHAKE;
+            else if (newMood == "HAPPY" || newMood == "EXCITED") pendingApiState = STATE_TOUCH;
+            else if (newMood == "SAD"   || newMood == "BORED")   pendingApiState = STATE_DARK;
+            else                                           pendingApiState = STATE_IDLE;
+          }
         }
       }
     }
@@ -433,32 +455,30 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  // 1. Read Light Sensor (LDR) - Active 24/7 for instant darkness response
+  // 1. Read Light Sensor (LDR) - Ultra Fast 200ms darkness detection with software dark override
   int lightVal = analogRead(LDR_PIN);
   
-  // ESP32 ADC: < 1200 indicates covered sensor / darkness
-  if (lightVal < 1200) {
+  if (lightVal < 1200 || now < softwareDarkUntil) {
     if (darkStartTime == 0) {
       darkStartTime = now;
-    } else if (now - darkStartTime >= 1500) { // 1.5 seconds darkness triggers sleep
+    } else if (now - darkStartTime >= 200 || now < softwareDarkUntil) { // 0.2 seconds instant darkness trigger
       if (currentState != STATE_DARK) {
         currentState = STATE_DARK;
-        playBeepSleepy();
         updateDisplayForState(currentState, true);
       }
     }
   } else {
-    if (darkStartTime != 0) {
+    if (darkStartTime != 0 || softwareDarkUntil > 0) {
       darkStartTime = 0;
+      softwareDarkUntil = 0;
       if (currentState == STATE_DARK) {
         currentState = STATE_IDLE;
-        playBeepCute();
         updateDisplayForState(currentState, true);
       }
     }
   }
 
-  // 2. Read Physical Sensors (Touch, Shake, Sound)
+  // 2. Read Physical Sensors (Touch, Shake, Sound) - Ultra fast threshold
   int touched = digitalRead(TOUCH_PIN);
   int shakeRaw = digitalRead(SHAKE_PIN);
   int shakenVal = (shakeRaw == LOW) ? 1 : 0;
@@ -468,12 +488,11 @@ void loop() {
   float mag = sqrt(a.acceleration.x * a.acceleration.x +
                     a.acceleration.y * a.acceleration.y +
                     a.acceleration.z * a.acceleration.z);
-  if (mag > 22.0) shakenVal = 1;
+  if (mag > 12.0) shakenVal = 1; // Ultra sensitive instant motion detection
 
-  // Sound Sensor Noise Filtering with high sensitivity & 1.5s cooldown
   int soundAmp = getSoundAmplitudeFast();
   bool soundTriggered = false;
-  if (soundAmp > 550 && (now - lastSoundTriggerTime > 1500)) {
+  if (soundAmp > 1200 && (now - lastSoundTriggerTime > 1500)) {
     soundTriggered = true;
     lastSoundTriggerTime = now;
   }
@@ -487,13 +506,9 @@ void loop() {
     physicalState = STATE_SOUND;
   }
 
-  // 3. Touch sensor priority: wakes Lola up immediately if touched in dark mode!
+  // 3. Touch sensor priority: 0ms instant wakeup
   if (touched == 1 && currentState == STATE_DARK) {
     currentState = STATE_TOUCH;
-    digitalWrite(VIBRATION_PIN, HIGH);
-    playBeepCute();
-    delay(100);
-    digitalWrite(VIBRATION_PIN, LOW);
     updateDisplayForState(currentState, true);
   }
   // 4. Physical Sensor Dominance
@@ -505,41 +520,22 @@ void loop() {
   else if (physicalState != STATE_IDLE && currentState != STATE_DARK) {
     if (currentState != physicalState) {
       currentState = physicalState;
-      if (currentState == STATE_TOUCH) {
-        digitalWrite(VIBRATION_PIN, HIGH);
-        playBeepCute();
-        delay(100);
-        digitalWrite(VIBRATION_PIN, LOW);
-      } else if (currentState == STATE_SOUND) {
-        playBeepSharp();
-      }
       updateDisplayForState(currentState, true);
     }
   }
-  // 5. Web Chat API Updates
-  else if (currentState != STATE_DARK) {
-    String pendingMsgIdStr = String(pendingMsgIdBuf);
-    if (pendingMsgIdStr.length() > 0 && pendingMsgIdStr != lastProcessedMsgId) {
-      lastProcessedMsgId = pendingMsgIdStr;
 
-      if (pendingApiState >= 0) {
-        int newState = pendingApiState;
-        pendingApiState = -1;
-        if (newState != currentState) {
-          currentState = newState;
-          if (currentState == STATE_ANNOYED) playBeepSharp();
-          else if (currentState == STATE_TOUCH) playBeepCute();
-          updateDisplayForState(currentState, true);
-        }
-      }
-
-      if (pendingDisplayUpdate) {
-        pendingDisplayUpdate = false;
-        apiDisplayText = String(pendingDisplayText);
-        updateDisplayForState(currentState, false);
-      }
-    }
+  // 5. Web Chat API Updates (Processes server messages & commands instantly)
+  if (pendingApiState >= 0) {
+    int newState = pendingApiState;
+    pendingApiState = -1;
+    currentState = newState;
+    updateDisplayForState(currentState, true);
   }
 
-  delay(15);
+  if (pendingDisplayUpdate) {
+    pendingDisplayUpdate = false;
+    apiDisplayText = String(pendingDisplayText);
+    updateDisplayForState(currentState, false);
+  }
 }
+
