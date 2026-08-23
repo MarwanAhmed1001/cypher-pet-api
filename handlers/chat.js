@@ -247,8 +247,8 @@ async function callGemini(message, history = [], extraContext = '', image = null
     parts: userParts
   });
 
-  // Try multiple Gemini models: gemini-1.5-flash, gemini-2.0-flash, gemini-1.5-pro
-  const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  // Target latest working models: gemini-3.6-flash, gemini-2.5-flash, gemini-1.5-flash
+  const geminiModels = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
 
   for (const modelName of geminiModels) {
     try {
