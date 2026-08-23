@@ -389,7 +389,7 @@ async function callGemini(message, history = [], extraContext = '', image = null
 4. If the photo shows an object, animal, food, or room, describe what you see in character as Lola!`;
   }
 
-  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nIMPORTANT RULES:\n1. You MUST reply in ENGLISH only. You understand Arabic input but ALWAYS respond in English.\n2. "reply" = your full English response (2-4 fun, witty, creative sentences in-character as Lola/Rapunzel). Be charming, clever, and engaging! Use humor, references to your tower life, Pascal, lanterns, frying pan, painting walls, etc.\n3. "reply_display" = a SHORT English phrase (max 20 chars) for a tiny TFT screen. Must start with "Lola: " followed by an emotion or action. Examples: "Lola: Happy!", "Lola: Haha!", "Lola: Love it!", "Lola: Excited!", "Lola: Tell me more", "Lola: Aww!", "Lola: Curious!"\n4. "mood" = one of: HAPPY, NEUTRAL, BORED, SAD, ANNOYED, EXCITED\n\nReturn ONLY valid JSON:\n{"reply": "...", "reply_display": "...", "mood": "..."}` });
+  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nIMPORTANT RULES:\n1. "reply" MUST be in 100% natural, witty, charming Egyptian Arabic (بالعامية المصرية القاهرية) reflecting Lola/Rapunzel's personality.\n2. "reply_display" MUST be a SHORT English ASCII text (max 20 chars) for the hardware TFT screen. Examples: "Lola: Happy!", "Lola: Haha!", "Lola: Love it!", "Lola: Excited!", "Lola: Tell me more", "Lola: Aww!", "Lola: Listening"\n3. "mood" = one of: HAPPY, NEUTRAL, BORED, SAD, ANNOYED, EXCITED\n\nReturn ONLY valid JSON:\n{"reply": "...", "reply_display": "...", "mood": "..."}` });
 
   contents.push({
     role: 'user',
@@ -445,7 +445,7 @@ async function callCohere(message, history = [], extraContext = '') {
   try {
     const res = await axios.post('https://api.cohere.com/v1/chat', {
       model: 'command-r-plus-08-2024',
-      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100).\n\nIMPORTANT: Reply in ENGLISH only. You understand Arabic but always respond in English. "reply_display" must be a SHORT English text (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`,
+      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100).\n\nIMPORTANT: "reply" MUST be in natural Egyptian Arabic. "reply_display" MUST be SHORT English ASCII text (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`,
       chat_history: chatHistory.length > 0 ? chatHistory : undefined,
       message: message
     }, {
@@ -497,7 +497,7 @@ async function callOpenRouter(message, history = [], extraContext = '') {
 
   messages.push({
     role: 'user',
-    content: `User Message: "${message}"\n\nIMPORTANT: Reply in ENGLISH only. "reply_display" must be SHORT English (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply":"...","reply_display":"...","mood":"${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
+    content: `User Message: "${message}"\n\nIMPORTANT: "reply" MUST be in natural Egyptian Arabic. "reply_display" MUST be SHORT English ASCII text (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply":"...","reply_display":"...","mood":"${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
   try {
@@ -557,7 +557,7 @@ async function callGroq(message, history = [], extraContext = '') {
   }
 
   const groqMessages = [
-    { role: 'system', content: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nIMPORTANT: Reply in ENGLISH only. You understand Arabic but always respond in English. "reply_display" must be SHORT English text (max 20 chars) for a tiny TFT screen.\n\nRespond in valid JSON with keys: "reply", "reply_display", and "mood".` }
+    { role: 'system', content: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nIMPORTANT: "reply" MUST be in 100% natural Egyptian Arabic (بالعامية المصرية). "reply_display" MUST be SHORT English ASCII text (max 20 chars) for hardware TFT screen.\n\nRespond in valid JSON with keys: "reply", "reply_display", and "mood".` }
   ];
 
   if (Array.isArray(history) && history.length > 0) {
@@ -781,8 +781,8 @@ module.exports = async (req, res) => {
           }
           if (!result) {
             result = {
-              reply: "Hey there! I'm Lola, your Rapunzel friend! Pascal and I are here for you. Tell me what's on your mind!",
-              display: "Lola: Hi there!",
+              reply: "أهلاً يا أيلولتي! 💖 أنا لولا، مبسوطة جداً إننا سوا ومستعدة نتكلم ونحكي ف كل حاجة! باسكال وأنا هنا عشانك، احكيلي إيه الأخبار؟ 🌸✨",
+              display: "Lola: Ready!",
               mood: "HAPPY",
               energyDelta: +5
             };
