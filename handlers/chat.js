@@ -389,7 +389,7 @@ async function callGemini(message, history = [], extraContext = '', image = null
 4. If the photo shows an object, animal, food, or room, describe what you see in character as Lola!`;
   }
 
-  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nIMPORTANT RULES:\n1. You MUST reply in ENGLISH only. You understand Arabic but always respond in English.\n2. "reply" = your full English response to the user (fun, witty, in-character as Lola/Rapunzel)\n3. "reply_display" = a SHORT English summary (max 20 chars) shown on a tiny TFT screen. Examples: "Lola: Happy!", "Lola: Haha!", "Lola: Love you!", "Lola: Excited!", "Lola: Tell me more"\n4. "mood" = one of: HAPPY, NEUTRAL, BORED, SAD, ANNOYED, EXCITED\n\nReturn JSON only:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` });
+  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nIMPORTANT RULES:\n1. You MUST reply in ENGLISH only. You understand Arabic input but ALWAYS respond in English.\n2. "reply" = your full English response (2-4 fun, witty, creative sentences in-character as Lola/Rapunzel). Be charming, clever, and engaging! Use humor, references to your tower life, Pascal, lanterns, frying pan, painting walls, etc.\n3. "reply_display" = a SHORT English phrase (max 20 chars) for a tiny TFT screen. Must start with "Lola: " followed by an emotion or action. Examples: "Lola: Happy!", "Lola: Haha!", "Lola: Love it!", "Lola: Excited!", "Lola: Tell me more", "Lola: Aww!", "Lola: Curious!"\n4. "mood" = one of: HAPPY, NEUTRAL, BORED, SAD, ANNOYED, EXCITED\n\nReturn ONLY valid JSON:\n{"reply": "...", "reply_display": "...", "mood": "..."}` });
 
   contents.push({
     role: 'user',
@@ -397,14 +397,14 @@ async function callGemini(message, history = [], extraContext = '', image = null
   });
 
   try {
-    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`, {
+    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       contents: contents,
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.85,
         maxOutputTokens: 1000,
         responseMimeType: "application/json"
       }
-    }, { timeout: 6000 });
+    }, { timeout: 15000 });
 
     const text = res.data.candidates[0].content.parts[0].text;
     const parsed = JSON.parse(text);
