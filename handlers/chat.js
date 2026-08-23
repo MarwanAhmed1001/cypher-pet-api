@@ -357,35 +357,43 @@ async function callOpenRouter(message, history = [], extraContext = '') {
     content: `User Message: "${message}"\n\nRULES: "reply" in Egyptian Arabic. "reply_display" in short English ASCII for TFT.\nReturn JSON: {"reply":"...","reply_display":"...","mood":"..."}`
   });
 
-  try {
-    const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'google/gemma-4-31b-it:free',
-      messages: messages,
-      max_tokens: 250
-    }, {
-      headers: {
-        'Authorization': `Bearer ${openRouterKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 4500
-    });
+  const openRouterModels = [
+    'deepseek/deepseek-r1:free',
+    'deepseek/deepseek-chat:free',
+    'google/gemini-2.0-flash-exp:free',
+    'meta-llama/llama-3.3-70b-instruct:free'
+  ];
 
-    const text = res.data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
-    const parsed = JSON.parse(text);
-    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-    if (replyText) {
-      return {
-        reply: cleanChatReply(replyText),
-        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-        energyDelta: currentlyAnnoyed ? -5 : +10
-      };
+  for (const modelName of openRouterModels) {
+    try {
+      const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: modelName,
+        messages: messages,
+        max_tokens: 300
+      }, {
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 4500
+      });
+
+      const text = res.data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(text);
+      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+      if (replyText) {
+        return {
+          reply: cleanChatReply(replyText),
+          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+          energyDelta: currentlyAnnoyed ? -5 : +10
+        };
+      }
+    } catch (err) {
+      console.error(`OpenRouter (${modelName}) Notice:`, err.message);
     }
-    return null;
-  } catch (err) {
-    console.error('OpenRouter API Notice:', err.message);
-    return null;
   }
+  return null;
 }
 
 async function callGroq(message, history = [], extraContext = '') {
@@ -482,6 +490,88 @@ module.exports = async (req, res) => {
 
     if (!message && !image) {
       return res.status(400).json({ error: 'Message or image is required' });
+    }
+
+    const msgLower = (message || '').trim().toLowerCase();
+
+    // Command 1: Write on screen ("اكتبي علي الشاشه ...", "اكتبي على الشاشة ...", "write on screen ...")
+    if (msgLower.includes('اكتبي علي الشاشه') || msgLower.includes('اكتبي على الشاشة') || msgLower.includes('write on screen')) {
+      let customText = message
+        .replace(/.*(اكتبي علي الشاشه|اكتبي على الشاشة|write on screen)/i, '')
+        .trim();
+      if (!customText) customText = "Lola: Ayane!";
+      
+      const cleanCustomDisplay = enforceEnglishScreenText(customText, "Lola: Custom!");
+      
+      recordInteraction(`حاضر يا أيلولتي! كتبت لك على الشاشة فوراً: "${cleanCustomDisplay}" 📺✨`, 'HAPPY', 'chat', cleanCustomDisplay, +5);
+      
+      return res.status(200).json({
+        success: true,
+        reply: `حاضر يا أيلولتي! كتبت لك على الشاشة فوراً: "${cleanCustomDisplay}" 📺✨`,
+        reply_display: cleanCustomDisplay,
+        mood: 'HAPPY'
+      });
+    }
+
+    // Command 2: Sleep ("نامي", "نام", "تصبح على خير", "sleep")
+    if (msgLower === 'نامي' || msgLower === 'نام' || msgLower.includes('نامي يا لولا') || msgLower.includes('تصبحي على خير') || msgLower === 'sleep') {
+      setCommand("SLEEP");
+      recordInteraction("تصبحي على خير يا أيلولتي! 💤 تصبح عيونك الجميلة على كل حاجة حلوة.. أنا هنام شوية والبرج يظلم 🌙✨", 'DARK', 'chat', 'SLEEPING...', -5);
+      return res.status(200).json({
+        success: true,
+        reply: "تصبحي على خير يا أيلولتي! 💤 تصبح عيونك الجميلة على كل حاجة حلوة.. أنا هنام شوية والبرج يظلم 🌙✨",
+        reply_display: "SLEEPING...",
+        mood: 'DARK'
+      });
+    }
+
+    // Command 3: Wake ("اصحي", "افايقي", "قومي", "wake")
+    if (msgLower === 'اصحي' || msgLower === 'افايقي' || msgLower === 'قومي' || msgLower.includes('اصحي يا لولا') || msgLower === 'wake') {
+      setCommand("WAKE");
+      recordInteraction("صباح الورد والسرور يا أيلولتي! ☀️ أدي صباح الخير وفقت ورجعت لك بمليون نشاط! 🌸✨", 'HAPPY', 'chat', 'Lola: Awake!', +10);
+      return res.status(200).json({
+        success: true,
+        reply: "صباح الورد والسرور يا أيلولتي! ☀️ أدي صباح الخير وفقت ورجعت لك بمليون نشاط! 🌸✨",
+        reply_display: "Lola: Awake!",
+        mood: 'HAPPY'
+      });
+    }
+
+    // Command 4: Shake ("اتهزي", "اهتزي", "دوخي", "shake")
+    if (msgLower === 'اتهزي' || msgLower === 'اهتزي' || msgLower.includes('اتهزي يا لولا') || msgLower === 'shake') {
+      setCommand("SHAKE");
+      recordInteraction("يا لويتي! باسكال وأنا اتهزينا ودوخنا خالص هههه! 🌀🦎", 'SHAKE', 'chat', 'SHAKING!', +5);
+      return res.status(200).json({
+        success: true,
+        reply: "يا لويتي! باسكال وأنا اتهزينا ودوخنا خالص هههه! 🌀🦎",
+        reply_display: "SHAKING!",
+        mood: 'SHAKE'
+      });
+    }
+
+    // Command 5: Annoyed ("ازعلي", "اتنرفزي", "ازعل", "annoyed")
+    if (msgLower === 'ازعلي' || msgLower === 'اتنرفزي' || msgLower.includes('ازعلي يا لولا') || msgLower === 'annoyed') {
+      setAnnoyedState();
+      setCommand("ALARM");
+      recordInteraction("أنا متضايقة وزعلانة خلاص! اتلم وشوف بتقول إيه! 🍳😤", 'ANNOYED', 'chat', 'Lola: Annoyed!', -5);
+      return res.status(200).json({
+        success: true,
+        reply: "أنا متضايقة وزعلانة خلاص! اتلم وشوف بتقول إيه! 🍳😤",
+        reply_display: "Lola: Annoyed!",
+        mood: 'ANNOYED'
+      });
+    }
+
+    // Command 6: Alarm / Scream ("صوتي", "صفري", "انذار", "alarm")
+    if (msgLower === 'صوتي' || msgLower === 'صفري' || msgLower.includes('صوتي يا لولا') || msgLower === 'alarm') {
+      setCommand("ALARM");
+      recordInteraction("🚨 إنذار إنذار! باسكال بيصفر والمقلاة جاهزة للعمليات الحساسة! 🍳🔊", 'ANNOYED', 'chat', 'ALARM!', -5);
+      return res.status(200).json({
+        success: true,
+        reply: "🚨 إنذار إنذار! باسكال بيصفر والمقلاة جاهزة للعمليات الحساسة! 🍳🔊",
+        reply_display: "ALARM!",
+        mood: 'ANNOYED'
+      });
     }
 
     const moodState = getMoodState();
