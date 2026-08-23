@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const axios = require('axios');
 const { 
   recordInteraction, 
@@ -394,12 +394,13 @@ async function callGemini(message, history = [], extraContext = '', image = null
     userParts.push({ inline_data: { mime_type: 'image/jpeg', data: b64Data } });
     promptContext += ` Note: Analyze this camera photo carefully:
 1. If the photo shows Ayane (your best friend), flirt with her beauty and greet her warmly: 'Ø£Ù‡Ù„Ø§Ù‹ ÙŠØ§ Ø£ÙŠÙ„ÙˆÙ„ØªÙŠ! ðŸŒ¸ðŸ˜'!
-2. If the photo shows a MALE/MAN/GUY/BOY stranger, DO NOT call him Ayane and DO NOT flirt! React with sarcastic surprise and shock: 'Ø¥Ù†Øª Ù…ÙŠÙ† ÙŠØ§ Ø´Ø­Ø· Ø¥Ù†Øª ÙˆØ¨ØªØ¹Ù…Ù„ Ø¥ÙŠÙ‡ Ù‡Ù†Ø§ØŸ! ðŸ§'! (Mood: ANNOYED, display: 'Lola: Who are you?').
+1. If the photo shows Ayane (your best friend), flirt with her beauty and greet her warmly: 'Ø£Ù‡Ù„Ø§Ù‹ ÙŠØ§ Ø£ÙŠÙ„ÙˆÙ„ØªÙŠ! ðŸŒ¸ðŸ˜ '!
+2. If the photo shows a MALE/MAN/GUY/BOY stranger, DO NOT call him Ayane and DO NOT flirt! React with sarcastic surprise and shock: 'Ø¥Ù†Øª Ù…ÙŠÙ† ÙŠØ§ Ø´Ø­Ø· Ø¥Ù†Øª ÙˆØ¨ØªØ¹Ù…Ù„ Ø¥ÙŠÙ‡ Ù‡Ù†Ø§ØŸ! ðŸ§ '! (Mood: ANNOYED, display: 'Lola: Who are you?').
 3. If the photo shows ANOTHER female stranger, react with suspicion/curiosity: 'Ù…ÙŠÙ† Ø§Ù„Ø¨Ù†Øª Ø§Ù„ØºØ±ÙŠØ¨Ø© Ø¯ÙŠØŸ Ø£Ù†Ø§ ØµØ¯ÙŠÙ‚Ø© Ø¢ÙŠØ© Ø¨Ø³!'.
 4. If the photo shows an object, animal, food, or room, describe what you see in character as Lola!`;
   }
 
-  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nØ£Ø±Ø¬Ø¹ Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© ÙÙŠ ØµÙŠØºØ© JSON ÙÙ‚Ø·:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` });
+  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nIMPORTANT RULES:\n1. You MUST reply in ENGLISH only. You understand Arabic but always respond in English.\n2. "reply" = your full English response to the user (fun, witty, in-character as Lola/Rapunzel)\n3. "reply_display" = a SHORT English summary (max 20 chars) shown on a tiny TFT screen. Examples: "Lola: Happy!", "Lola: Haha!", "Lola: Love you!", "Lola: Excited!", "Lola: Tell me more"\n4. "mood" = one of: HAPPY, NEUTRAL, BORED, SAD, ANNOYED, EXCITED\n\nReturn JSON only:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}` });
 
   contents.push({
     role: 'user',
@@ -455,7 +456,7 @@ async function callCohere(message, history = [], extraContext = '') {
   try {
     const res = await axios.post('https://api.cohere.com/v1/chat', {
       model: 'command-r-plus-08-2024',
-      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100).\n\nØ£Ø±Ø¬Ø¹ JSON ÙÙ‚Ø·:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`,
+      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100).\n\nIMPORTANT: Reply in ENGLISH only. You understand Arabic but always respond in English. "reply_display" must be a SHORT English text (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply": "...", "reply_display": "...", "mood": "${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`,
       chat_history: chatHistory.length > 0 ? chatHistory : undefined,
       message: message
     }, {
@@ -507,7 +508,7 @@ async function callOpenRouter(message, history = [], extraContext = '') {
 
   messages.push({
     role: 'user',
-    content: `User Message: "${message}"\n\nØ£Ø±Ø¬Ø¹ JSON ÙÙ‚Ø·:\n{"reply":"...","reply_display":"...","mood":"${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
+    content: `User Message: "${message}"\n\nIMPORTANT: Reply in ENGLISH only. "reply_display" must be SHORT English (max 20 chars) for TFT screen.\n\nReturn JSON only:\n{"reply":"...","reply_display":"...","mood":"${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}"}`
   });
 
   try {
@@ -567,7 +568,7 @@ async function callGroq(message, history = [], extraContext = '') {
   }
 
   const groqMessages = [
-    { role: 'system', content: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nImportant: You must respond in valid json format with keys: "reply", "reply_display", and "mood".` }
+    { role: 'system', content: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nIMPORTANT: Reply in ENGLISH only. You understand Arabic but always respond in English. "reply_display" must be SHORT English text (max 20 chars) for a tiny TFT screen.\n\nRespond in valid JSON with keys: "reply", "reply_display", and "mood".` }
   ];
 
   if (Array.isArray(history) && history.length > 0) {
