@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const axios = require('axios');
 const { 
   recordInteraction, 
@@ -767,15 +767,25 @@ module.exports = async (req, res) => {
             };
           }
         } else {
-          // Priority model order requested by User:
-          // 1. Gemini (Smartest model)
-          // 2. Groq (Llama 3.3 70B / 8B)
-          // 3. Cohere
-          // 4. OpenRouter
-          // 5. Smart Rapunzel Fallback
+          // Priority model order:
+          // 1. Gemini → 2. Groq → 3. Cohere → 4. OpenRouter → 5. English Fallback
           result = await callGemini(message, history);
           if (!result) {
             result = await callGroq(message, history);
+          }
+          if (!result) {
+            result = await callCohere(message, history);
+          }
+          if (!result) {
+            result = await callOpenRouter(message, history);
+          }
+          if (!result) {
+            result = {
+              reply: "Hey there! I'm Lola, your Rapunzel friend! Pascal and I are here for you. Tell me what's on your mind!",
+              display: "Lola: Hi there!",
+              mood: "HAPPY",
+              energyDelta: +5
+            };
           }
         }
       }
