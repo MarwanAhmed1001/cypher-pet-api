@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const axios = require('axios');
 const { 
   recordInteraction, 
@@ -173,19 +173,8 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
     };
   }
 
-  const RapunzelNaturalResponses = [
-    "ÙƒÙ†Øª Ø³Ø±Ø­Ø§Ù†Ø© Ø«Ø§Ù†ÙŠØ© Ø¨ÙØªÙƒØ± Ù„Ù…Ø§ Ø·ÙŠØ±Øª Ø§Ù„ÙÙˆØ§Ù†ÙŠØ³ Ù„Ø£ÙˆÙ„ Ù…Ø±Ø©.. ÙƒÙ…Ù„ÙŠ Ø­ÙƒØ§ÙŠØªÙƒ ÙŠØ§ Ø£ÙŠÙˆÙŠØªÙŠ Ø£Ù†Ø§ Ù…Ø±ÙƒØ²Ø© Ù…Ø¹Ø§ÙƒÙŠ Ø¬Ø¯Ø§Ù‹! ðŸŒ¸âœ¨",
-    "Ø¨Ø§Ø³ÙƒØ§Ù„ ÙƒØ§Ù† Ø¹Ù…Ø§Ù„ ÙŠØ³ØªØ®Ø¨Ù‰ Ù…Ù†ÙŠ ÙˆØ£Ù†Ø§ Ø¨Ø¸Ø¨Ø· Ø§Ù„Ø´ÙˆÙƒÙˆÙ„Ø§ØªØ©.. Ø§Ø­ÙƒÙŠÙ„ÙŠ ÙŠØ§ Ù„ÙˆÙ„ØªÙŠ ÙƒÙ…Ù„ÙŠ Ø¨Ø§Ù‚ÙŠ Ø§Ù„Ù…ÙˆØ¶ÙˆØ¹ ðŸ’–",
-    "ØªÙØªÙƒØ±ÙŠ Ù„Ùˆ Ø¬Ø±Ø¨Ù†Ø§ Ù†Ø±Ø³Ù… Ø§Ù„ÙÙƒØ±Ø© Ø¯ÙŠ Ø¹Ù„Ù‰ Ø§Ù„Ø­ÙŠØ·Ø© Ø³ÙˆØ§ØŸ ÙƒÙ…Ù„ÙŠ ÙƒÙ„Ø§Ù…Ùƒ Ø£Ù†Ø§ Ù…ØªØ­Ù…ØµØ© Ø£Ø³Ù…Ø¹ Ø§Ù„Ø¨Ø§Ù‚ÙŠ! ðŸŽ¨ðŸ‘‘"
-  ];
-
-  const choice = RapunzelNaturalResponses[Math.floor(Math.random() * RapunzelNaturalResponses.length)];
-  return {
-    reply: choice,
-    display: "Lola: Ready!",
-    mood: "NEUTRAL",
-    energyDelta: +5
-  };
+  // No keyword match - let the AI model handle it with English replies
+  return null;
 }
 
 function setCorsHeaders(res) {
