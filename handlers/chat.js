@@ -131,17 +131,51 @@ function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
     };
   }
 
-  // 6. Sadness / Comfort
-  if (text.includes('زعلان') || text.includes('مضايق') || text.includes('تعبان') || text.includes('مخنوق') || text.includes('تعبت')) {
+  // 6. Work & Study / Projects / Design
+  if (text.includes('شغل') || text.includes('دراسة') || text.includes('جامعة') || text.includes('امتحان') || text.includes('مذاكرة') || text.includes('مشروع') || text.includes('تصميم') || text.includes('ديزاين')) {
+    const WorkReplies = [
+      "واو يا أيلولتي! الشغل والدراسة والإبداع دول زيهم زي رسم جداريات البرج بالضبط، محتاجين حماس وألوان! باسكال وأنا واقفين في ظهرك وبنشجعك جداً! احكيلي بتعملي إيه بالضبط؟ 🎨👑",
+      "ربنا يقويكي يا روح قلبي يا أيلولتي! 🌸 خدي لك بريك صغير، واشربي شوكولاتة سخنة، وتعالي نحكي شوية تفصل المود! 💖✨"
+    ];
     return {
-      reply: "سلامتك من الزعل يا أيلولتي! 💖 أنا هنا جنبك ومش هسيبك، تعالي نحكي ونفضفض ولّا أعملك شوكولاتة سخنة ونرسم حاجة حلوة تروّق دمك؟ 🌸✨",
+      reply: WorkReplies[Math.floor(Math.random() * WorkReplies.length)],
+      display: "Lola: Creative!",
+      mood: "HAPPY",
+      energyDelta: +5
+    };
+  }
+
+  // 7. Food & Cooking & Sweets
+  if (text.includes('أكل') || text.includes('اكل') || text.includes('طبخ') || text.includes('حلويات') || text.includes('شوكولاتة') || text.includes('بيتزا') || text.includes('جعان')) {
+    return {
+      reply: "يمممم! بتجيبوا سيرة الأكل والشوكولاتة من غيري؟ هههه باسكال راح جاب المقلاة (Frying Pan) 🍳 فوراً! تعالي ناكل سوا ونعمل أحلى حلويات! 🥐✨",
+      display: "Lola: Yummy!",
+      mood: "EXCITED",
+      energyDelta: +5
+    };
+  }
+
+  // 8. Jokes & Humor
+  if (text.includes('اضحك') || text.includes('نكتة') || text.includes('هههه') || text.includes('ضحك') || text.includes('مضحك')) {
+    return {
+      reply: "ههههه عارفة يا أيلولتي؟ فلين رايدر مرة افتكر المقلاة بتاعتي تحفة فنية وقعد يحاول يشتريها بـ 100 قطعة ذهب هههه! باسكال كان هيتجنن من كتر الضحك 🦎😂",
+      display: "Lola: Laughing!",
+      mood: "HAPPY",
+      energyDelta: +5
+    };
+  }
+
+  // 9. Sadness / Comfort
+  if (text.includes('زعلان') || text.includes('مضايق') || text.includes('تعبان') || text.includes('مخنوق') || text.includes('تعبت') || text.includes('زهقان')) {
+    return {
+      reply: "سلامتك من الزعل والملل يا أيلولتي! 💖 أنا هنا جنبك ومش هسيبك، تعالي نحكي ونفضفض ولّا أعملك شوكولاتة سخنة ونرسم حاجة حلوة تروّق دمك؟ 🌸✨",
       display: "Lola: Hugs <3",
       mood: "NEUTRAL",
       energyDelta: +5
     };
   }
 
-  // 7. General Dynamic Randomizer (Rich dynamic choices)
+  // 10. General Dynamic Randomizer (Rich dynamic choices)
   const GeneralRandomizers = [
     "كنت سرحانة ثانية بفتكر لما طيرت الفوانيس لأول مرة.. كملي حكايتك يا أيويتي أنا مركزة معاكي جداً! 🌸✨",
     "باسكال كان عمال يستخبى مني وأنا بظبط الشوكولاتة.. احكيلي يا لولتي كملي باقي الموضوع 💖",

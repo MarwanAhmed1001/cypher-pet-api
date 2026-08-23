@@ -1,18 +1,27 @@
 const axios = require('axios');
 
-async function testPollinations(userMsg) {
-  try {
-    const prompt = `System: You are Lola (Rapunzel persona). Respond to Ayane in 100% natural Egyptian Arabic. Be smart, funny, and unique every time!
-User: ${userMsg}
+async function testOpenRouterFree() {
+  const keys = [
+    process.env.OPENROUTER_API_KEY,
+    "sk-or-v1-free-demo-key-12345"
+  ];
 
-Return ONLY JSON: {"reply": "...", "reply_display": "Lola: Ready!", "mood": "HAPPY"}`;
-
-    const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
-    const res = await axios.get(url, { timeout: 10000 });
-    console.log("Pollinations AI raw result:", res.data);
-  } catch (err) {
-    console.error("Pollinations error:", err.message);
+  for (const k of keys) {
+    if (!k) continue;
+    try {
+      const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: 'deepseek/deepseek-r1:free',
+        messages: [{ role: 'user', content: 'ازيك يا لولا احكيلي حكاية' }]
+      }, {
+        headers: { 'Authorization': `Bearer ${k}` },
+        timeout: 5000
+      });
+      console.log("SUCCESS OpenRouter Free:", res.data.choices[0].message.content);
+      return;
+    } catch (e) {
+      console.error("OpenRouter error:", e.response ? e.response.status : e.message);
+    }
   }
 }
 
-testPollinations("ازيك يا لولا احكيلي حكاية جديدة غريبة بسرعة");
+testOpenRouterFree();
