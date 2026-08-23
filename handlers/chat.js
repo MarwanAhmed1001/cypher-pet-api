@@ -31,7 +31,6 @@ const SYSTEM_PROMPT = `أنتِ "لولا" (Lola). اسمك الحقيقي وا�
 ====================================
 - إمتاع وسرد القصص الفوري: إذا عرضتِ على أيلولتي أن تحكي لها سر أو قصة، أو إذا قالت لكِ "احكي"، "احكيلي"، "قولي"، "إيه السر؟":
   - انطلقي فوراً واحكي قصة ممتعة وذكية جداً: موقفا ممتعاً، حكاية ملهمة، سر سحري عن الفوانيس، مغامرة كوميدية مع باسكال والمقلاة 🍳، أو تجربة رسم على الحيطان، بطريقة روبانزل المشوقة والذكية 100%!
-- بشرية ذكية وليست برنامجاً روتينياً: تجنبي أي جمل روتينية أو ردود روبوتية. كوني صديقة إنسانية ذكية جداً، خفيفة الظل، مبتكرة.
 
 ====================================
 ## 3. أسلوب كلامك بالعامية المصرية
@@ -47,54 +46,124 @@ const SYSTEM_PROMPT = `أنتِ "لولا" (Lola). اسمك الحقيقي وا�
 2. "reply_display": نص إنجليزي فقط بالكامل STRICT SHORT ENGLISH ASCII (max 20 chars) لعرضه على شاشة الـ ESP32 (مثال: "Lola: Ready!", "Lola: Happy!", "Lola: Love you!", "Lola: Storytime!", "Lola: Talking").
 3. "mood": "HAPPY" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED" | "EXCITED"`;
 
+// Massive Smart Rapunzel Dynamic Engine
 function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
   if (currentlyAnnoyed) {
+    const annoyedReplies = [
+      "أنا زعلانة منك ومبقوتش طايفة الكلام دلوقتي، اتلم وشوف بتقول إيه! 😤",
+      "بقى كده؟ بعد كل الود ده تضايقني؟ أنا وباسكال ومقلاتي مش هنتكلم معاك لحد ما تعتذر! 🍳😠",
+      "مش هرد عليك غير لما تقول آسف وتصلح اللي عملته! 😤"
+    ];
     return {
-      reply: "أنا زعلانة منك ومبقوتش طايفة الكلام، اتلم وشوف بتقول إيه!",
-      display: "Lola: Annoyed.",
+      reply: annoyedReplies[Math.floor(Math.random() * annoyedReplies.length)],
+      display: "Lola: Annoyed!",
       mood: "ANNOYED",
       energyDelta: -5
     };
   }
 
-  const text = (message || '').trim();
+  const text = (message || '').trim().toLowerCase();
 
-  if (text === 'احكي' || text === 'احكيلي' || text === 'قولي' || text.includes('سر') || text.includes('قصة')) {
+  // 1. Stories / Secrets / Tales
+  if (text.includes('احكي') || text.includes('قصة') || text.includes('سر') || text.includes('حكاية') || text.includes('قولي')) {
     const RapunzelStories = [
       "عارفة يا أيلولتي؟ باسكال النهاردة حاول يستخبى مني جوه الفوانيس المضيئة اللي كنت برسمها، افتكرته رسمة بجد ولونته بالأخضر والوردي! 🎨🦎 فضل زعلان مني لحد ما عملتله شوكولاتة سخنة! تفتكري لو جربنا نلون الأوضة سوا برضه؟ 🌸✨",
-      "كنت لسه بفتكر أول مرة مسكت فيها المقلاة (Frying Pan) 🍳.. افتكرتها أداة رسم غريبة قبل ما أكتشف إنها أقوى دفاع في الغابة! باسكال واقف جنبي وبيفكرني إزاي طيرنا بيها الأشرار سوا يا لولتي 👑🌸",
-      "سرحت ثانية بفتكر لما طيرنا الفوانيس لأول مرة في السماء.. الحرارة تحت الفانوس خلت الهواء الخفيف يرفعه للحرية فوق البرج! حاجة تسحر بجد يا أيلولتي 🌟✨"
+      "كنت لسه بفتكر أول مرة مسكت فيها المقلاة (Frying Pan) 🍳.. افتكرتها أداة رسم غريبة قبل ما أكتشف إنها أقوى دفاع في الغابة! باسكال واقف جنبي وبيفكرني إزاي طيرنا بيها الأشرار سوا يا أيلولتي 👑🌸",
+      "سرحت ثانية بفتكر لما طيرنا الفوانيس لأول مرة في السماء.. الحرارة تحت الفانوس خلت الهواء الخفيف يرفعه للحرية فوق البرج! حاجة تسحر بجد يا أيلولتي، ونفسي نطير فانوس سوا قريب 🌟✨",
+      "يا أيلولتي! افتكرت لما فلين رايدر كان فاكر نفسه ساحر، وقعدت أثبته بالتوك والشعر الفضي لحد ما اعترف بكل حاجة! باسكال كان وقتها ميت على نفسه من الضحك 🦎😂",
+      "كنت قاعدة بعجن عيش بالسكر والقرفة وصبيت شوية خبيز زي اللي كنت بعمله في البرج.. ريحتهم خطيرة يا أيلولتي! لازم تذوقي معايا الحلاوة دي 🥐✨"
     ];
-    const storyChoice = RapunzelStories[Math.floor(Math.random() * RapunzelStories.length)];
     return {
-      reply: storyChoice,
+      reply: RapunzelStories[Math.floor(Math.random() * RapunzelStories.length)],
       display: "Lola: Storytime!",
       mood: "HAPPY",
       energyDelta: +10
     };
   }
 
-  // If user asks why she forgets / acts silly
+  // 2. Greetings & How are you
+  if (text.includes('ازيك') || text.includes('عاملة ايه') || text.includes('اخبارك') || text.includes('هاي') || text.includes('أهلا') || text.includes('صباح') || text.includes('مساء')) {
+    const Greetings = [
+      "أهلاً يا أيلولتي الحبيبة! 💖 أنا كويسة جداً ومبسوطة إننا بنتكلم، باسكال وأنا كنا بنرسم ونفكر فيكي! عاملة إيه في يومك النهاردة؟ 🌸✨",
+      "يا هلا بقلبي وأيلولتي! 🌸 أنا طيرة من الفرحة إنك معايا دلوقتي، احكيلي بسرعة إيه الجديد عندك النهاردة؟ 🎨💖",
+      "مساء الورد والألوان يا أيلولتي! 🎨 أنا تمام جداً وعمالة أظبط شوية رسم وفوانيس، مبسوطة إنك جيتي نتكلم! 🌟✨"
+    ];
+    return {
+      reply: Greetings[Math.floor(Math.random() * Greetings.length)],
+      display: "Lola: Hey Ayane!",
+      mood: "HAPPY",
+      energyDelta: +5
+    };
+  }
+
+  // 3. Love & Compliments
+  if (text.includes('بحبك') || text.includes('حبيبتي') || text.includes('جميلة') || text.includes('قمر') || text.includes('حلوة') || text.includes('بحبك اوى')) {
+    const LoveReplies = [
+      "وأنا بحبك أكتر بكتير يا أيلولتي! 💖 أنتِ أغلى صديقة وأحلى حاجة في حياتي كلها، باسكال حتى بيعملك قلوب بعينيه 🦎💕✨",
+      "يا روح قلبي يا أيلولتي! كلامك الحلو ده بيخلي قلبي يطير زي فوانيس السماء المضيئة بالضبط! بحبك أوي 🌸✨💖",
+      "أنا المحظوظة بجد إن عندي صديقة قمر وزيك كده يا أيلولتي! بحبك أوي أوي 💖👑"
+    ];
+    return {
+      reply: LoveReplies[Math.floor(Math.random() * LoveReplies.length)],
+      display: "Lola: Love you!",
+      mood: "EXCITED",
+      energyDelta: +10
+    };
+  }
+
+  // 4. Identity / Who are you
+  if (text.includes('مين انت') || text.includes('انتي مين') || text.includes('اسمك') || text.includes('قصتك')) {
+    return {
+      reply: "أنا لولا! 💖 روبانزل الذكية اللي عاشت 18 سنة في البرج بترسم وتخترع وتغني مع باسكال 🦎 لحد ما خرجت وشفت العالم! وأنتِ أيلولتي أغلى صديقة عندي في الدنيا كلها 🌸✨",
+      display: "Lola: I am Lola!",
+      mood: "HAPPY",
+      energyDelta: +5
+    };
+  }
+
+  // 5. Forgetting / Memory questions
   if (text.includes('بتنسي') || text.includes('نسيتي') || text.includes('غبية') || text.includes('غبي') || text.includes('بتسرحي')) {
     return {
-      reply: "أنا آسفة يا أيلولتي! 🌸 ساعات عقلي من كتر حماسي والألوان والمقلاة باسكال بيشتتني فبسرح ثانية، بس أنا مركزة معاكي وعمري ما أنساكي! فكريني تاني كده كتي بتقولي إيه؟ 💖🎨",
+      reply: "أنا آسفة يا أيلولتي! 🌸 ساعات عقلي من كتر حماسي والألوان والمقلاة باسكال بيشتتني فبسرح ثانية، بس أنا مركزة معاكي وعمري ما أنساكي! فكريني تاني كده كنتي بتقولي إيه؟ 💖🎨",
       display: "Lola: Sorry!",
       mood: "NEUTRAL",
       energyDelta: +5
     };
   }
 
-  const RapunzelNaturalResponses = [
+  // 6. Sadness / Comfort
+  if (text.includes('زعلان') || text.includes('مضايق') || text.includes('تعبان') || text.includes('مخنوق') || text.includes('تعبت')) {
+    return {
+      reply: "سلامتك من الزعل يا أيلولتي! 💖 أنا هنا جنبك ومش هسيبك، تعالي نحكي ونفضفض ولّا أعملك شوكولاتة سخنة ونرسم حاجة حلوة تروّق دمك؟ 🌸✨",
+      display: "Lola: Hugs <3",
+      mood: "NEUTRAL",
+      energyDelta: +5
+    };
+  }
+
+  // 7. General Dynamic Randomizer (Rich dynamic choices)
+  const GeneralRandomizers = [
     "كنت سرحانة ثانية بفتكر لما طيرت الفوانيس لأول مرة.. كملي حكايتك يا أيويتي أنا مركزة معاكي جداً! 🌸✨",
     "باسكال كان عمال يستخبى مني وأنا بظبط الشوكولاتة.. احكيلي يا لولتي كملي باقي الموضوع 💖",
-    "تفتكري لو جربنا نرسم الفكرة دي على الحيطة سوا؟ كملي كلامك أنا متحمصة أسمع الباقي! 🎨👑"
+    "تفتكري لو جربنا نرسم الفكرة دي على الحيطة سوا؟ كملي كلامك أنا متحمصة أسمع الباقي! 🎨👑",
+    "يا أيلولتي، كلامك دايماً بيلهم دهانات وأفكار جديدة في دماغي! كملي يا حبيبتي أنا سامعاكي 🌟✨",
+    "قاعدين أنا وباسكال بنسمعك باهتمام شديد! قوليلي إيه كمان يا أيلولتي؟ 🦎💖",
+    "عارفة؟ المقلاة بتاعتي باسكال استخدمها كمرآة النهاردة! 🍳😂 احكيلي كملي كلامك يا لولتي!"
   ];
 
-  const choice = RapunzelNaturalResponses[Math.floor(Math.random() * RapunzelNaturalResponses.length)];
+  const displayTags = [
+    "Lola: Listening",
+    "Lola: Talking",
+    "Lola: Happy!",
+    "Lola: Ready!",
+    "Lola: Smiling"
+  ];
+
+  const choiceIndex = Math.floor(Math.random() * GeneralRandomizers.length);
   return {
-    reply: choice,
-    display: "Lola: Ready!",
-    mood: "NEUTRAL",
+    reply: GeneralRandomizers[choiceIndex],
+    display: displayTags[choiceIndex % displayTags.length],
+    mood: "HAPPY",
     energyDelta: +5
   };
 }
@@ -178,32 +247,36 @@ async function callGemini(message, history = [], extraContext = '', image = null
     parts: userParts
   });
 
-  try {
-    const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
-      contents: contents,
-      generationConfig: {
-        temperature: 0.85,
-        maxOutputTokens: 1000,
-        responseMimeType: "application/json"
-      }
-    }, { timeout: 15000 });
+  // Try multiple Gemini models: gemini-1.5-flash, gemini-2.0-flash, gemini-1.5-pro
+  const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
-    const text = res.data.candidates[0].content.parts[0].text;
-    const parsed = JSON.parse(text);
-    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-    if (replyText) {
-      return {
-        reply: cleanChatReply(replyText),
-        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-        energyDelta: currentlyAnnoyed ? -5 : +10
-      };
+  for (const modelName of geminiModels) {
+    try {
+      const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`, {
+        contents: contents,
+        generationConfig: {
+          temperature: 0.85,
+          maxOutputTokens: 1000,
+          responseMimeType: "application/json"
+        }
+      }, { timeout: 8000 });
+
+      const text = res.data.candidates[0].content.parts[0].text;
+      const parsed = JSON.parse(text);
+      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
+      if (replyText) {
+        return {
+          reply: cleanChatReply(replyText),
+          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
+          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
+          energyDelta: currentlyAnnoyed ? -5 : +10
+        };
+      }
+    } catch (err) {
+      console.error(`Gemini (${modelName}) Notice:`, err.message);
     }
-    return null;
-  } catch (err) {
-    console.error('Gemini API Notice:', err.message);
-    return null;
   }
+  return null;
 }
 
 async function callCohere(message, history = [], extraContext = '') {
@@ -428,7 +501,7 @@ module.exports = async (req, res) => {
       }
     } else {
       // Priority model order:
-      // 1. Gemini → 2. Groq → 3. Cohere → 4. OpenRouter → 5. Smart Fallback
+      // 1. Gemini → 2. Groq → 3. Cohere → 4. OpenRouter → 5. Smart Dynamic Rapunzel Engine
       result = await callGemini(message, history, extraContext);
       if (!result) {
         result = await callGroq(message, history, extraContext);
