@@ -668,6 +668,7 @@
 
     <!-- Bottom Input Bar -->
     <div class="input-bar">
+      <button class="action-btn" id="joyBtn" title="التحكم بالعجل (Joystick)" onclick="openJoystickModal()">🕹️</button>
       <button class="action-btn" id="camBtn" title="التقاط صورة للكاميرا" onclick="openCameraModal()">📷</button>
       <button class="action-btn" id="micBtn" title="التحدث بالصوت" onclick="toggleVoiceRecording()">🎙️</button>
 
@@ -697,6 +698,41 @@
           <canvas id="snapshotCanvas"></canvas>
         </div>
         <button class="snap-btn" onclick="captureAndSendPhoto()">📸 التقط صورة وارسلي لـ لولا</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Joystick Control Modal -->
+  <div class="modal-overlay" id="joystickModal">
+    <div class="modal-card" style="max-width: 380px; text-align: center;">
+      <div class="modal-header">
+        <div class="modal-title">🕹️ التحكم في حركة العجل (Joystick)</div>
+        <button class="close-btn" onclick="closeJoystickModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <p style="margin-bottom: 12px; font-size: 13px; color: #ccc;">حرك عصا التحكم (Joystick) لتوجيه حركة العجل بالكامل:</p>
+        
+        <!-- Touch/Mouse Virtual Joystick Canvas -->
+        <div id="joystickContainer" style="width: 220px; height: 220px; background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.15); border-radius: 50%; position: relative; touch-action: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer;">
+          <div id="joystickKnob" style="width: 70px; height: 70px; background: linear-gradient(135deg, #FF6B57, #FFD700); border-radius: 50%; position: absolute; top: 75px; left: 75px; box-shadow: 0 4px 15px rgba(255, 107, 87, 0.5); cursor: grab; transition: transform 0.05s ease;"></div>
+        </div>
+
+        <div id="joyStatus" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #FFD700;">
+          الحالة: متوقف (0, 0)
+        </div>
+
+        <!-- Quick Direction Buttons -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; width: 100%;">
+          <div></div>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(200,200)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(200,200)" ontouchend="sendDirectDrive(0,0)">⬆️ للأمام</button>
+          <div></div>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(-180,180)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(-180,180)" ontouchend="sendDirectDrive(0,0)">⬅️ يسار</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0; background: #FF6B57; color: #fff;" onclick="sendDirectDrive(0,0)">⏹️ إيقاف</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(180,-180)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(180,-180)" ontouchend="sendDirectDrive(0,0)">➡️ يمين</button>
+          <div></div>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(-200,-200)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(-200,-200)" ontouchend="sendDirectDrive(0,0)">⬇️ للخلف</button>
+          <div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1102,6 +1138,109 @@
       resetIdleTimer();
       if (e.key === 'Enter') sendMessage();
     });
+
+    // Joystick Modal & Control Handlers
+    let isDraggingJoy = false;
+    let joyLastSend = 0;
+
+    function openJoystickModal() {
+      document.getElementById('joystickModal').classList.add('active');
+    }
+
+    function closeJoystickModal() {
+      document.getElementById('joystickModal').classList.remove('active');
+      sendDirectDrive(0, 0);
+    }
+
+    function sendDirectDrive(left, right) {
+      const joyStatus = document.getElementById('joyStatus');
+      if (joyStatus) {
+        if (left === 0 && right === 0) joyStatus.innerText = 'الحالة: متوقف (0, 0)';
+        else if (left > 0 && right > 0) joyStatus.innerText = `الحالة: للأمام (${left})`;
+        else if (left < 0 && right < 0) joyStatus.innerText = `الحالة: للخلف (${Math.abs(left)})`;
+        else if (left < 0 && right > 0) joyStatus.innerText = `الحالة: دوران يسار`;
+        else if (left > 0 && right < 0) joyStatus.innerText = `الحالة: دوران يمين`;
+      }
+      fetch('/api/joystick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ left, right })
+      }).catch(e => console.error(e));
+    }
+
+    // Virtual Joystick Touch / Mouse Dragging Engine
+    const joyContainer = document.getElementById('joystickContainer');
+    const joyKnob = document.getElementById('joystickKnob');
+
+    if (joyContainer && joyKnob) {
+      const handleJoyMove = (clientX, clientY) => {
+        const rect = joyContainer.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const maxRadius = rect.width / 2 - 35;
+
+        let dx = clientX - centerX;
+        let dy = clientY - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > maxRadius) {
+          dx = (dx / dist) * maxRadius;
+          dy = (dy / dist) * maxRadius;
+        }
+
+        joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+        const normX = dx / maxRadius;
+        const normY = -dy / maxRadius;
+
+        const speed = normY * 255;
+        const turn = normX * 200;
+
+        let left = Math.round(speed + turn);
+        let right = Math.round(speed - turn);
+
+        const now = Date.now();
+        if (now - joyLastSend > 100) {
+          joyLastSend = now;
+          sendDirectDrive(left, right);
+        }
+      };
+
+      const handleJoyEnd = () => {
+        isDraggingJoy = false;
+        joyKnob.style.transform = `translate(0px, 0px)`;
+        sendDirectDrive(0, 0);
+      };
+
+      joyContainer.addEventListener('mousedown', (e) => {
+        isDraggingJoy = true;
+        handleJoyMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingJoy) handleJoyMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDraggingJoy) handleJoyEnd();
+      });
+
+      joyContainer.addEventListener('touchstart', (e) => {
+        isDraggingJoy = true;
+        if (e.touches.length > 0) handleJoyMove(e.touches[0].clientX, e.touches[0].clientY);
+      });
+
+      joyContainer.addEventListener('touchmove', (e) => {
+        if (isDraggingJoy && e.touches.length > 0) {
+          e.preventDefault();
+          handleJoyMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+
+      joyContainer.addEventListener('touchend', () => {
+        if (isDraggingJoy) handleJoyEnd();
+      });
+    }
 
     // Initialize Polling & Voice & Proactive Timer
     pollMood();
