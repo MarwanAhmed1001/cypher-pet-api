@@ -247,8 +247,8 @@ async function callGemini(message, history = [], extraContext = '', image = null
     parts: userParts
   });
 
-  // Target latest working models: gemini-3.6-flash, gemini-2.5-flash, gemini-1.5-flash
-  const geminiModels = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+  // Target primary fast working model: gemini-3.6-flash
+  const geminiModels = ['gemini-3.6-flash'];
 
   for (const modelName of geminiModels) {
     try {
@@ -259,7 +259,7 @@ async function callGemini(message, history = [], extraContext = '', image = null
           maxOutputTokens: 1000,
           responseMimeType: "application/json"
         }
-      }, { timeout: 8000 });
+      }, { timeout: 3000 });
 
       const text = res.data.candidates[0].content.parts[0].text;
       const parsed = JSON.parse(text);
