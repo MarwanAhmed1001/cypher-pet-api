@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const axios = require('axios');
 const querystring = require('querystring');
 const { 
@@ -213,8 +213,8 @@ const spotifyHandler = async (req, res) => {
           </head>
           <body>
             <div class="card">
-              <h1>✅ Spotify Connected to Cypher Pet!</h1>
-              <p>تم ربط حسابك في سبوتيفاي بنجاح مع Cypher Pet 🎉</p>
+              <h1>âœ… Spotify Connected to Cypher Pet!</h1>
+              <p>ØªÙ… Ø±Ø¨Ø· Ø­Ø³Ø§Ø¨Ùƒ ÙÙŠ Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ Ø¨Ù†Ø¬Ø§Ø­ Ù…Ø¹ Cypher Pet ðŸŽ‰</p>
               <p>Your Refresh Token has been saved into memory!</p>
               <code>${refresh_token}</code>
             </div>
@@ -246,11 +246,11 @@ const spotifyHandler = async (req, res) => {
     let displayText = "";
 
     if (nowPlaying && nowPlaying.trackName) {
-      const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
-      replyText = `بتسمع دلوقتي: "${nowPlaying.trackName}"${artistStr} 🎵 أروق مان في المجرة 🎧`;
+      const artistStr = nowPlaying.artistName ? ` Ù„Ù€ ${nowPlaying.artistName}` : '';
+      replyText = `Ø¨ØªØ³Ù…Ø¹ Ø¯Ù„ÙˆÙ‚ØªÙŠ: "${nowPlaying.trackName}"${artistStr} ðŸŽµ Ø£Ø±ÙˆÙ‚ Ù…Ø§Ù† ÙÙŠ Ø§Ù„Ù…Ø¬Ø±Ø© ðŸŽ§`;
       displayText = enforceEnglishScreenText(`${nowPlaying.artistName || 'Spotify'} - ${nowPlaying.trackName}`, nowPlaying.trackName);
     } else {
-      replyText = "شغّلت سبوتيفاي! افتح أي أغنية وعينيا عليها 🎶🎧";
+      replyText = "Ø´ØºÙ‘Ù„Øª Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ! Ø§ÙØªØ­ Ø£ÙŠ Ø£ØºÙ†ÙŠØ© ÙˆØ¹ÙŠÙ†ÙŠØ§ Ø¹Ù„ÙŠÙ‡Ø§ ðŸŽ¶ðŸŽ§";
       displayText = "Spotify Ready!";
     }
 

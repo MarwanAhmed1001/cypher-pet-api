@@ -1,0 +1,23 @@
+const express = require('express');
+const path = require('path');
+const chatHandler = require('../handlers/chat');
+const moodHandler = require('../handlers/mood');
+const notifyHandler = require('../handlers/notify');
+const spotifyHandler = require('../handlers/spotify');
+const resetHandler = require('../handlers/reset');
+const joystickHandler = require('../handlers/joystick');
+
+const app = express();
+
+app.use(express.json());
+
+// API Routes - all in one serverless function = shared in-memory state
+app.all('/api/chat', (req, res) => chatHandler(req, res));
+app.all('/api/mood', (req, res) => moodHandler(req, res));
+app.all('/api/notify', (req, res) => notifyHandler(req, res));
+app.all('/api/spotify', (req, res) => spotifyHandler(req, res));
+app.all('/api/spotify/callback', (req, res) => spotifyHandler(req, res));
+app.all('/api/reset', (req, res) => resetHandler(req, res));
+app.all('/api/joystick', (req, res) => joystickHandler(req, res));
+
+module.exports = app;

@@ -1,4 +1,4 @@
-const { recordInteraction } = require('../lib/store');
+﻿const { recordInteraction } = require('../lib/store');
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -31,18 +31,18 @@ function getNotificationReply(req) {
   const artist = (query.artist || body.artist || query.singer || body.singer || '').toString().trim();
 
   // 1. Spotify / Music
-  if (fullContext.includes('spotify') || fullContext.includes('سبوتيفاي') || fullContext.includes('music') || fullContext.includes('موسيقى') || title.length > 0) {
+  if (fullContext.includes('spotify') || fullContext.includes('Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ') || fullContext.includes('music') || fullContext.includes('Ù…ÙˆØ³ÙŠÙ‚Ù‰') || title.length > 0) {
     let songInfoArabic = "";
     let songInfoDisplay = "";
 
     if (title && artist) {
-      songInfoArabic = `بتسمع "${title}" لـ ${artist}. الذوق محتاج مراجعة.`;
+      songInfoArabic = `Ø¨ØªØ³Ù…Ø¹ "${title}" Ù„Ù€ ${artist}. Ø§Ù„Ø°ÙˆÙ‚ Ù…Ø­ØªØ§Ø¬ Ù…Ø±Ø§Ø¬Ø¹Ø©.`;
       songInfoDisplay = enforceEnglishScreenText(`${artist} - ${title}`, `${title}`);
     } else if (title) {
-      songInfoArabic = `شغال أغنية: "${title}". تمام، كمل.`;
+      songInfoArabic = `Ø´ØºØ§Ù„ Ø£ØºÙ†ÙŠØ©: "${title}". ØªÙ…Ø§Ù…ØŒ ÙƒÙ…Ù„.`;
       songInfoDisplay = enforceEnglishScreenText(`${title}`, "Spotify Music!");
     } else {
-      songInfoArabic = "شغّلت سبوتيفاي... كأن مفيش وراك حاجة تانية تعملها.";
+      songInfoArabic = "Ø´ØºÙ‘Ù„Øª Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ... ÙƒØ£Ù† Ù…ÙÙŠØ´ ÙˆØ±Ø§Ùƒ Ø­Ø§Ø¬Ø© ØªØ§Ù†ÙŠØ© ØªØ¹Ù…Ù„Ù‡Ø§.";
       songInfoDisplay = "Spotify Music!";
     }
 
@@ -54,45 +54,45 @@ function getNotificationReply(req) {
   }
 
   // 2. Charger / Charging
-  if (fullContext.includes('charger') || fullContext.includes('charging') || fullContext.includes('شاحن') || fullContext.includes('شحن')) {
+  if (fullContext.includes('charger') || fullContext.includes('charging') || fullContext.includes('Ø´Ø§Ø­Ù†') || fullContext.includes('Ø´Ø­Ù†')) {
     return {
-      reply: "أخيراً افتكرت تحطه على الشاحن قبل ما يفصل.",
+      reply: "Ø£Ø®ÙŠØ±Ø§Ù‹ Ø§ÙØªÙƒØ±Øª ØªØ­Ø·Ù‡ Ø¹Ù„Ù‰ Ø§Ù„Ø´Ø§Ø­Ù† Ù‚Ø¨Ù„ Ù…Ø§ ÙŠÙØµÙ„.",
       display: "Charger Plugged!",
       mood: "NEUTRAL"
     };
   }
 
   // 3. Low Battery Mode / Battery Level
-  if (fullContext.includes('battery') || fullContext.includes('بطارية') || fullContext.includes('بطاريه') || fullContext.includes('low_battery') || fullContext.includes('lowpower')) {
+  if (fullContext.includes('battery') || fullContext.includes('Ø¨Ø·Ø§Ø±ÙŠØ©') || fullContext.includes('Ø¨Ø·Ø§Ø±ÙŠÙ‡') || fullContext.includes('low_battery') || fullContext.includes('lowpower')) {
     return {
-      reply: "البطارية بتفوت، حط التليفون على الشاحن بدل العطلة دي.",
+      reply: "Ø§Ù„Ø¨Ø·Ø§Ø±ÙŠØ© Ø¨ØªÙÙˆØªØŒ Ø­Ø· Ø§Ù„ØªÙ„ÙŠÙÙˆÙ† Ø¹Ù„Ù‰ Ø§Ù„Ø´Ø§Ø­Ù† Ø¨Ø¯Ù„ Ø§Ù„Ø¹Ø·Ù„Ø© Ø¯ÙŠ.",
       display: "Low Battery!",
       mood: "ANNOYED"
     };
   }
 
   // 4. Wi-Fi Connected
-  if (fullContext.includes('wifi') || fullContext.includes('wi-fi') || fullContext.includes('واي فاي') || fullContext.includes('شبكة')) {
+  if (fullContext.includes('wifi') || fullContext.includes('wi-fi') || fullContext.includes('ÙˆØ§ÙŠ ÙØ§ÙŠ') || fullContext.includes('Ø´Ø¨ÙƒØ©')) {
     return {
-      reply: "اتصلت بالشبكة. اتفضل كمل رغي.",
+      reply: "Ø§ØªØµÙ„Øª Ø¨Ø§Ù„Ø´Ø¨ÙƒØ©. Ø§ØªÙØ¶Ù„ ÙƒÙ…Ù„ Ø±ØºÙŠ.",
       display: "WiFi Connected!",
       mood: "NEUTRAL"
     };
   }
 
   // 5. Alarm Dismissed / Morning Wake Up
-  if (fullContext.includes('alarm') || fullContext.includes('منبه') || fullContext.includes('صباح') || fullContext.includes('dismiss')) {
+  if (fullContext.includes('alarm') || fullContext.includes('Ù…Ù†Ø¨Ù‡') || fullContext.includes('ØµØ¨Ø§Ø­') || fullContext.includes('dismiss')) {
     return {
-      reply: "صحيت؟ ياريت تكون هتسيبني في حالي.",
+      reply: "ØµØ­ÙŠØªØŸ ÙŠØ§Ø±ÙŠØª ØªÙƒÙˆÙ† Ù‡ØªØ³ÙŠØ¨Ù†ÙŠ ÙÙŠ Ø­Ø§Ù„ÙŠ.",
       display: "Alarm Off!",
       mood: "NEUTRAL"
     };
   }
 
   // 6. WhatsApp
-  if (fullContext.includes('whatsapp') || fullContext.includes('واتساب')) {
+  if (fullContext.includes('whatsapp') || fullContext.includes('ÙˆØ§ØªØ³Ø§Ø¨')) {
     return {
-      reply: "رسالة واتساب جديدة... ياترى مين بيوجع دماغه بيك.",
+      reply: "Ø±Ø³Ø§Ù„Ø© ÙˆØ§ØªØ³Ø§Ø¨ Ø¬Ø¯ÙŠØ¯Ø©... ÙŠØ§ØªØ±Ù‰ Ù…ÙŠÙ† Ø¨ÙŠÙˆØ¬Ø¹ Ø¯Ù…Ø§ØºÙ‡ Ø¨ÙŠÙƒ.",
       display: "WA: New Msg!",
       mood: "NEUTRAL"
     };
@@ -101,7 +101,7 @@ function getNotificationReply(req) {
   // 7. SMS / Text Message
   if (fullContext.includes('sms') || fullContext.includes('message')) {
     return {
-      reply: "وصلتك رسالة. روح شوفها وخلصنا.",
+      reply: "ÙˆØµÙ„ØªÙƒ Ø±Ø³Ø§Ù„Ø©. Ø±ÙˆØ­ Ø´ÙˆÙÙ‡Ø§ ÙˆØ®Ù„ØµÙ†Ø§.",
       display: "SMS: New Msg!",
       mood: "NEUTRAL"
     };
@@ -113,7 +113,7 @@ function getNotificationReply(req) {
     const cleanCustom = enforceEnglishScreenText(customText.toString(), "");
     if (cleanCustom.length > 0) {
       return {
-        reply: `إشعار جديد: ${cleanCustom}. مش مهم أوي يعني.`,
+        reply: `Ø¥Ø´Ø¹Ø§Ø± Ø¬Ø¯ÙŠØ¯: ${cleanCustom}. Ù…Ø´ Ù…Ù‡Ù… Ø£ÙˆÙŠ ÙŠØ¹Ù†ÙŠ.`,
         display: cleanCustom,
         mood: "NEUTRAL"
       };
@@ -121,7 +121,7 @@ function getNotificationReply(req) {
   }
 
   return {
-    reply: "إشعار جديد وصل. تليفونك مبيسكتش.",
+    reply: "Ø¥Ø´Ø¹Ø§Ø± Ø¬Ø¯ÙŠØ¯ ÙˆØµÙ„. ØªÙ„ÙŠÙÙˆÙ†Ùƒ Ù…Ø¨ÙŠØ³ÙƒØªØ´.",
     display: "iOS Event!",
     mood: "NEUTRAL"
   };

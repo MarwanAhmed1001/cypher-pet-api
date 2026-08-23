@@ -1,11 +1,11 @@
 const express = require('express');
 const path = require('path');
-const chatHandler = require('./api/chat');
-const moodHandler = require('./api/mood');
-const notifyHandler = require('./api/notify');
-const spotifyHandler = require('./api/spotify');
-const resetHandler = require('./api/reset');
-const joystickHandler = require('./api/joystick');
+const chatHandler = require('./handlers/chat');
+const moodHandler = require('./handlers/mood');
+const notifyHandler = require('./handlers/notify');
+const spotifyHandler = require('./handlers/spotify');
+const resetHandler = require('./handlers/reset');
+const joystickHandler = require('./handlers/joystick');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

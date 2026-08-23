@@ -1,5 +1,14 @@
 {
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/chat", "destination": "/api" },
+    { "source": "/api/mood", "destination": "/api" },
+    { "source": "/api/notify", "destination": "/api" },
+    { "source": "/api/spotify", "destination": "/api" },
+    { "source": "/api/spotify/callback", "destination": "/api" },
+    { "source": "/api/reset", "destination": "/api" },
+    { "source": "/api/joystick", "destination": "/api" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
