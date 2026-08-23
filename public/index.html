@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Lola - لولا | الكائن الرقمي الذكي</title>
   
   <!-- Google Fonts: Tajawal & Outfit -->
@@ -1248,5 +1251,19 @@
     setInterval(pollMood, 3000);
     resetIdleTimer();
   </script>
+
+  <!-- Floating Joystick Quick Button -->
+  <button id="floatingJoyBtn" onclick="openJoystickModal()" style="position: fixed; bottom: 85px; right: 20px; z-index: 99999; background: linear-gradient(135deg, #FF6B57, #FFD700); color: #000; font-weight: 900; font-size: 15px; padding: 12px 18px; border-radius: 50px; border: 2px solid #fff; box-shadow: 0 8px 25px rgba(255, 107, 87, 0.7); cursor: pointer; display: flex; align-items: center; gap: 8px; animation: pulseJoy 2s infinite;">
+    <span style="font-size: 20px;">🕹️</span>
+    <span style="font-weight: 800;">تحكم بالعجل</span>
+  </button>
+
+  <style>
+    @keyframes pulseJoy {
+      0% { transform: scale(1); box-shadow: 0 8px 25px rgba(255, 107, 87, 0.7); }
+      50% { transform: scale(1.08); box-shadow: 0 12px 35px rgba(255, 215, 0, 0.9); }
+      100% { transform: scale(1); box-shadow: 0 8px 25px rgba(255, 107, 87, 0.7); }
+    }
+  </style>
 </body>
 </html>
