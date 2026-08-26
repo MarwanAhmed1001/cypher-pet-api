@@ -675,6 +675,7 @@
       <button class="action-btn" id="joyBtn" title="التحكم بالعجل (Joystick)" onclick="openJoystickModal()">🕹️</button>
       <button class="action-btn" id="camBtn" title="التقاط صورة للكاميرا" onclick="openCameraModal()">📷</button>
       <button class="action-btn" id="micBtn" title="التحدث بالصوت" onclick="toggleVoiceRecording()">🎙️</button>
+      <button class="action-btn" id="audioToggleBtn" title="صوت لولا مفعّل" onclick="toggleAudioOutput()">🔊</button>
 
       <div class="input-wrapper">
         <input type="text" class="chat-input" id="chatInput" placeholder="اكتب رسالة لـ لولا..." autocomplete="off">
@@ -836,38 +837,107 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    function getFemaleArabicVoice() {
+    function getBestVoice(isArabic = true) {
       const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
-      const femaleKeywords = ['salma', 'zariyah', 'laila', 'mariam', 'sama', 'female', 'سلمى', 'مريم', 'ليلى', 'عائشة'];
-      let best = voices.find(v => {
-        if (!v.lang || (!v.lang.includes('ar') && !v.lang.startsWith('ar'))) return false;
-        const name = v.name.toLowerCase();
-        return femaleKeywords.some(kw => name.includes(kw));
-      });
-      if (best) return best;
+      if (voices.length === 0) return null;
 
-      best = voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')) && v.name.toLowerCase().includes('natural'));
-      if (best) return best;
+      if (isArabic) {
+        const arabicFemaleKeywords = ['salma', 'zariyah', 'laila', 'mariam', 'sama', 'female', 'سلمى', 'مريم', 'ليلى', 'عائشة', 'hoda', 'zeina'];
+        let best = voices.find(v => {
+          if (!v.lang || (!v.lang.includes('ar') && !v.lang.startsWith('ar'))) return false;
+          const name = v.name.toLowerCase();
+          return arabicFemaleKeywords.some(kw => name.includes(kw));
+        });
+        if (best) return best;
 
-      return voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
+        best = voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')) && v.name.toLowerCase().includes('natural'));
+        if (best) return best;
+
+        return voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
+      } else {
+        const englishFemaleKeywords = ['samantha', 'victoria', 'zira', 'karen', 'cora', 'jenny', 'aria', 'natural', 'female', 'google us english'];
+        let best = voices.find(v => {
+          if (!v.lang || (!v.lang.includes('en') && !v.lang.startsWith('en'))) return false;
+          const name = v.name.toLowerCase();
+          return englishFemaleKeywords.some(kw => name.includes(kw));
+        });
+        if (best) return best;
+
+        return voices.find(v => v.lang && (v.lang.includes('en') || v.lang.startsWith('en')));
+      }
     }
 
+    let ttsEnabled = true;
+
     function playWebBuzzerAlarm() {
-      // Browser audio disabled per user request
-      return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0.3;
+        osc.type = 'square';
+
+        // Cute alarm pattern: beep-beep-beep
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(0, now + 0.15);
+        osc.frequency.setValueAtTime(1100, now + 0.25);
+        osc.frequency.setValueAtTime(0, now + 0.4);
+        osc.frequency.setValueAtTime(880, now + 0.5);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+
+        osc.start(now);
+        osc.stop(now + 0.7);
+      } catch (e) { console.log('Audio alarm skipped:', e); }
     }
 
     function speakText(text) {
-      // Browser Web Speech TTS disabled per user request
-      return;
+      if (!ttsEnabled || !('speechSynthesis' in window) || !text) return;
+
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      // Clean text for natural speech (remove emojis, Markdown and special characters)
+      const cleanText = text
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/[\u{1F000}-\u{1FFFF}|\u{2600}-\u{27FF}|\u{FE00}-\u{FEFF}|✨|💖|🌸|💛|🎀|❤️|🦎|🍳|☀️|🌙|⭐|🔥|😂|😭|🥺|💕|🌈|✌️|👑|💫|🎶|🎵|💜|🧡|💚|🤍|🖤|💗|💝|🌺|🌻|🌹|🌷|💐|🎨|🎭|📸|🎪|🎡|🎢]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleanText) return;
+
+      const isArabic = /[\u0600-\u06FF]/.test(cleanText);
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      const voice = getBestVoice(isArabic);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+      } else {
+        utterance.lang = isArabic ? 'ar-EG' : 'en-US';
+      }
+
+      utterance.rate = isArabic ? 1.0 : 1.05;
+      utterance.pitch = 1.15; // Slightly higher pitch for cute friendly voice
+      utterance.volume = 0.95;
+
+      // Chrome bug fix: prevent garbage collection interruption on long phrases
+      utterance.onpause = () => { window.speechSynthesis.resume(); };
+
+      window.speechSynthesis.speak(utterance);
     }
 
-
-
-
     function toggleAudioOutput() {
-      // Disabled - no TTS button exists
-      return;
+      ttsEnabled = !ttsEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      if (btn) {
+        btn.textContent = ttsEnabled ? '🔊' : '🔇';
+        btn.title = ttsEnabled ? 'صوت لولا مفعّل' : 'صوت لولا مكتوم';
+      }
     }
 
 
