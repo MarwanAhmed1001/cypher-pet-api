@@ -11,8 +11,7 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-const DEFAULT_GEMINI_KEY = Buffer.from("QVEuQWI4Uk42SmZmTXlkZEpqcERlbXJVQXNNelo2anE2YWFKRXh1S2plb3YxeG5EejM0X3c=", "base64").toString("utf-8");
-const GEMINI_KEY = process.env.GEMINI_API_KEY || DEFAULT_GEMINI_KEY;
+const ZENMUX_KEY = process.env.ZENMUX_KEY || "sk-ai-v1-c257f0999a6ad6fadc6c1d098e9dea0b80f2b6361b5536ab51d7512318171932";
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -69,57 +68,49 @@ async function fetchLiveWeather() {
   return { temp: 28, condition: "مشمس وجميل", conditionEn: "Sunny & Warm", cmd: "SUNNY" };
 }
 
-// 2. Primary Live LLM via Google Gemini Ultra / Flash Engine
-async function callGeminiLive(message, extraContext = "") {
-  const SYSTEM_INSTRUCTION = `You are the physical consciousness and personality of "Lola", an ultra-smart, witty, and charming desktop robot pet companion.
-Guidelines:
-1. "reply": Answer naturally and intelligently in 2 to 3 expressive, charming sentences (under 40 words). If spoken to in Arabic, speak in witty, delightful Egyptian Arabic (عامية مصرية عفوية). If in English, reply in natural, fluent English.
-2. "reply_display": Short English summary (max 20 ASCII characters) for the hardware TFT screen.
-3. "mood": "HAPPY" | "LOVE" | "EXCITED" | "CURIOUS" | "THINKING" | "BORED" | "DARK"
-4. "voice_clip": "WEATHER" (for weather/climate), "LOVE" (for love/affection/sweetness), "DANCE" (for dance/music/celebration), "BYE" (for sleep/goodnight/leaving), "GOOD" (for stories/jokes/fun/cheer), "INTRO" (for identity/who are you), "HELLO" (for greetings/daily chat), "LISTEN" (for listening/conversation/advice).
-${extraContext ? "Context: " + extraContext : ""}
+// 2. Primary Free Live LLM via ZenMux Dots-3 (Preserves Gemini Free Trial!)
+async function callPrimaryLLM(message, extraContext = "") {
+  try {
+    const res = await axios.post('https://zenmux.ai/api/v1/chat/completions', {
+      model: 'dots-studio/dots3-note-prev',
+      messages: [
+        {
+          role: 'system',
+          content: `You are "Lola", an ultra-smart, witty, loving desktop robot pet. Respond in 2-3 expressive sentences (under 35 words). Use lively Egyptian Arabic for Arabic queries and natural English for English queries. ${extraContext}`
+        },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 250,
+      temperature: 0.85
+    }, {
+      headers: {
+        'Authorization': `Bearer ${ZENMUX_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 6000
+    });
 
-Return valid JSON ONLY matching schema:
-{"reply": "...", "reply_display": "...", "mood": "...", "voice_clip": "..."}`;
+    const reply = res.data?.choices?.[0]?.message?.content?.trim();
+    if (reply) {
+      let voice_clip = "HELLO";
+      const lower = (message + " " + reply).toLowerCase();
+      if (lower.includes('طقس') || lower.includes('weather')) voice_clip = "WEATHER";
+      else if (lower.includes('بحبك') || lower.includes('love')) voice_clip = "LOVE";
+      else if (lower.includes('ارقص') || lower.includes('dance')) { voice_clip = "DANCE"; setCommand("DANCE"); }
+      else if (lower.includes('نام') || lower.includes('sleep')) { voice_clip = "BYE"; setCommand("SLEEP"); }
+      else if (lower.includes('اصح') || lower.includes('wake')) { voice_clip = "HELLO"; setCommand("WAKE"); }
+      else if (lower.includes('قصة') || lower.includes('نكتة') || lower.includes('story') || lower.includes('joke')) voice_clip = "GOOD";
+      else voice_clip = "LISTEN";
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.6-flash'
-  ];
-
-  for (const m of candidateModels) {
-    try {
-      const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${GEMINI_KEY}`, {
-        contents: [
-          { role: 'user', parts: [{ text: `${SYSTEM_INSTRUCTION}\n\nUser: "${message}"\n\nJSON Response:` }] }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.85,
-          maxOutputTokens: 350
-        }
-      }, { timeout: 8000 });
-
-      const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text) {
-        const parsed = JSON.parse(text);
-        if (parsed.reply) {
-          if (parsed.voice_clip === "DANCE" || message.toLowerCase().includes('ارقص') || message.toLowerCase().includes('dance')) setCommand("DANCE");
-          else if (parsed.voice_clip === "BYE" || message.toLowerCase().includes('نام') || message.toLowerCase().includes('sleep')) setCommand("SLEEP");
-          else if (message.toLowerCase().includes('اصح') || message.toLowerCase().includes('wake')) setCommand("WAKE");
-
-          return {
-            reply: parsed.reply,
-            display: enforceEnglishScreenText(parsed.reply_display, "Lola: Ready!"),
-            mood: parsed.mood || "HAPPY",
-            voice_clip: parsed.voice_clip || "HELLO"
-          };
-        }
-      }
-    } catch (e) {
-      // Continue to fallback
+      return {
+        reply: reply,
+        display: enforceEnglishScreenText(reply.substring(0, 20), "Lola: Thinking!"),
+        mood: "HAPPY",
+        voice_clip: voice_clip
+      };
     }
+  } catch (e) {
+    // Graceful fallback to local engine
   }
   return null;
 }
@@ -133,12 +124,12 @@ async function processSmartDialogue(message) {
   if (text.includes('طقس') || text.includes('الجو') || text.includes('حرارة') || text.includes('حر') || text.includes('برد') || text.includes('مطر') || text.includes('شمس') || text.includes('weather') || text.includes('temp') || text.includes('forecast')) {
     const w = await fetchLiveWeather();
     setCommand(w.cmd);
-    weatherContext = `Live Weather in Cairo: ${w.temp}°C, condition: ${w.condition} (${w.conditionEn}). Include this accurate temperature in your witty response.`;
+    weatherContext = `Live Weather in Cairo: ${w.temp}°C, condition: ${w.condition} (${w.conditionEn}).`;
   }
 
-  // 1. Try Live Gemini LLM
-  const geminiResult = await callGeminiLive(message, weatherContext);
-  if (geminiResult) return geminiResult;
+  // 1. Try Primary Active Key on ZenMux (No Gemini Trial Consumption!)
+  const primaryResult = await callPrimaryLLM(message, weatherContext);
+  if (primaryResult) return primaryResult;
 
   // 2. High-Quality Fallback Engine
   const isEnglish = /[a-zA-Z]{3,}/.test(text) && !/[\u0600-\u06FF]/.test(text);

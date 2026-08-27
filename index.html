@@ -824,51 +824,21 @@
     const moodText = document.getElementById('moodText');
     const statusDot = document.getElementById('statusDot');
     const dailyMoodText = document.getElementById('dailyMoodText');
-    // Speech Synthesis (Text to Speech for Egyptian Arabic - Soft Female Voice)
-    let availableVoices = [];
-    function loadVoices() {
-      if ('speechSynthesis' in window) {
-        availableVoices = window.speechSynthesis.getVoices();
-      }
-    }
-    if ('speechSynthesis' in window) {
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
+    // ========================================================
+    // BROWSER AUDIO PERMANENTLY DISABLED - 100% MUTED
+    // All audio output is routed exclusively to ESP32 MAX98357A
+    // ========================================================
+    try {
+      window.speechSynthesis = null;
+      window.SpeechSynthesisUtterance = null;
+      window.Audio = function() { return { play: () => {}, pause: () => {}, addEventListener: () => {} }; };
+      window.AudioContext = null;
+      window.webkitAudioContext = null;
+    } catch (e) {}
 
-    function getFemaleArabicVoice() {
-      const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
-      const femaleKeywords = ['salma', 'zariyah', 'laila', 'mariam', 'sama', 'female', 'سلمى', 'مريم', 'ليلى', 'عائشة'];
-      let best = voices.find(v => {
-        if (!v.lang || (!v.lang.includes('ar') && !v.lang.startsWith('ar'))) return false;
-        const name = v.name.toLowerCase();
-        return femaleKeywords.some(kw => name.includes(kw));
-      });
-      if (best) return best;
-
-      best = voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')) && v.name.toLowerCase().includes('natural'));
-      if (best) return best;
-
-      return voices.find(v => v.lang && (v.lang.includes('ar') || v.lang.startsWith('ar')));
-    }
-
-    function playWebBuzzerAlarm() {
-      // Browser audio disabled per user request
-      return;
-    }
-
-    function speakText(text) {
-      // Browser Web Speech TTS disabled per user request
-      return;
-    }
-
-
-
-
-    function toggleAudioOutput() {
-      // Disabled - no TTS button exists
-      return;
-    }
+    function playWebBuzzerAlarm() { return; }
+    function speakText(text) { return; }
+    function toggleAudioOutput() { return; }
 
 
     // Speech Recognition (Speech to Text)
@@ -1101,25 +1071,18 @@
         if (res.ok && data.reply) {
           appendMessage('cypher', data.reply, null, data.mood, data.data_type);
           updateTopBarUI(data.mood, data.daily_mood);
-          speakText(data.reply);
-
-          if (text.toLowerCase().includes('صوتي') || text.toLowerCase().includes('باظر') || text.toLowerCase().includes('انذار')) {
-            playWebBuzzerAlarm();
-          }
 
           chatHistory.push({ role: 'assistant', content: data.reply });
           if (chatHistory.length > 10) chatHistory.shift();
         } else {
-          const fallback = 'أنا لولا! 💖 عاملة إيه يا أيلولتي؟ تعالي نقعد سوا ونتكلم ونتعرف على بعض أكتر! 🌸✨';
+          const fallback = 'أنا لولا! 💖 عاملة إيه يا روحي؟ تعالي نقعد سوا ونتكلم ونتعرف على بعض أكتر! 🌸✨';
           appendMessage('cypher', fallback, null, 'HAPPY', 'chat');
-          speakText(fallback);
         }
       } catch (err) {
         console.error('Send Error:', err);
         typingRow.classList.remove('active');
-        const fallback = 'سامحيني يا أيلولتي! 🌸 عقلي سرح ثانية في الرسم والألوان، كمليلي كنتي بتقولي إيه يا قمر؟ 💖✨';
+        const fallback = 'سامحيني يا قلبي! 🌸 عقلي سرح ثانية في الأفكار والألوان، كمليلي كنتي بتقولي إيه يا قمر؟ 💖✨';
         appendMessage('cypher', fallback, null, 'HAPPY', 'chat');
-        speakText(fallback);
       }
     }
 
