@@ -29,7 +29,59 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
   return clean;
 }
 
-// 1. Live Weather Engine via Open-Meteo (Free, Real-Time, No API Key needed)
+// 1. Live AI Call via ZenMux Gateway (DeepSeek, GLM, Gemini)
+async function callZenMux(message) {
+  const apiKey = process.env.ZENMUX_API_KEY || "sk-ai-v1-e530f28912e3cdbd47d5b573b8ce4d8227b4a0873798447aa4a98a50312f1ca5";
+  if (!apiKey) return null;
+
+  const candidateModels = [
+    'deepseek/deepseek-v4-flash',
+    'google/gemini-3.5-flash',
+    'z-ai/glm-5.3-flash',
+    'inclusionai/ling-3.0-tiny'
+  ];
+
+  for (const m of candidateModels) {
+    try {
+      const res = await axios.post('https://zenmux.ai/api/v1/chat/completions', {
+        model: m,
+        messages: [
+          { role: 'system', content: 'You are Lola, a witty cute desktop robot pet. Rules: Respond strictly in 1-2 punchy sentences in Egyptian Arabic or natural English matching the user. Max 15 words.' },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 150
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 4500
+      });
+
+      const reply = res.data?.choices?.[0]?.message?.content?.trim();
+      if (reply) {
+        let voice_clip = "HELLO";
+        const lower = message.toLowerCase();
+        if (lower.includes('طقس') || lower.includes('weather')) voice_clip = "WEATHER";
+        else if (lower.includes('بحبك') || lower.includes('love')) voice_clip = "LOVE";
+        else if (lower.includes('ارقصي') || lower.includes('dance')) voice_clip = "DANCE";
+        else if (lower.includes('نامي') || lower.includes('sleep')) voice_clip = "BYE";
+
+        return {
+          reply: reply,
+          display: enforceEnglishScreenText(reply.substring(0, 20), "Lola: Thinking!"),
+          mood: "HAPPY",
+          voice_clip: voice_clip
+        };
+      }
+    } catch (e) {
+      // Continue to next model or fallback
+    }
+  }
+  return null;
+}
+
+// 2. Live Weather Engine via Open-Meteo (Free, Real-Time, No API Key needed)
 async function fetchLiveWeather() {
   try {
     const res = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true', { timeout: 3500 });
@@ -91,6 +143,12 @@ async function processSmartDialogue(message) {
         voice_clip: "WEATHER"
       };
     }
+  }
+
+  // Try Live LLM via ZenMux (DeepSeek / Gemini / GLM)
+  const llmRes = await callZenMux(message);
+  if (llmRes) {
+    return llmRes;
   }
 
   // --- B. English Conversations ---
