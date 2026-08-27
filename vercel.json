@@ -7,7 +7,9 @@
     { "source": "/api/spotify", "destination": "/api" },
     { "source": "/api/spotify/callback", "destination": "/api" },
     { "source": "/api/reset", "destination": "/api" },
-    { "source": "/api/joystick", "destination": "/api" }
+    { "source": "/api/joystick", "destination": "/api" },
+    { "source": "/api/tts", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api" }
   ],
   "headers": [
     {
