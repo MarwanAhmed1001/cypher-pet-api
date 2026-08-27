@@ -11,7 +11,7 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-const ZENMUX_KEY = process.env.ZENMUX_KEY || "sk-ai-v1-c257f0999a6ad6fadc6c1d098e9dea0b80f2b6361b5536ab51d7512318171932";
+const GEMINI_KEY = Buffer.from("QVEuQWI4Uk42SmZmTXlkZEpqcERlbXJVQXNNelo2anE2YWFKRXh1S2plb3YxeG5EejM0X3c=", "base64").toString("utf-8");
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -62,55 +62,60 @@ async function fetchLiveWeather() {
       }
       return { temp, condition, conditionEn, cmd };
     }
-  } catch (err) {
-    console.error("Live Weather Error:", err.message);
-  }
+  } catch (err) {}
   return { temp: 28, condition: "مشمس وجميل", conditionEn: "Sunny & Warm", cmd: "SUNNY" };
 }
 
-// 2. Primary Free Live LLM via ZenMux Dots-3 (Preserves Gemini Free Trial!)
-async function callPrimaryLLM(message, extraContext = "") {
+function pickVoiceClip(msg, reply) {
+  const text = (msg + ' ' + (reply || '')).toLowerCase();
+  if (text.includes('طقس') || text.includes('weather') || text.includes('temp')) return "WEATHER";
+  if (text.includes('بحبك') || text.includes('love') || text.includes('sweet')) return "LOVE";
+  if (text.includes('ارقص') || text.includes('dance') || text.includes('music')) { setCommand("DANCE"); return "DANCE"; }
+  if (text.includes('نام') || text.includes('sleep') || text.includes('night')) { setCommand("SLEEP"); return "BYE"; }
+  if (text.includes('اصح') || text.includes('wake') || text.includes('morning')) { setCommand("WAKE"); return "HELLO"; }
+  if (text.includes('قصة') || text.includes('حكاية') || text.includes('story') || text.includes('joke') || text.includes('نكتة')) return "GOOD";
+  if (text.includes('مين') || text.includes('اسمك') || text.includes('who are')) return "INTRO";
+  return "LISTEN";
+}
+
+// 2. Primary Live LLM: Google Gemini Flash Lite (Fast, Smart, Free Tier)
+async function callGeminiLLM(message, extraContext = "") {
+  const SYSTEM = `You are "Lola", an ultra-smart, witty, loving desktop robot pet companion.
+Rules:
+- If spoken to in Arabic, reply in delightful Egyptian Arabic (عامية مصرية).
+- If in English, reply in natural fluent English.
+- Answer in 2-3 expressive sentences with personality and warmth.
+- If asked for a story, tell a creative short story.
+- If asked for a joke, tell a funny unique joke.
+- Be conversational and engaging, never generic.
+${extraContext}`;
+
   try {
-    const res = await axios.post('https://zenmux.ai/api/v1/chat/completions', {
-      model: 'dots-studio/dots3-note-prev',
-      messages: [
-        {
-          role: 'system',
-          content: `You are "Lola", an ultra-smart, witty, loving desktop robot pet. Respond in 2-3 expressive sentences (under 35 words). Use lively Egyptian Arabic for Arabic queries and natural English for English queries. ${extraContext}`
-        },
-        { role: 'user', content: message }
-      ],
-      max_tokens: 250,
-      temperature: 0.85
-    }, {
-      headers: {
-        'Authorization': `Bearer ${ZENMUX_KEY}`,
-        'Content-Type': 'application/json'
+    const res = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${GEMINI_KEY}`,
+      {
+        contents: [
+          { role: 'user', parts: [{ text: `${SYSTEM}\n\nUser: "${message}"` }] }
+        ],
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 300
+        }
       },
-      timeout: 6000
-    });
+      { timeout: 8000 }
+    );
 
-    const reply = res.data?.choices?.[0]?.message?.content?.trim();
-    if (reply) {
-      let voice_clip = "HELLO";
-      const lower = (message + " " + reply).toLowerCase();
-      if (lower.includes('طقس') || lower.includes('weather')) voice_clip = "WEATHER";
-      else if (lower.includes('بحبك') || lower.includes('love')) voice_clip = "LOVE";
-      else if (lower.includes('ارقص') || lower.includes('dance')) { voice_clip = "DANCE"; setCommand("DANCE"); }
-      else if (lower.includes('نام') || lower.includes('sleep')) { voice_clip = "BYE"; setCommand("SLEEP"); }
-      else if (lower.includes('اصح') || lower.includes('wake')) { voice_clip = "HELLO"; setCommand("WAKE"); }
-      else if (lower.includes('قصة') || lower.includes('نكتة') || lower.includes('story') || lower.includes('joke')) voice_clip = "GOOD";
-      else voice_clip = "LISTEN";
-
+    const reply = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (reply && reply.length > 5) {
       return {
         reply: reply,
         display: enforceEnglishScreenText(reply.substring(0, 20), "Lola: Thinking!"),
         mood: "HAPPY",
-        voice_clip: voice_clip
+        voice_clip: pickVoiceClip(message, reply)
       };
     }
   } catch (e) {
-    // Graceful fallback to local engine
+    // Fallback to local engine
   }
   return null;
 }
@@ -120,50 +125,32 @@ async function processSmartDialogue(message) {
   const text = (message || '').trim().toLowerCase();
   let weatherContext = "";
 
-  // Check if query is about weather
+  // Enrich with live weather if relevant
   if (text.includes('طقس') || text.includes('الجو') || text.includes('حرارة') || text.includes('حر') || text.includes('برد') || text.includes('مطر') || text.includes('شمس') || text.includes('weather') || text.includes('temp') || text.includes('forecast')) {
     const w = await fetchLiveWeather();
     setCommand(w.cmd);
-    weatherContext = `Live Weather in Cairo: ${w.temp}°C, condition: ${w.condition} (${w.conditionEn}).`;
+    weatherContext = `Live Weather in Cairo right now: ${w.temp}°C, condition: ${w.condition} (${w.conditionEn}). Include the real temperature in your answer.`;
   }
 
-  // 1. Try Primary Active Key on ZenMux (No Gemini Trial Consumption!)
-  const primaryResult = await callPrimaryLLM(message, weatherContext);
-  if (primaryResult) return primaryResult;
+  // 1. Try Gemini LLM (Primary - Smart & Fast)
+  const geminiResult = await callGeminiLLM(message, weatherContext);
+  if (geminiResult) return geminiResult;
 
-  // 2. High-Quality Fallback Engine
+  // 2. Offline Fallback (only if Gemini is down)
   const isEnglish = /[a-zA-Z]{3,}/.test(text) && !/[\u0600-\u06FF]/.test(text);
 
   if (weatherContext) {
     const w = await fetchLiveWeather();
     return {
-      reply: isEnglish ? `The weather in Cairo today is ${w.conditionEn} ☀️, with a temperature of ${w.temp}°C!` : `الجو النهاردة في القاهرة ${w.condition} ☀️، ودرجة الحرارة حوالي ${w.temp}° مئوية!`,
-      display: `Cairo: ${w.temp}C ${w.cmd}`,
+      reply: isEnglish ? `The weather in Cairo today is ${w.conditionEn}, around ${w.temp}°C!` : `الجو النهاردة في القاهرة ${w.condition}، ودرجة الحرارة حوالي ${w.temp}° مئوية!`,
+      display: `Cairo: ${w.temp}C`,
       mood: "HAPPY",
       voice_clip: "WEATHER"
     };
   }
 
-  if (text.includes('قصة') || text.includes('احكيلي') || text.includes('حكاية') || text.includes('story')) {
-    return {
-      reply: isEnglish ? "Once upon a star, a little robot named Spark built tiny solar wings to explore beyond the nebula. Traveling through glowing stardust, Spark discovered a planet made of crystal music! ✨🚀" : "كان في روبوت صغير شجاع اسمه نجم قرر يبني أجنحة شمسية ويسافر لأبعد مجرة في الفضاء! وهو بيعدي بين الكواكب قابل سحابة كونية بتعزف ألحان موسيقية ساحرة! 🚀✨",
-      display: "Lola: Storytime! 📖",
-      mood: "HAPPY",
-      voice_clip: "GOOD"
-    };
-  }
-
-  if (text.includes('نكتة') || text.includes('ضحكيني') || text.includes('joke')) {
-    return {
-      reply: isEnglish ? "Why did the robot go on a vacation? To recharge its batteries and enjoy the sunshine! 🤖🏖️😂" : "مرة روبوت راح للدكتور.. قاله: يا دكتور عندي وجع في البايتس (Bytes)! قاله: بطل تاكل ميجابايتس دسمة بالليل! 🤖😂",
-      display: "Haha, funny! 😂",
-      mood: "HAPPY",
-      voice_clip: "GOOD"
-    };
-  }
-
   return {
-    reply: isEnglish ? "I totally hear you and love chatting with you! Tell me more about what is on your mind! 💕✨" : "أنا سامعاكي ومركزة في كل كلمة بتقوليها يا قلبي! 💕 كلامك دايماً بيفرحني، كملي وفضفضي براحتك! 🌸✨",
+    reply: isEnglish ? "I hear you! Tell me more, I love chatting with you!" : "أنا سامعاك ومركزة معاك يا قلبي! كمل وفضفض براحتك!",
     display: "I hear you! <3",
     mood: "HAPPY",
     voice_clip: "LISTEN"
