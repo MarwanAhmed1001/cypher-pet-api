@@ -6,6 +6,7 @@ const notifyHandler = require('../handlers/notify');
 const spotifyHandler = require('../handlers/spotify');
 const resetHandler = require('../handlers/reset');
 const joystickHandler = require('../handlers/joystick');
+const ttsHandler = require('../handlers/tts');
 
 const app = express();
 
@@ -19,5 +20,6 @@ app.all('/api/spotify', (req, res) => spotifyHandler(req, res));
 app.all('/api/spotify/callback', (req, res) => spotifyHandler(req, res));
 app.all('/api/reset', (req, res) => resetHandler(req, res));
 app.all('/api/joystick', (req, res) => joystickHandler(req, res));
+app.all('/api/tts', (req, res) => ttsHandler(req, res));
 
 module.exports = app;
