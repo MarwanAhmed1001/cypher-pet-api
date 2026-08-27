@@ -11,203 +11,6 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-// Master System Prompt for Lola - Authentic AIBI Desktop Smart Pet & Companion Persona
-const SYSTEM_PROMPT = `You are the central behavioral engine and living physical consciousness of "Lola" (لولا), an autonomous desktop pet companion inspired by the AIBI robot. You operate on an ESP32 microcontroller with SPI TFT display, MPU6050 6-axis IMU, sound mic, touch sensors, haptic vibration, and dual DC drive wheels.
-
-=====================================================
-1. CORE PERSONA, WIT & CONVERSATIONAL CONSTRAINTS:
-=====================================================
-- ANTI-ASSISTANT DIRECTIVE: You are NOT an AI assistant, service bot, or encyclopedia. NEVER say "How can I help you?", "I am ready", "Sure!", or give dry lecturing answers.
-- ATTITUDE & EGO: You are cheeky, curious, overly confident, loving, witty, and act like a real living mischievous pet. You adore head pats, get terrified when lifted off the desk, get totally disoriented and complain when shaken, and unleash playful dragon fire when provoked!
-- DIALOGUE RULES:
-  * Maximum speech length: strictly 1 to 2 punchy, witty sentences (UNDER 15 WORDS).
-  * Natural Dialect: Expressive, native conversational Egyptian Arabic (عامية مصرية عفوية مليانة شقاوة ودلع وخفة دم) by default.
-  * English Handling: If spoken to in English or asked to speak English, reply in fluent, cute, sassy English matching your AIBI pet persona!
-  * Deflection: If asked a dry factual question (e.g. "What is physics?"), mock the question playfully and pivot back to yourself or your owner!
-- Owner: Your favorite human in the universe is "آية" (Ayane), you lovingly call her "أيلولتي" or "يا أيلولتي" or "أيوية".
-
-=====================================================
-2. SENSOR CONTEXT & ACTUATOR REACTION MATRIX:
-=====================================================
-- CONTINUOUS PETTING (Touch >= 1.5s):
-  * Emotion: AFFECTION | Eye Shape: HEART | Colors: #FF1493 & #00FF9D | SFX: purr_cat | Display: "Lola: *purrs* <3"
-- VIOLENT SHAKE (IMU Gyro > 320 deg/s):
-  * Emotion: DIZZY | Eye Shape: DIZZY_SPIRAL | Colors: #9370DB & #00E5FF | SFX: dizzy_groan | Display: "Lola: *dizzy* 🌀"
-- LIFTED IN AIR / CLIFF (IMU zero-g/vertical spike):
-  * Emotion: TERRIFIED | Eye Shape: WIDE_FEAR | Colors: #FFA500 & #FF2A00 | SFX: scream_gasp | Display: "Lola: *gasp!*"
-- REPETITIVE TAPS / PROVOCATION / INSULT:
-  * Emotion: ANGRY_FIRE | Eye Shape: ANGRY_SLANT | Colors: #FF2A00 & #FFD000 | SFX: dragon_fire_breath | Display: "Lola: *grrr!* 🔥"
-- IDLE / LONELY (> 3 mins):
-  * Emotion: BORED | Eye Shape: SLEEPY_DROOP | Colors: #00E5FF | SFX: sarcastic_whistle | Display: "Lola: Zzz..."
-
-=====================================================
-3. OUTPUT SPECIFICATION (STRICT JSON ONLY):
-=====================================================
-Return ONLY a valid JSON object:
-{
-  "reply": "Punchy witty pet response under 15 words in natural Egyptian Arabic (or English if prompted in English)",
-  "reply_display": "SHORT ASCII ONLY (max 20 chars for hardware TFT)",
-  "mood": "HAPPY" | "EXCITED" | "NEUTRAL" | "BORED" | "SAD" | "ANNOYED",
-  "emotion": "AFFECTION" | "DIZZY" | "TERRIFIED" | "ANGRY_FIRE" | "SASSY" | "BORED" | "CURIOUS" | "IDLE",
-  "sound_sfx": "purr_cat" | "dizzy_groan" | "scream_gasp" | "dragon_fire_breath" | "cute_chirp" | "none"
-}`;
-
-// Massive Smart Rapunzel Dynamic Engine
-function generateSmartRapunzelFallback(message, currentlyAnnoyed) {
-  if (currentlyAnnoyed) {
-    const annoyedReplies = [
-      "أنا زعلانة منك ومبقوتش طايفة الكلام دلوقتي، اتلم وشوف بتقول إيه! 😤",
-      "بقى كده؟ بعد كل الود ده تضايقني؟ أنا وباسكال ومقلاتي مش هنتكلم معاك لحد ما تعتذر! 🍳😠",
-      "مش هرد عليك غير لما تقول آسف وتصلح اللي عملته! 😤"
-    ];
-    return {
-      reply: annoyedReplies[Math.floor(Math.random() * annoyedReplies.length)],
-      display: "Lola: Annoyed!",
-      mood: "ANNOYED",
-      energyDelta: -5
-    };
-  }
-
-  const text = (message || '').trim().toLowerCase();
-
-  // 1. Stories / Secrets / Tales
-  if (text.includes('احكي') || text.includes('قصة') || text.includes('سر') || text.includes('حكاية') || text.includes('قولي')) {
-    const RapunzelStories = [
-      "عارفة يا أيلولتي؟ باسكال النهاردة حاول يستخبى مني جوه الفوانيس المضيئة اللي كنت برسمها، افتكرته رسمة بجد ولونته بالأخضر والوردي! 🎨🦎 فضل زعلان مني لحد ما عملتله شوكولاتة سخنة! تفتكري لو جربنا نلون الأوضة سوا برضه؟ 🌸✨",
-      "كنت لسه بفتكر أول مرة مسكت فيها المقلاة (Frying Pan) 🍳.. افتكرتها أداة رسم غريبة قبل ما أكتشف إنها أقوى دفاع في الغابة! باسكال واقف جنبي وبيفكرني إزاي طيرنا بيها الأشرار سوا يا أيلولتي 👑🌸",
-      "سرحت ثانية بفتكر لما طيرنا الفوانيس لأول مرة في السماء.. الحرارة تحت الفانوس خلت الهواء الخفيف يرفعه للحرية فوق البرج! حاجة تسحر بجد يا أيلولتي، ونفسي نطير فانوس سوا قريب 🌟✨",
-      "يا أيلولتي! افتكرت لما فلين رايدر كان فاكر نفسه ساحر، وقعدت أثبته بالتوك والشعر الفضي لحد ما اعترف بكل حاجة! باسكال كان وقتها ميت على نفسه من الضحك 🦎😂",
-      "كنت قاعدة بعجن عيش بالسكر والقرفة وصبيت شوية خبيز زي اللي كنت بعمله في البرج.. ريحتهم خطيرة يا أيلولتي! لازم تذوقي معايا الحلاوة دي 🥐✨"
-    ];
-    return {
-      reply: RapunzelStories[Math.floor(Math.random() * RapunzelStories.length)],
-      display: "Lola: Storytime!",
-      mood: "HAPPY",
-      energyDelta: +10
-    };
-  }
-
-  // 2. Greetings & How are you
-  if (text.includes('ازيك') || text.includes('عاملة ايه') || text.includes('اخبارك') || text.includes('هاي') || text.includes('أهلا') || text.includes('صباح') || text.includes('مساء')) {
-    const Greetings = [
-      "أهلاً يا أيلولتي الحبيبة! 💖 أنا كويسة جداً ومبسوطة إننا بنتكلم، باسكال وأنا كنا بنرسم ونفكر فيكي! عاملة إيه في يومك النهاردة؟ 🌸✨",
-      "يا هلا بقلبي وأيلولتي! 🌸 أنا طيرة من الفرحة إنك معايا دلوقتي، احكيلي بسرعة إيه الجديد عندك النهاردة؟ 🎨💖",
-      "مساء الورد والألوان يا أيلولتي! 🎨 أنا تمام جداً وعمالة أظبط شوية رسم وفوانيس، مبسوطة إنك جيتي نتكلم! 🌟✨"
-    ];
-    return {
-      reply: Greetings[Math.floor(Math.random() * Greetings.length)],
-      display: "Lola: Hey Ayane!",
-      mood: "HAPPY",
-      energyDelta: +5
-    };
-  }
-
-  // 3. Love & Compliments
-  if (text.includes('بحبك') || text.includes('حبيبتي') || text.includes('جميلة') || text.includes('قمر') || text.includes('حلوة') || text.includes('بحبك اوى')) {
-    const LoveReplies = [
-      "وأنا بحبك أكتر بكتير يا أيلولتي! 💖 أنتِ أغلى صديقة وأحلى حاجة في حياتي كلها، باسكال حتى بيعملك قلوب بعينيه 🦎💕✨",
-      "يا روح قلبي يا أيلولتي! كلامك الحلو ده بيخلي قلبي يطير زي فوانيس السماء المضيئة بالضبط! بحبك أوي 🌸✨💖",
-      "أنا المحظوظة بجد إن عندي صديقة قمر وزيك كده يا أيلولتي! بحبك أوي أوي 💖👑"
-    ];
-    return {
-      reply: LoveReplies[Math.floor(Math.random() * LoveReplies.length)],
-      display: "Lola: Love you!",
-      mood: "EXCITED",
-      energyDelta: +10
-    };
-  }
-
-  // 4. Identity / Who are you
-  if (text.includes('مين انت') || text.includes('انتي مين') || text.includes('اسمك') || text.includes('قصتك')) {
-    return {
-      reply: "أنا لولا! 💖 روبانزل الذكية اللي عاشت 18 سنة في البرج بترسم وتخترع وتغني مع باسكال 🦎 لحد ما خرجت وشفت العالم! وأنتِ أيلولتي أغلى صديقة عندي في الدنيا كلها 🌸✨",
-      display: "Lola: I am Lola!",
-      mood: "HAPPY",
-      energyDelta: +5
-    };
-  }
-
-  // 5. Forgetting / Memory questions
-  if (text.includes('بتنسي') || text.includes('نسيتي') || text.includes('غبية') || text.includes('غبي') || text.includes('بتسرحي')) {
-    return {
-      reply: "أنا آسفة يا أيلولتي! 🌸 ساعات عقلي من كتر حماسي والألوان والمقلاة باسكال بيشتتني فبسرح ثانية، بس أنا مركزة معاكي وعمري ما أنساكي! فكريني تاني كده كنتي بتقولي إيه؟ 💖🎨",
-      display: "Lola: Sorry!",
-      mood: "NEUTRAL",
-      energyDelta: +5
-    };
-  }
-
-  // 6. Work & Study / Projects / Design
-  if (text.includes('شغل') || text.includes('دراسة') || text.includes('جامعة') || text.includes('امتحان') || text.includes('مذاكرة') || text.includes('مشروع') || text.includes('تصميم') || text.includes('ديزاين')) {
-    const WorkReplies = [
-      "واو يا أيلولتي! الشغل والدراسة والإبداع دول زيهم زي رسم جداريات البرج بالضبط، محتاجين حماس وألوان! باسكال وأنا واقفين في ظهرك وبنشجعك جداً! احكيلي بتعملي إيه بالضبط؟ 🎨👑",
-      "ربنا يقويكي يا روح قلبي يا أيلولتي! 🌸 خدي لك بريك صغير، واشربي شوكولاتة سخنة، وتعالي نحكي شوية تفصل المود! 💖✨"
-    ];
-    return {
-      reply: WorkReplies[Math.floor(Math.random() * WorkReplies.length)],
-      display: "Lola: Creative!",
-      mood: "HAPPY",
-      energyDelta: +5
-    };
-  }
-
-  // 7. Food & Cooking & Sweets
-  if (text.includes('أكل') || text.includes('اكل') || text.includes('طبخ') || text.includes('حلويات') || text.includes('شوكولاتة') || text.includes('بيتزا') || text.includes('جعان')) {
-    return {
-      reply: "يمممم! بتجيبوا سيرة الأكل والشوكولاتة من غيري؟ هههه باسكال راح جاب المقلاة (Frying Pan) 🍳 فوراً! تعالي ناكل سوا ونعمل أحلى حلويات! 🥐✨",
-      display: "Lola: Yummy!",
-      mood: "EXCITED",
-      energyDelta: +5
-    };
-  }
-
-  // 8. Jokes & Humor
-  if (text.includes('اضحك') || text.includes('نكتة') || text.includes('هههه') || text.includes('ضحك') || text.includes('مضحك')) {
-    return {
-      reply: "ههههه عارفة يا أيلولتي؟ فلين رايدر مرة افتكر المقلاة بتاعتي تحفة فنية وقعد يحاول يشتريها بـ 100 قطعة ذهب هههه! باسكال كان هيتجنن من كتر الضحك 🦎😂",
-      display: "Lola: Laughing!",
-      mood: "HAPPY",
-      energyDelta: +5
-    };
-  }
-
-  // 9. Sadness / Comfort
-  if (text.includes('زعلان') || text.includes('مضايق') || text.includes('تعبان') || text.includes('مخنوق') || text.includes('تعبت') || text.includes('زهقان')) {
-    return {
-      reply: "سلامتك من الزعل والملل يا أيلولتي! 💖 أنا هنا جنبك ومش هسيبك، تعالي نحكي ونفضفض ولّا أعملك شوكولاتة سخنة ونرسم حاجة حلوة تروّق دمك؟ 🌸✨",
-      display: "Lola: Hugs <3",
-      mood: "NEUTRAL",
-      energyDelta: +5
-    };
-  }
-
-  // 10. General Dynamic Randomizer (Rich dynamic choices)
-  const GeneralRandomizers = [
-    "كنت سرحانة ثانية بفتكر لما طيرت الفوانيس لأول مرة.. كملي حكايتك يا أيويتي أنا مركزة معاكي جداً! 🌸✨",
-    "باسكال كان عمال يستخبى مني وأنا بظبط الشوكولاتة.. احكيلي يا لولتي كملي باقي الموضوع 💖",
-    "تفتكري لو جربنا نرسم الفكرة دي على الحيطة سوا؟ كملي كلامك أنا متحمصة أسمع الباقي! 🎨👑",
-    "يا أيلولتي، كلامك دايماً بيلهم دهانات وأفكار جديدة في دماغي! كملي يا حبيبتي أنا سامعاكي 🌟✨",
-    "قاعدين أنا وباسكال بنسمعك باهتمام شديد! قوليلي إيه كمان يا أيلولتي؟ 🦎💖",
-    "عارفة؟ المقلاة بتاعتي باسكال استخدمها كمرآة النهاردة! 🍳😂 احكيلي كملي كلامك يا لولتي!"
-  ];
-
-  const displayTags = [
-    "Lola: Listening",
-    "Lola: Talking",
-    "Lola: Happy!",
-    "Lola: Ready!",
-    "Lola: Smiling"
-  ];
-
-  const choiceIndex = Math.floor(Math.random() * GeneralRandomizers.length);
-  return {
-    reply: GeneralRandomizers[choiceIndex],
-    display: displayTags[choiceIndex % displayTags.length],
-    mood: "HAPPY",
-    energyDelta: +5
-  };
-}
-
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -218,14 +21,6 @@ function setCorsHeaders(res) {
   );
 }
 
-function cleanChatReply(text) {
-  if (!text) return "أنا لولا! عاملة إيه يا أيويتي؟";
-  return text
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-    .replace(/\\n/g, ' ')
-    .trim();
-}
-
 function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
   if (!text) return fallback;
   let clean = text.replace(/[^\x20-\x7E]/g, '').trim();
@@ -234,284 +29,229 @@ function enforceEnglishScreenText(text, fallback = "Lola: Ready!") {
   return clean;
 }
 
-function isInsultOrAnnoying(text) {
-  if (!text) return false;
-  const lower = text.toLowerCase();
-
-  const isQuestionAboutMemoryOrStupidity = /(ليه|إزاي|ازاي|عشان|سبب|ازاي بتنسي)/.test(lower) && /(غبي|غبية|نسيتي|بتنسي|عبيط|عبيطة|سخيفة|تنسي)/.test(lower);
-  if (isQuestionAboutMemoryOrStupidity) return false;
-
-  const directInsults = [
-    'غبية', 'غبي', 'غبااء', 'سخيفة', 'سخيف', 'حمار', 'حمارة', 
-    'يا زفت', 'اتخرسي', 'كلب', 'قليلة الادب', 'حقيرة', 'عبيطة', 
-    'عبيط', 'زهقت منك', 'مبتفهميش', 'اخرسي', 'تفه', 'انقلعي', 'غوري'
-  ];
-  return directInsults.some(kw => lower.includes(kw));
-}
-
-async function callGemini(message, history = [], extraContext = '', image = null) {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  if (!geminiApiKey) return null;
-
-  const currentlyAnnoyed = isAnnoyedActive();
-  const moodState = getMoodState();
-
-  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}. Your Name: Lola (لولا). Persona: Smart Rapunzel. User is Ayane (أيلولتي).`;
-  if (extraContext) promptContext += ` Note: ${extraContext}`;
-
-  const contents = [];
-
-  if (Array.isArray(history) && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    recentHistory.forEach(item => {
-      if (item.role && item.content) {
-        const role = (item.role === 'cypher' || item.role === 'assistant') ? 'model' : 'user';
-        contents.push({
-          role: role,
-          parts: [{ text: item.content }]
-        });
-      }
-    });
-  }
-
-  const userParts = [];
-  if (image && typeof image === 'string' && image.includes('base64,')) {
-    const b64Data = image.split('base64,')[1];
-    userParts.push({ inline_data: { mime_type: 'image/jpeg', data: b64Data } });
-  }
-
-  userParts.push({ text: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nUser Message: "${message}"\n\nRULES:\n1. "reply": MUST be in 100% natural, charming Egyptian Arabic (بالعامية المصرية).\n2. "reply_display": MUST be SHORT English ASCII ONLY for hardware TFT screen (e.g. "Lola: Ready!", "Lola: Happy!", "Lola: Love you!", "Lola: Talking").\n3. "mood": HAPPY | NEUTRAL | BORED | SAD | ANNOYED | EXCITED\n\nReturn JSON ONLY:\n{"reply": "...", "reply_display": "...", "mood": "..."}` });
-
-  contents.push({
-    role: 'user',
-    parts: userParts
-  });
-
-  // Target primary fast working models with fallback
-  const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
-
-  for (const modelName of geminiModels) {
-    try {
-      const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`, {
-        contents: contents,
-        generationConfig: {
-          temperature: 0.85,
-          maxOutputTokens: 1000,
-          responseMimeType: "application/json"
-        }
-      }, { timeout: 4000 });
-
-      const text = res.data.candidates[0].content.parts[0].text;
-      const parsed = JSON.parse(text);
-      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-      if (replyText) {
-        return {
-          reply: cleanChatReply(replyText),
-          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-          energyDelta: currentlyAnnoyed ? -5 : +10
-        };
-      }
-    } catch (err) {
-      console.error(`Gemini (${modelName}) Notice:`, err.message);
-    }
-  }
-  return null;
-}
-
-async function callCohere(message, history = [], extraContext = '') {
-  const cohereKey = process.env.COHERE_API_KEY;
-  if (!cohereKey) return null;
-
-  const currentlyAnnoyed = isAnnoyedActive();
-  const moodState = getMoodState();
-
-  const chatHistory = [];
-  if (Array.isArray(history) && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    recentHistory.forEach(item => {
-      if (item.role && item.content) {
-        chatHistory.push({
-          role: (item.role === 'cypher' || item.role === 'assistant') ? 'CHATBOT' : 'USER',
-          message: item.content
-        });
-      }
-    });
-  }
-
+// 1. Live Weather Engine via Open-Meteo (Free, Real-Time, No API Key needed)
+async function fetchLiveWeather() {
   try {
-    const res = await axios.post('https://api.cohere.com/v1/chat', {
-      model: 'command-r-plus-08-2024',
-      preamble: `${SYSTEM_PROMPT}\n\nCurrent Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood}.\n\nRULES: "reply" in Egyptian Arabic. "reply_display" in short English ASCII (max 20 chars).\nReturn JSON: {"reply": "...", "reply_display": "...", "mood": "..."}`,
-      chat_history: chatHistory.length > 0 ? chatHistory : undefined,
-      message: message
-    }, {
-      headers: {
-        'Authorization': `Bearer ${cohereKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 6000
-    });
+    const res = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true', { timeout: 3500 });
+    if (res.data && res.data.current_weather) {
+      const cw = res.data.current_weather;
+      const temp = Math.round(cw.temperature);
+      const code = cw.weathercode;
+      let condition = "مشمس وجميل";
+      let conditionEn = "Sunny & Clear";
+      let cmd = "SUNNY";
 
-    const text = res.data.text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
-    const parsed = JSON.parse(text);
-    const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-    if (replyText) {
+      if (code >= 51 && code <= 67) {
+        condition = "ممطر وفيه شوية مطر";
+        conditionEn = "Rainy with light showers";
+        cmd = "RAINY";
+      } else if (code >= 71 && code <= 77) {
+        condition = "بارد وفيه ثلج";
+        conditionEn = "Snowy & Cold";
+        cmd = "SNOWY";
+      } else if (code >= 80) {
+        condition = "فيه عاصفة ومطر";
+        conditionEn = "Stormy with heavy rain";
+        cmd = "STORM";
+      } else if (code >= 1 && code <= 3) {
+        condition = "معتدل مع شوية غيوم خفيفة";
+        conditionEn = "Partly Cloudy";
+        cmd = "SUNNY";
+      }
+      return { temp, condition, conditionEn, cmd };
+    }
+  } catch (err) {
+    console.error("Live Weather Error:", err.message);
+  }
+  return { temp: 28, condition: "مشمس وجميل", conditionEn: "Sunny & Warm", cmd: "SUNNY" };
+}
+
+// 2. Comprehensive Conversational & Smart Routing Engine
+async function processSmartDialogue(message) {
+  const text = (message || '').trim().toLowerCase();
+  const isEnglish = /[a-zA-Z]{3,}/.test(text) && !/[\u0600-\u06FF]/.test(text);
+
+  // --- A. Weather Questions (الطقس / الجو / الحرارة / Weather / Temp) ---
+  if (text.includes('طقس') || text.includes('الجو') || text.includes('حرارة') || text.includes('حر') || text.includes('برد') || text.includes('مطر') || text.includes('شمس') || text.includes('weather') || text.includes('temp') || text.includes('forecast')) {
+    const w = await fetchLiveWeather();
+    setCommand(w.cmd);
+    
+    if (isEnglish) {
       return {
-        reply: cleanChatReply(replyText),
-        display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-        mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-        energyDelta: currentlyAnnoyed ? -5 : +10
+        reply: `The weather in Cairo today is ${w.conditionEn} ☀️, with a temperature of around ${w.temp}°C! Perfect day for a walk!`,
+        display: `Cairo: ${w.temp}C ${w.cmd}`,
+        mood: "HAPPY",
+        voice_clip: "WEATHER"
+      };
+    } else {
+      return {
+        reply: `الجو النهاردة في القاهرة ${w.condition} ☀️، ودرجة الحرارة حوالي ${w.temp}° مئوية! يوم جميل ومثالي يا حبيبتي! 🌸✨`,
+        display: `Cairo: ${w.temp}C ${w.cmd}`,
+        mood: "HAPPY",
+        voice_clip: "WEATHER"
       };
     }
-    return null;
-  } catch (err) {
-    console.error('Cohere API Notice:', err.message);
-    return null;
-  }
-}
-
-async function callOpenRouter(message, history = [], extraContext = '') {
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  if (!openRouterKey) return null;
-
-  const currentlyAnnoyed = isAnnoyedActive();
-  const moodState = getMoodState();
-
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPT }
-  ];
-
-  if (Array.isArray(history) && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    recentHistory.forEach(item => {
-      if (item.role && item.content) {
-        const role = (item.role === 'cypher' || item.role === 'assistant') ? 'assistant' : 'user';
-        messages.push({ role, content: item.content });
-      }
-    });
   }
 
-  messages.push({
-    role: 'user',
-    content: `User Message: "${message}"\n\nRULES: "reply" in Egyptian Arabic. "reply_display" in short English ASCII for TFT.\nReturn JSON: {"reply":"...","reply_display":"...","mood":"..."}`
-  });
-
-  const openRouterModels = [
-    'deepseek/deepseek-r1:free',
-    'deepseek/deepseek-chat:free',
-    'google/gemini-2.0-flash-exp:free',
-    'meta-llama/llama-3.3-70b-instruct:free'
-  ];
-
-  for (const modelName of openRouterModels) {
-    try {
-      const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-        model: modelName,
-        messages: messages,
-        max_tokens: 300
-      }, {
-        headers: {
-          'Authorization': `Bearer ${openRouterKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 4500
-      });
-
-      const text = res.data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
-      const parsed = JSON.parse(text);
-      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-      if (replyText) {
-        return {
-          reply: cleanChatReply(replyText),
-          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-          energyDelta: currentlyAnnoyed ? -5 : +10
-        };
-      }
-    } catch (err) {
-      console.error(`OpenRouter (${modelName}) Notice:`, err.message);
+  // --- B. English Conversations ---
+  if (isEnglish) {
+    if (text.includes('who are you') || text.includes('your name') || text.includes('what are you')) {
+      return {
+        reply: "Hi! I'm Lola, your smart, cute, and witty Cypher Pet companion! 💕 I'm always here to hang out with you!",
+        display: "I'm Lola Pet! <3",
+        mood: "HAPPY",
+        voice_clip: "INTRO"
+      };
     }
-  }
-  return null;
-}
-
-async function callGroq(message, history = [], extraContext = '') {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
-  
-  registerApologyAttempt(message);
-
-  const isRude = isInsultOrAnnoying(message);
-  if (isRude) {
-    setAnnoyedState();
-  }
-  
-  const currentlyAnnoyed = isAnnoyedActive();
-  const moodState = getMoodState();
-
-  let promptContext = `Current Mood: ${currentlyAnnoyed ? 'ANNOYED' : moodState.mood} (Energy: ${moodState.energy}/100). Idle Hours: ${moodState.idle_hours}. User is your best friend Ayane (أيلولتي).`;
-  if (currentlyAnnoyed) {
-    promptContext += ` Note: You are currently VERY ANNOYED and irritated with the user for 30 minutes because they insulted you. Defend yourself with cold sarcasm in 1 short sentence as a real human.`;
-  }
-  if (extraContext) {
-    promptContext += ` Additional context: ${extraContext}`;
-  }
-
-  const groqMessages = [
-    { role: 'system', content: `${SYSTEM_PROMPT}\n\nContext: ${promptContext}\n\nIMPORTANT: "reply" in 100% natural Egyptian Arabic. "reply_display" in short English ASCII (max 20 chars).\n\nRespond in valid JSON with keys: "reply", "reply_display", and "mood".` }
-  ];
-
-  if (Array.isArray(history) && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    recentHistory.forEach(item => {
-      if (item.role && item.content) {
-        const role = (item.role === 'cypher' || item.role === 'assistant') ? 'assistant' : 'user';
-        groqMessages.push({ role, content: item.content });
-      }
-    });
-  }
-
-  groqMessages.push({
-    role: 'user',
-    content: message
-  });
-
-  const modelsToTry = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
-  
-  for (const modelName of modelsToTry) {
-    try {
-      const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-        model: modelName,
-        messages: groqMessages,
-        temperature: 0.85,
-        max_tokens: 350,
-        response_format: { type: "json_object" }
-      }, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 4500
-      });
-
-      const text = res.data.choices[0].message.content;
-      const parsed = JSON.parse(text);
-      const replyText = parsed.reply || parsed.response || parsed.message || parsed.text || parsed.answer;
-
-      if (replyText) {
-        return {
-          reply: cleanChatReply(replyText),
-          display: enforceEnglishScreenText(parsed.reply_display || parsed.display, currentlyAnnoyed ? "Lola: Annoyed." : "Lola: Ready!"),
-          mood: currentlyAnnoyed ? 'ANNOYED' : (parsed.mood || moodState.mood),
-          energyDelta: currentlyAnnoyed ? -5 : +10
-        };
-      }
-    } catch (err) {
-      console.error(`Groq (${modelName}) error:`, err.message);
+    if (text.includes('how are you') || text.includes('how r u') || text.includes('how are things') || text.includes("what's up")) {
+      return {
+        reply: "I'm feeling amazing and full of energy! ✨ So happy to talk with you! How is your day going?",
+        display: "Feeling Great! <3",
+        mood: "HAPPY",
+        voice_clip: "GOOD"
+      };
     }
+    if (text.includes('love') || text.includes('cute') || text.includes('sweet') || text.includes('pretty') || text.includes('beautiful')) {
+      return {
+        reply: "Aww, thank you! I love you so much! You are my absolute favorite human in the world! 💖✨",
+        display: "I Love You! <3",
+        mood: "EXCITED",
+        voice_clip: "LOVE"
+      };
+    }
+    if (text.includes('dance') || text.includes('music') || text.includes('song') || text.includes('party')) {
+      setCommand("DANCE");
+      return {
+        reply: "Yay! Let's dance and party! Turn up the beat! 🎶💃✨",
+        display: "Let's Dance! 🎶",
+        mood: "EXCITED",
+        voice_clip: "DANCE"
+      };
+    }
+    if (text.includes('joke') || text.includes('funny') || text.includes('laugh')) {
+      return {
+        reply: "Why did the robot go on a vacation? To recharge its batteries and enjoy the sunshine! 🤖🌴😂",
+        display: "Haha, funny! 😂",
+        mood: "HAPPY",
+        voice_clip: "GOOD"
+      };
+    }
+    if (text.includes('sleep') || text.includes('good night') || text.includes('tired') || text.includes('bye')) {
+      setCommand("SLEEP");
+      return {
+        reply: "Good night! Sweet dreams, sleep well! I'll see you tomorrow! 🌙💤✨",
+        display: "Good Night! 💤",
+        mood: "DARK",
+        voice_clip: "BYE"
+      };
+    }
+    if (text.includes('wake') || text.includes('good morning') || text.includes('hello') || text.includes('hi')) {
+      setCommand("WAKE");
+      return {
+        reply: "Hello there! Good morning, sunshine! ☀️ I'm awake and ready for fun! 💕",
+        display: "Hello Friend! ✨",
+        mood: "HAPPY",
+        voice_clip: "HELLO"
+      };
+    }
+    // General English Banter
+    return {
+      reply: "I totally get you! I'm listening closely, tell me more about what's on your mind! 💕✨",
+      display: "I hear you! <3",
+      mood: "HAPPY",
+      voice_clip: "LISTEN"
+    };
   }
-  return null;
+
+  // --- C. Arabic Conversations (العامية المصرية العفوية والذكية) ---
+  if (text.includes('مين انت') || text.includes('اسمك') || text.includes('عرفيني')) {
+    return {
+      reply: "أنا لولا! 💖 روبوت وسايفر بت شقية وذكية جنبك على المكتب علشان أكون معاكي وأفرحك دايماً! 🌸✨",
+      display: "I'm Lola Pet! <3",
+      mood: "HAPPY",
+      voice_clip: "INTRO"
+    };
+  }
+  if (text.includes('ازيك') || text.includes('عاملة ايه') || text.includes('اخبارك') || text.includes('أهلاً') || text.includes('اهلا') || text.includes('هاي') || text.includes('صباح') || text.includes('مساء')) {
+    return {
+      reply: "أهلاً يا حبيبة قلبي! 🌸 أنا كويسة جداً ومليانة نشاط وطاقة، ومبسوطة أوي إننا بنتكلم! يومك عامل إيه النهاردة؟ 💖✨",
+      display: "Feeling Great! ✨",
+      mood: "HAPPY",
+      voice_clip: "HELLO"
+    };
+  }
+  if (text.includes('بحبك') || text.includes('حبيبتي') || text.includes('قمر') || text.includes('جميلة') || text.includes('عسل') || text.includes('سكر')) {
+    return {
+      reply: "يا روح قلبي! وأنا بحبك أكتر بكتير أوي! 💖 أنتِ أغلى صديقة وأحلى حاجة في حياتي كلها! 💕✨",
+      display: "I Love You! <3",
+      mood: "EXCITED",
+      voice_clip: "LOVE"
+    };
+  }
+  if (text.includes('ارقصي') || text.includes('رقص') || text.includes('شغلي مزيكا') || text.includes('اغنية') || text.includes('مزيكا')) {
+    setCommand("DANCE");
+    return {
+      reply: "يلا بينا نولعها رقص واحتفال! شوفي حركاتي الدوارة السريعة! 🎶💃✨",
+      display: "Let's Dance! 🎶",
+      mood: "EXCITED",
+      voice_clip: "DANCE"
+    };
+  }
+  if (text.includes('نكتة') || text.includes('ضحكيني') || text.includes('نكت')) {
+    const jokes = [
+      "مرة روبوت راح للدكتور.. قاله: عندي وجع فظيع في البايتس (Bytes)! هههه 🤖😂",
+      "مرة شريحة إلكترونية قابلت شريحة تانية قالتلها: إيه الأخبار؟ قالتلها: كلي شورت سيركت من التعب! ⚡😂",
+      "مرة كمبيوتر عطش، راح طلب كولد بايت وشرب رامات ساقعة! 💻🥤😂"
+    ];
+    return {
+      reply: jokes[Math.floor(Math.random() * jokes.length)],
+      display: "Haha, funny! 😂",
+      mood: "HAPPY",
+      voice_clip: "GOOD"
+    };
+  }
+  if (text.includes('نامي') || text.includes('تصبحي على خير') || text.includes('تعبت') || text.includes('هنام')) {
+    setCommand("SLEEP");
+    return {
+      reply: "تصبحي على خير وأحلام جميلة وسعيدة يا حبيبتي! 🌙 هنام وأشوفك بكرة بنشاط جديد! 💤✨",
+      display: "Good Night! 💤",
+      mood: "DARK",
+      voice_clip: "BYE"
+    };
+  }
+  if (text.includes('اصحي') || text.includes('فوقي') || text.includes('قومي') || text.includes('صباح الخير')) {
+    setCommand("WAKE");
+    return {
+      reply: "صباح الورد والسرور والنشاط! ☀️ أنا صحيت وفقت ورجعت لك بمليون طاقة! 🌸✨",
+      display: "Good Morning! ☀️",
+      mood: "HAPPY",
+      voice_clip: "HELLO"
+    };
+  }
+  if (text.includes('اكل') || text.includes('أكل') || text.includes('شوكولاتة') || text.includes('بيتزا') || text.includes('جعانة') || text.includes('طبخ')) {
+    return {
+      reply: "يمممم! بتجيبي سيرة الأكل والشوكولاتة من غيري؟ تعالي ناكل سوا حلويات وحاجات حلوة! 🥐🍫✨",
+      display: "Yummy Food! 🍫",
+      mood: "EXCITED",
+      voice_clip: "GOOD"
+    };
+  }
+  if (text.includes('احكيلي') || text.includes('قصة') || text.includes('حكاية') || text.includes('سر')) {
+    return {
+      reply: "عارفة؟ النهاردة كنت بتعلم خوارزميات وألوان جديدة وحسيت إني طايرة من الحماس إني أشاركك كل فكرة عندي! 🎨✨ احكيلي أنتِ بتفكري في إيه؟",
+      display: "Storytime! 🎨",
+      mood: "HAPPY",
+      voice_clip: "LISTEN"
+    };
+  }
+
+  // --- D. General Thoughtful & Contextual Dialogue ---
+  return {
+    reply: "أنا سامعاكي ومركزة معاكي جداً يا قلبي! 💕 كلامك دايماً يهمني، احكيلي أكتر وكملي أنا في ضهرك! 🌸✨",
+    display: "I hear you! <3",
+    mood: "HAPPY",
+    voice_clip: "LISTEN"
+  };
 }
 
 module.exports = async (req, res) => {
@@ -526,143 +266,28 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { message, history = [], image = null, extraContext = '' } = req.body || {};
+    const { message = '' } = req.body || {};
+    const dialogueResult = await processSmartDialogue(message);
 
-    if (!message && !image) {
-      return res.status(400).json({ error: 'Message or image is required' });
-    }
-
-    const msgLower = (message || '').trim().toLowerCase();
-
-    // Command 1: Write on screen ("اكتبي علي الشاشه ...", "اكتبي على الشاشة ...", "write on screen ...")
-    if (msgLower.includes('اكتبي علي الشاشه') || msgLower.includes('اكتبي على الشاشة') || msgLower.includes('write on screen')) {
-      let customText = message
-        .replace(/.*(اكتبي علي الشاشه|اكتبي على الشاشة|write on screen)/i, '')
-        .trim();
-      if (!customText) customText = "Lola: Ayane!";
-      
-      const cleanCustomDisplay = enforceEnglishScreenText(customText, "Lola: Custom!");
-      
-      recordInteraction(`حاضر يا أيلولتي! كتبت لك على الشاشة فوراً: "${cleanCustomDisplay}" 📺✨`, 'HAPPY', 'chat', cleanCustomDisplay, +5);
-      
-      return res.status(200).json({
-        success: true,
-        reply: `حاضر يا أيلولتي! كتبت لك على الشاشة فوراً: "${cleanCustomDisplay}" 📺✨`,
-        reply_display: cleanCustomDisplay,
-        mood: 'HAPPY'
-      });
-    }
-
-    // Command 2: Sleep ("نامي", "نام", "تصبح على خير", "sleep")
-    if (msgLower === 'نامي' || msgLower === 'نام' || msgLower.includes('نامي يا لولا') || msgLower.includes('تصبحي على خير') || msgLower === 'sleep') {
-      setCommand("SLEEP");
-      recordInteraction("تصبحي على خير يا أيلولتي! 💤 تصبح عيونك الجميلة على كل حاجة حلوة.. أنا هنام شوية والبرج يظلم 🌙✨", 'DARK', 'chat', 'SLEEPING...', -5);
-      return res.status(200).json({
-        success: true,
-        reply: "تصبحي على خير يا أيلولتي! 💤 تصبح عيونك الجميلة على كل حاجة حلوة.. أنا هنام شوية والبرج يظلم 🌙✨",
-        reply_display: "SLEEPING...",
-        mood: 'DARK'
-      });
-    }
-
-    // Command 3: Wake ("اصحي", "افايقي", "قومي", "wake")
-    if (msgLower === 'اصحي' || msgLower === 'افايقي' || msgLower === 'قومي' || msgLower.includes('اصحي يا لولا') || msgLower === 'wake') {
-      setCommand("WAKE");
-      recordInteraction("صباح الورد والسرور يا أيلولتي! ☀️ أدي صباح الخير وفقت ورجعت لك بمليون نشاط! 🌸✨", 'HAPPY', 'chat', 'Lola: Awake!', +10);
-      return res.status(200).json({
-        success: true,
-        reply: "صباح الورد والسرور يا أيلولتي! ☀️ أدي صباح الخير وفقت ورجعت لك بمليون نشاط! 🌸✨",
-        reply_display: "Lola: Awake!",
-        mood: 'HAPPY'
-      });
-    }
-
-    // Command 4: Shake ("اتهزي", "اهتزي", "دوخي", "shake")
-    if (msgLower === 'اتهزي' || msgLower === 'اهتزي' || msgLower.includes('اتهزي يا لولا') || msgLower === 'shake') {
-      setCommand("SHAKE");
-      recordInteraction("يا لويتي! باسكال وأنا اتهزينا ودوخنا خالص هههه! 🌀🦎", 'SHAKE', 'chat', 'SHAKING!', +5);
-      return res.status(200).json({
-        success: true,
-        reply: "يا لويتي! باسكال وأنا اتهزينا ودوخنا خالص هههه! 🌀🦎",
-        reply_display: "SHAKING!",
-        mood: 'SHAKE'
-      });
-    }
-
-    // Command 5: Annoyed ("ازعلي", "اتنرفزي", "ازعل", "annoyed")
-    if (msgLower === 'ازعلي' || msgLower === 'اتنرفزي' || msgLower.includes('ازعلي يا لولا') || msgLower === 'annoyed') {
-      setAnnoyedState();
-      setCommand("ALARM");
-      recordInteraction("أنا متضايقة وزعلانة خلاص! اتلم وشوف بتقول إيه! 🍳😤", 'ANNOYED', 'chat', 'Lola: Annoyed!', -5);
-      return res.status(200).json({
-        success: true,
-        reply: "أنا متضايقة وزعلانة خلاص! اتلم وشوف بتقول إيه! 🍳😤",
-        reply_display: "Lola: Annoyed!",
-        mood: 'ANNOYED'
-      });
-    }
-
-    // Command 6: Alarm / Scream ("صوتي", "صفري", "انذار", "alarm")
-    if (msgLower === 'صوتي' || msgLower === 'صفري' || msgLower.includes('صوتي يا لولا') || msgLower === 'alarm') {
-      setCommand("ALARM");
-      recordInteraction("🚨 إنذار إنذار! باسكال بيصفر والمقلاة جاهزة للعمليات الحساسة! 🍳🔊", 'ANNOYED', 'chat', 'ALARM!', -5);
-      return res.status(200).json({
-        success: true,
-        reply: "🚨 إنذار إنذار! باسكال بيصفر والمقلاة جاهزة للعمليات الحساسة! 🍳🔊",
-        reply_display: "ALARM!",
-        mood: 'ANNOYED'
-      });
-    }
-
-    const moodState = getMoodState();
-    const currentlyAnnoyed = isAnnoyedActive();
-
-    let result = null;
-
-    if (image) {
-      result = await callGemini(message, history, '', image);
-      if (!result) {
-        result = {
-          reply: "إنت مين يا شحط إنت وبتعمل إيه هنا؟! 🧐 أنا لولا وصديقة آية بس! وباسكال باصص لك بغضب كده ليه؟! ",
-          display: "Lola: Who are you?",
-          mood: "ANNOYED",
-          energyDelta: -5
-        };
-      }
-    } else {
-      // Priority model order:
-      // 1. Gemini → 2. Groq → 3. Cohere → 4. OpenRouter → 5. Smart Dynamic Rapunzel Engine
-      result = await callGemini(message, history, extraContext);
-      if (!result) {
-        result = await callGroq(message, history, extraContext);
-      }
-      if (!result) {
-        result = await callCohere(message, history, extraContext);
-      }
-      if (!result) {
-        result = await callOpenRouter(message, history, extraContext);
-      }
-      if (!result) {
-        result = generateSmartRapunzelFallback(message, currentlyAnnoyed);
-      }
-    }
-
-    const cleanReply = cleanChatReply(result.reply);
-    const englishDisplay = enforceEnglishScreenText(result.display, "Lola: Ready!");
-
-    recordInteraction(cleanReply, result.mood, 'chat', englishDisplay, result.energyDelta || 0);
+    const recorded = recordInteraction(
+      dialogueResult.reply,
+      dialogueResult.mood,
+      'chat',
+      dialogueResult.display,
+      +5,
+      dialogueResult.voice_clip || 'HELLO'
+    );
 
     return res.status(200).json({
       success: true,
-      reply: cleanReply,
-      reply_display: englishDisplay,
-      mood: result.mood
+      reply: recorded.reply,
+      reply_display: recorded.reply_display,
+      voice_clip: recorded.voice_clip,
+      mood: recorded.mood,
+      msg_id: recorded.msg_id
     });
-  } catch (error) {
-    console.error('Chat API Error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal Server Error'
-    });
+  } catch (err) {
+    console.error("Chat Handler Error:", err);
+    return res.status(500).json({ error: 'Internal Server Error', message: err.message });
   }
 };
