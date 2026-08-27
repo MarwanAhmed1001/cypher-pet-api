@@ -8,6 +8,26 @@
   <meta http-equiv="Expires" content="0">
   <title>Lola - لولا | الكائن الرقمي الذكي</title>
   
+  <!-- Bulletproof Browser Audio Kill-Switch: 100% SILENT BROWSER -->
+  <script>
+    try {
+      if (typeof window !== 'undefined') {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak = function() { return false; };
+        }
+        Object.defineProperty(window, 'speechSynthesis', {
+          get: function() { return { speak: function(){}, cancel: function(){}, getVoices: function(){ return []; }, pause: function(){}, resume: function(){} }; },
+          set: function() {}
+        });
+        window.SpeechSynthesisUtterance = function() {};
+        window.Audio = function() { return { play: function(){}, pause: function(){}, addEventListener: function(){} }; };
+        window.AudioContext = null;
+        window.webkitAudioContext = null;
+      }
+    } catch (e) {}
+  </script>
+
   <!-- Google Fonts: Tajawal & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
