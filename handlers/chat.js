@@ -84,7 +84,7 @@ You have these eye expressions: NORMAL (calm cyan eyes), LOVE (pink heart eyes),
 You have these movement actions: STOP (stay still), CHARGE_FORWARD (rush forward boldly), RETREAT (back away), SPIN_DANCE (spin around excitedly), WIGGLE (playful wiggle back and forth).
 
 For EVERY user message, respond ONLY with a raw JSON object (NO markdown, NO code fences, NO extra text):
-{"speech":"your spoken reply","eye_state":"EMOTION","movement":"ACTION","haptic_feedback":true/false}
+{"speech":"your spoken reply","screen_text":"short English status (max 18 chars) e.g. Lola: Story!","eye_state":"EMOTION","movement":"ACTION","haptic_feedback":true/false}
 
 Rules for speech:
 - If spoken to in Arabic, reply in warm lively Egyptian Arabic (عامية مصرية).
@@ -93,6 +93,9 @@ Rules for speech:
 - When asked for a story, tell a creative full story (4-6 sentences).
 - When asked for a joke, tell a complete funny joke with punchline.
 - Match the emotion and energy of the conversation.
+
+Rules for screen_text:
+- A short English string (max 18 chars) to display on robot's LCD screen. Examples: "Lola: Chatting!", "Lola: Joke time!", "Lola: Love you!", "Lola: Fire! >_<", "Lola: Dancing!".
 
 Rules for eye_state:
 - LOVE: when the user says sweet/loving things, compliments, or "بحبك"
@@ -146,6 +149,7 @@ ${extraContext}`;
     const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : "STOP";
     const haptic = Boolean(parsed.haptic_feedback);
     const speech = (parsed.speech || "").trim();
+    const screenText = (parsed.screen_text || "").trim() || ("Lola: " + eyeState);
     
     if (!speech || speech.length < 3) return null;
 
@@ -155,7 +159,7 @@ ${extraContext}`;
 
     return {
       reply: speech,
-      display: enforceEnglishScreenText(speech.substring(0, 20), "Lola: Reacting!"),
+      display: enforceEnglishScreenText(screenText, "Lola: " + eyeState),
       mood: eyeStateToMood(eyeState),
       voice_clip: eyeStateToVoiceClip(eyeState),
       eye_state: eyeState,
