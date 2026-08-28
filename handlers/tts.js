@@ -36,6 +36,8 @@ module.exports = async (req, res) => {
     // Always use English for TTS (speech_en is always English)
     const lang = 'en';
 
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 100))}&tl=${lang}&client=tw-ob`;
+
     const audioRes = await axios.get(ttsUrl, {
       responseType: 'arraybuffer',
       headers: {
