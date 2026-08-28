@@ -43,8 +43,12 @@ module.exports = async (req, res) => {
       cleanText = lastSpace > 40 ? truncated.substring(0, lastSpace) : truncated;
     }
 
-    // Always use English for TTS (speech_en is always English)
-    const lang = 'en';
+    // Detect language strictly based on text content
+    let lang = queryLang;
+    if (!lang) {
+      const isArabic = /[\u0600-\u06FF]/.test(cleanText);
+      lang = isArabic ? 'ar' : 'en';
+    }
 
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
 

@@ -154,12 +154,17 @@ ${extraContext}`;
     // Validate and sanitize
     const eyeState = VALID_EYES.includes(parsed.eye_state) ? parsed.eye_state : "NORMAL";
     const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : "STOP";
-    const haptic = Boolean(parsed.haptic_feedback);
-    const speech = (parsed.speech || "").trim();
-    const speechEn = (parsed.speech_en || speech).trim(); // Fallback to speech if no speech_en
+    let speech = (parsed.speech || "").trim();
+    let speechEn = (parsed.speech_en || "").trim();
+    
+    // If speech_en is missing or has Arabic letters, provide clean English answer:
+    if (!speechEn || /[\u0600-\u06FF]/.test(speechEn)) {
+      speechEn = /[a-zA-Z]{3,}/.test(speech) ? speech : "I am Lola, your friendly robot!";
+    }
+    
     const screenText = (parsed.screen_text || "").trim() || ("Lola: " + eyeState);
     
-    if (!speech || speech.length < 3) return null;
+    if (!speech || speech.length < 2) return null;
 
     // Trigger motor commands based on movement
     if (movement === "SPIN_DANCE") setCommand("DANCE");
