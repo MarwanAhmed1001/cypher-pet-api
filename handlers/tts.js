@@ -36,19 +36,19 @@ module.exports = async (req, res) => {
     // Always use English for TTS (speech_en is always English)
     const lang = 'en';
 
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 100))}&tl=${lang}&client=tw-ob`;
-
     const audioRes = await axios.get(ttsUrl, {
-      responseType: 'stream',
+      responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
       },
-      timeout: 6000
+      timeout: 8000
     });
 
+    const buffer = Buffer.from(audioRes.data);
     res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', buffer.length);
     res.setHeader('Cache-Control', 'no-cache');
-    audioRes.data.pipe(res);
+    res.status(200).send(buffer);
   } catch (err) {
     console.error("TTS Handler Error:", err.message);
     res.status(500).json({ error: "Failed to generate TTS audio", details: err.message });
