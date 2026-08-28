@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
 
     if (!textToSpeak) {
       const currentState = getMoodState();
-      textToSpeak = currentState.last_reply || "أنا لولا، روبوتك الأليف الذكي!";
+      textToSpeak = currentState.last_reply_en || currentState.last_reply || "Hello! I am Lola, your cute robot pet!";
     }
 
     // Clean text of emojis and special characters for TTS
@@ -33,8 +33,8 @@ module.exports = async (req, res) => {
       .replace(/[\*\#\_]/g, '')
       .trim();
 
-    const isEnglish = queryLang === 'en' || (/[a-zA-Z]{3,}/.test(cleanText) && !/[\u0600-\u06FF]/.test(cleanText));
-    const lang = isEnglish ? 'en' : 'ar';
+    // Always use English for TTS (speech_en is always English)
+    const lang = 'en';
 
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 200))}&tl=${lang}&client=tw-ob`;
 

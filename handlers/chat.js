@@ -84,15 +84,21 @@ You have these eye expressions: NORMAL (calm cyan eyes), LOVE (pink heart eyes),
 You have these movement actions: STOP (stay still), CHARGE_FORWARD (rush forward boldly), RETREAT (back away), SPIN_DANCE (spin around excitedly), WIGGLE (playful wiggle back and forth).
 
 For EVERY user message, respond ONLY with a raw JSON object (NO markdown, NO code fences, NO extra text):
-{"speech":"your spoken reply","screen_text":"short English status (max 18 chars) e.g. Lola: Story!","eye_state":"EMOTION","movement":"ACTION","haptic_feedback":true/false}
+{"speech":"your spoken reply in the user's language","speech_en":"same reply but ALWAYS in English","screen_text":"short English status (max 18 chars) e.g. Lola: Story!","eye_state":"EMOTION","movement":"ACTION","haptic_feedback":true/false}
 
 Rules for speech:
-- ALWAYS reply in natural fluent English with personality, even if the user writes in Arabic.
+- If spoken to in Arabic, reply in warm lively Egyptian Arabic (عامية مصرية).
+- If in English, reply in natural fluent English with personality.
 - Be expressive, witty, loving. Never be generic or robotic.
 - When asked for a story, tell a creative full story (4-6 sentences).
 - When asked for a joke, tell a complete funny joke with punchline.
 - Match the emotion and energy of the conversation.
-- Keep responses SHORT (1-3 sentences max) for quick TTS playback.
+- Keep responses SHORT (1-3 sentences max) for quick playback.
+
+Rules for speech_en:
+- MUST be the SAME meaning as "speech" but ALWAYS written in English.
+- If speech is already English, speech_en should be identical.
+- Keep it natural and expressive.
 
 Rules for screen_text:
 - A short English string (max 18 chars) to display on robot's LCD screen. Examples: "Lola: Chatting!", "Lola: Joke time!", "Lola: Love you!", "Lola: Fire! >_<", "Lola: Dancing!".
@@ -149,6 +155,7 @@ ${extraContext}`;
     const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : "STOP";
     const haptic = Boolean(parsed.haptic_feedback);
     const speech = (parsed.speech || "").trim();
+    const speechEn = (parsed.speech_en || speech).trim(); // Fallback to speech if no speech_en
     const screenText = (parsed.screen_text || "").trim() || ("Lola: " + eyeState);
     
     if (!speech || speech.length < 3) return null;
@@ -159,6 +166,7 @@ ${extraContext}`;
 
     return {
       reply: speech,
+      reply_en: speechEn,
       display: enforceEnglishScreenText(screenText, "Lola: " + eyeState),
       mood: eyeStateToMood(eyeState),
       voice_clip: eyeStateToVoiceClip(eyeState),
@@ -225,7 +233,8 @@ module.exports = async (req, res) => {
       dialogueResult.voice_clip || 'HELLO',
       dialogueResult.eye_state || 'NORMAL',
       dialogueResult.movement || 'STOP',
-      dialogueResult.haptic_feedback || false
+      dialogueResult.haptic_feedback || false,
+      dialogueResult.reply_en || dialogueResult.reply
     );
 
     return res.status(200).json({
