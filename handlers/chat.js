@@ -96,9 +96,10 @@ Rules for speech:
 - Keep responses SHORT (1-3 sentences max) for quick playback.
 
 Rules for speech_en:
-- MUST be the SAME meaning as "speech" but ALWAYS written in English.
-- If speech is already English, speech_en should be identical.
-- Keep it natural and expressive.
+- MUST directly and accurately answer the user's question or prompt in clear, natural, spoken English.
+- Keep it concise (1 to 2 short sentences, max 25 words) so playback is quick, smooth, and crystal clear.
+- If speech is already English, speech_en must be the exact direct answer.
+- Never use emojis, asterisks, or markdown symbols.
 
 Rules for screen_text:
 - A short English string (max 18 chars) to display on robot's LCD screen. Examples: "Lola: Chatting!", "Lola: Joke time!", "Lola: Love you!", "Lola: Fire! >_<", "Lola: Dancing!".

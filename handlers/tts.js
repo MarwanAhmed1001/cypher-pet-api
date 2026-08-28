@@ -28,15 +28,25 @@ module.exports = async (req, res) => {
     }
 
     // Clean text of emojis and special characters for TTS
-    const cleanText = textToSpeak
+    let cleanText = textToSpeak
       .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
-      .replace(/[\*\#\_]/g, '')
+      .replace(/[\*\#\_\~\[\]\(\)\{\}\<\>\/\\\|]/g, '')
+      .replace(/\s+/g, ' ')
       .trim();
+
+    if (!cleanText) cleanText = "Hello! I am Lola, your cute robot pet!";
+
+    // Limit to 180 characters without cutting words
+    if (cleanText.length > 180) {
+      const truncated = cleanText.substring(0, 180);
+      const lastSpace = truncated.lastIndexOf(' ');
+      cleanText = lastSpace > 50 ? truncated.substring(0, lastSpace) : truncated;
+    }
 
     // Always use English for TTS (speech_en is always English)
     const lang = 'en';
 
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 100))}&tl=${lang}&client=tw-ob`;
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
 
     const audioRes = await axios.get(ttsUrl, {
       responseType: 'arraybuffer',
