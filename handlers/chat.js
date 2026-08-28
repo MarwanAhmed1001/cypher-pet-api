@@ -154,6 +154,7 @@ ${extraContext}`;
     // Validate and sanitize
     const eyeState = VALID_EYES.includes(parsed.eye_state) ? parsed.eye_state : "NORMAL";
     const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : "STOP";
+    const haptic = Boolean(parsed.haptic_feedback);
     let speech = (parsed.speech || "").trim();
     let speechEn = (parsed.speech_en || "").trim();
     
@@ -206,6 +207,7 @@ async function processSmartDialogue(message) {
   const isEnglish = /[a-zA-Z]{3,}/.test(text) && !/[\u0600-\u06FF]/.test(text);
   return {
     reply: isEnglish ? "I hear you! Tell me more, I love chatting!" : "أنا سامعاك يا قلبي! كمل وفضفض براحتك!",
+    reply_en: "I hear you! Tell me more, I love chatting with you!",
     display: "I hear you! <3",
     mood: "HAPPY",
     voice_clip: "LISTEN",
@@ -246,6 +248,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       reply: recorded.reply,
+      reply_en: recorded.reply_en,
       reply_display: recorded.reply_display,
       voice_clip: recorded.voice_clip,
       mood: recorded.mood,
