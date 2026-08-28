@@ -870,7 +870,7 @@
       }
 
       const rec = new SpeechRecognition();
-      rec.lang = 'ar-EG';
+      rec.lang = '';  // auto-detect: accepts both Arabic and English
       rec.continuous = false;
       rec.interimResults = false;
 
