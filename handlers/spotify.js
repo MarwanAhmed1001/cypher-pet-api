@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const axios = require('axios');
 const querystring = require('querystring');
 const { 
@@ -9,6 +9,12 @@ const {
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+
+// 5-Second in-memory cache to prevent rate-limiting (R11)
+let spotifyCache = {
+  data: null,
+  expiry: 0
+};
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -36,6 +42,33 @@ function enforceEnglishScreenText(text, fallback = "Spotify Music!") {
   if (clean.length === 0) return fallback;
   if (clean.length > 22) return clean.substring(0, 22);
   return clean;
+}
+
+// lrclib.net Lyrics Fetcher with 2-second timeout and graceful fallback (R11)
+async function fetchLyrics(artistName, trackName) {
+  if (!artistName || !trackName) return null;
+
+  try {
+    const params = new URLSearchParams({
+      artist_name: artistName,
+      track_name: trackName
+    });
+
+    const response = await axios.get(`https://lrclib.net/api/get?${params.toString()}`, {
+      timeout: 2000, // 2s timeout requirement
+      headers: {
+        'User-Agent': 'Lola-Robot-Pet/1.0'
+      }
+    });
+
+    if (response.status === 200 && response.data) {
+      return response.data.syncedLyrics || response.data.plainLyrics || null;
+    }
+  } catch (error) {
+    // 404 Not Found, timeout > 2s, or network error — return null gracefully
+    return null;
+  }
+  return null;
 }
 
 async function getSpotifyAccessToken() {
@@ -79,8 +112,20 @@ async function getSpotifyAccessToken() {
 }
 
 async function fetchCurrentlyPlayingTrack() {
+  const now = Date.now();
+
+  // 1. Check 5-second in-memory cache (R11)
+  if (spotifyCache.data && now < spotifyCache.expiry) {
+    return spotifyCache.data;
+  }
+
   const accessToken = await getSpotifyAccessToken();
-  if (!accessToken) return { isConnected: false };
+  if (!accessToken) {
+    const disconnectedData = { isConnected: false };
+    spotifyCache.data = disconnectedData;
+    spotifyCache.expiry = now + 5000;
+    return disconnectedData;
+  }
 
   try {
     const response = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
@@ -94,38 +139,55 @@ async function fetchCurrentlyPlayingTrack() {
       const trackName = response.data.item.name || '';
       const artistName = (response.data.item.artists || []).map(a => a.name).join(', ') || '';
       const isPlaying = response.data.is_playing || false;
+      const trackId = response.data.item.id || `${artistName}-${trackName}`;
 
-      return {
+      // 2. Query lrclib.net lyrics with 2s timeout (R11)
+      let lyrics = null;
+      if (isPlaying && trackName) {
+        lyrics = await fetchLyrics(artistName, trackName);
+      }
+
+      const trackData = {
         isConnected: true,
         isPlaying,
         trackName,
-        artistName
+        artistName,
+        trackId,
+        lyrics
       };
+
+      spotifyCache.data = trackData;
+      spotifyCache.expiry = now + 5000;
+      return trackData;
     } else {
-      return {
+      const idleData = {
         isConnected: true,
         isPlaying: false,
         trackName: "",
-        artistName: ""
+        artistName: "",
+        trackId: "",
+        lyrics: null
       };
+      spotifyCache.data = idleData;
+      spotifyCache.expiry = now + 5000;
+      return idleData;
     }
   } catch (error) {
     console.error('Error fetching Spotify track:', error.response?.data || error.message);
-    if (error.response?.status === 403) {
-      return {
-        isConnected: true,
-        premiumRequired: true,
-        isPlaying: false,
-        trackName: "",
-        artistName: ""
-      };
-    }
-    return { isConnected: false };
+    const errorData = {
+      isConnected: error.response?.status !== 401,
+      premiumRequired: error.response?.status === 403,
+      isPlaying: false,
+      trackName: "",
+      artistName: "",
+      trackId: "",
+      lyrics: null
+    };
+    spotifyCache.data = errorData;
+    spotifyCache.expiry = now + 5000;
+    return errorData;
   }
 }
-
-
-
 
 const spotifyHandler = async (req, res) => {
   setCorsHeaders(res);
@@ -144,6 +206,8 @@ const spotifyHandler = async (req, res) => {
   // Unlink Spotify handler
   if (action === 'unlink' || action === 'logout' || action === 'clear') {
     setSpotifyRefreshToken('UNLINKED');
+    spotifyCache.data = null;
+    spotifyCache.expiry = 0;
     if (typeof res.json === 'function') {
       return res.status(200).json({ success: true, message: 'Spotify has been unlinked successfully!' });
     } else {
@@ -154,6 +218,8 @@ const spotifyHandler = async (req, res) => {
 
   if (setToken) {
     setSpotifyRefreshToken(setToken);
+    spotifyCache.data = null;
+    spotifyCache.expiry = 0;
     return res.status(200).json({ success: true, message: 'Spotify Refresh Token saved!' });
   }
 
@@ -196,6 +262,8 @@ const spotifyHandler = async (req, res) => {
       const refresh_token = response.data.refresh_token;
       if (refresh_token) {
         setSpotifyRefreshToken(refresh_token);
+        spotifyCache.data = null;
+        spotifyCache.expiry = 0;
         console.log('NEW SPOTIFY REFRESH TOKEN SAVED:', refresh_token);
         
         const html = `
@@ -213,9 +281,9 @@ const spotifyHandler = async (req, res) => {
           </head>
           <body>
             <div class="card">
-              <h1>âœ… Spotify Connected to Cypher Pet!</h1>
-              <p>ØªÙ… Ø±Ø¨Ø· Ø­Ø³Ø§Ø¨Ùƒ ÙÙŠ Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ Ø¨Ù†Ø¬Ø§Ø­ Ù…Ø¹ Cypher Pet ðŸŽ‰</p>
-              <p>Your Refresh Token has been saved into memory!</p>
+              <h1>✅ Spotify Connected to Lola!</h1>
+              <p>تم ربط حسابك في سبوتيفاي بنجاح مع Lola 🎉</p>
+              <p>Your Refresh Token has been saved!</p>
               <code>${refresh_token}</code>
             </div>
           </body>
@@ -244,42 +312,52 @@ const spotifyHandler = async (req, res) => {
 
     let replyText = "";
     let displayText = "";
+    let eyeState = "NORMAL";
+    let soundSfx = "happy_beep";
+    let movement = "STOP";
 
     if (nowPlaying && nowPlaying.trackName) {
-      const artistStr = nowPlaying.artistName ? ` Ù„Ù€ ${nowPlaying.artistName}` : '';
-      replyText = `Ø¨ØªØ³Ù…Ø¹ Ø¯Ù„ÙˆÙ‚ØªÙŠ: "${nowPlaying.trackName}"${artistStr} ðŸŽµ Ø£Ø±ÙˆÙ‚ Ù…Ø§Ù† ÙÙŠ Ø§Ù„Ù…Ø¬Ø±Ø© ðŸŽ§`;
+      const artistStr = nowPlaying.artistName ? ` لـ ${nowPlaying.artistName}` : '';
+      replyText = `بتسمع دلوقتي: "${nowPlaying.trackName}"${artistStr} 🎵 أروق مان في المجرة 🎧`;
       displayText = enforceEnglishScreenText(`${nowPlaying.artistName || 'Spotify'} - ${nowPlaying.trackName}`, nowPlaying.trackName);
+      eyeState = "MUSIC_DANCE";
+      soundSfx = "dance_beat";
+      movement = "WIGGLE";
     } else {
-      replyText = "Ø´ØºÙ‘Ù„Øª Ø³Ø¨ÙˆØªÙŠÙØ§ÙŠ! Ø§ÙØªØ­ Ø£ÙŠ Ø£ØºÙ†ÙŠØ© ÙˆØ¹ÙŠÙ†ÙŠØ§ Ø¹Ù„ÙŠÙ‡Ø§ ðŸŽ¶ðŸŽ§";
+      replyText = "شغّلت سبوتيفاي! افتح أي أغنية وعينيا عليها 🎶🎧";
       displayText = "Spotify Ready!";
     }
 
-    const state = recordInteraction(
+    const state = await recordInteraction(
       replyText,
       'EXCITED',
       'spotify',
-      displayText
+      displayText,
+      0,
+      'GOOD',
+      eyeState,
+      movement,
+      true
     );
 
+    const payload = {
+      success: true,
+      now_playing: nowPlaying,
+      lyrics: nowPlaying.lyrics || null,
+      reply: replyText,
+      reply_display: displayText,
+      eye_state: eyeState,
+      sound_sfx: soundSfx,
+      movement: movement,
+      mood: 'EXCITED',
+      data: state
+    };
+
     if (typeof res.json === 'function') {
-      return res.status(200).json({
-        success: true,
-        now_playing: nowPlaying,
-        reply: replyText,
-        reply_display: displayText,
-        mood: 'EXCITED',
-        data: state
-      });
+      return res.status(200).json(payload);
     } else {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({
-        success: true,
-        now_playing: nowPlaying,
-        reply: replyText,
-        reply_display: displayText,
-        mood: 'EXCITED',
-        data: state
-      }));
+      return res.end(JSON.stringify(payload));
     }
   } catch (err) {
     console.error('Spotify API Error:', err);
@@ -302,3 +380,5 @@ const spotifyHandler = async (req, res) => {
 
 module.exports = spotifyHandler;
 module.exports.fetchCurrentlyPlayingTrack = fetchCurrentlyPlayingTrack;
+module.exports.fetchLyrics = fetchLyrics;
+module.exports.spotifyCache = spotifyCache;
