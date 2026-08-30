@@ -22,9 +22,13 @@ module.exports = async (req, res) => {
     const { text: queryText, lang: queryLang } = req.query || {};
     let textToSpeak = queryText;
 
-    if (!textToSpeak) {
+    if (!textToSpeak || /[\u0600-\u06FF]/.test(textToSpeak)) {
       const currentState = await getMoodState();
-      textToSpeak = currentState.last_reply_en || currentState.last_reply || "Hello! I am Lola, your cute robot pet!";
+      textToSpeak = currentState.last_reply_en || queryText || "Hello! I am Lola, your cute robot pet!";
+      // If still contains Arabic, use clean English fallback
+      if (/[\u0600-\u06FF]/.test(textToSpeak)) {
+        textToSpeak = currentState.last_reply_display || "I am Lola, your living robot pet!";
+      }
     }
 
     // Clean text of emojis and special characters for TTS
@@ -34,7 +38,9 @@ module.exports = async (req, res) => {
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!cleanText) cleanText = "Hello! I am Lola, your cute robot pet!";
+    if (!cleanText || cleanText.length < 2) {
+      cleanText = "Hello! I am Lola, your cute robot pet!";
+    }
 
     // Limit to 120 characters without cutting words (guarantees audio is ~12-16KB, well under 24KB buffer)
     if (cleanText.length > 120) {
@@ -43,12 +49,8 @@ module.exports = async (req, res) => {
       cleanText = lastSpace > 40 ? truncated.substring(0, lastSpace) : truncated;
     }
 
-    // Detect language strictly based on text content
-    let lang = queryLang;
-    if (!lang) {
-      const isArabic = /[\u0600-\u06FF]/.test(cleanText);
-      lang = isArabic ? 'ar' : 'en';
-    }
+    // Physical speaker audio is strictly English (en) as requested by user
+    const lang = queryLang === 'ar' ? 'ar' : 'en';
 
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
 

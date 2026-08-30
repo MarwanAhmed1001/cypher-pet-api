@@ -525,18 +525,150 @@ User says: "${message || ""}"
 `.trim();
 
   // Normalized message for resilient command matching
-  const msgNorm = (message || "").toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
+  const rawMsg = (message || "").trim();
+  const msgNorm = rawMsg.toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
 
-  // Special command handling: "صوتي"
-  if (msgNorm === "صوتي" || msgNorm.includes("صوتي")) {
+  // 1. Direct command: "صوتي" / "سيرينا" / "scream" (Scream for 15 seconds)
+  if (msgNorm === "صوتي" || msgNorm.includes("صوتي") || msgNorm === "سيرينا" || msgNorm.includes("سيرينا") || msgNorm === "scream" || msgNorm.includes("scream")) {
     return {
-      reply: "يا لهوييييي! سيبوني في حالي بقى!",
-      reply_en: "Screaming! Leave me alone!",
+      reply: "يا لهوييييي! سيبوني في حالي بقى! 🚨🔥",
+      reply_en: "Emergency! Screaming for fifteen seconds!",
       display: "SCREAMING! ><",
       mood: "ANNOYED",
       voice_clip: "LISTEN",
       sound_sfx: "scream_emergency",
       eye_state: "FIRE",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 2. Direct command: "نامي" / "نام" / "sleep" / "تصبحي على خير"
+  if (msgNorm === "نامي" || msgNorm === "نام" || msgNorm === "ادخلي نامي" || msgNorm === "sleep" || msgNorm.includes("تصبحي علي خير") || msgNorm.includes("تصبح علي خير")) {
+    return {
+      reply: "تصبح على خير يا قلبي، رايحة أنام وأحلم بيك! 💤✨",
+      reply_en: "Good night sweetie, going to sleep now! 💤",
+      display: "ZZZ.. SLEEP",
+      mood: "SLEEPY",
+      voice_clip: "GOOD",
+      sound_sfx: "sleepy_yawn",
+      eye_state: "SLEEP",
+      movement: "STOP",
+      haptic_feedback: false
+    };
+  }
+
+  // 3. Direct command: "اضحكي" / "ابتسمي" / "laugh" / "smile"
+  if (msgNorm === "اضحكي" || msgNorm === "ابتسمي" || msgNorm === "laugh" || msgNorm === "smile" || msgNorm.includes("قولي نكته") || msgNorm.includes("ضحكيني")) {
+    return {
+      reply: "ههههههه يا خبر أبيض! ضحكتني من قلبي يا سكر! 😂✨",
+      reply_en: "Haha I am so happy and laughing sweetie! 😂✨",
+      display: "SO HAPPY! :D",
+      mood: "HAPPY",
+      voice_clip: "GOOD",
+      sound_sfx: "happy_chirp",
+      eye_state: "HAPPY",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 4. Direct command: "اغضبي" / "ازعلي" / "angry" / "mad" / "اتعصبي"
+  if (msgNorm === "اغضبي" || msgNorm === "ازعلي" || msgNorm === "اتعصبي" || msgNorm === "angry" || msgNorm === "mad" || msgNorm.includes("كوني غاضبه")) {
+    return {
+      reply: "أنا متغاظة وزعلانة منك جداً دلوقتي! متكلمنيش! 😡🔥",
+      reply_en: "I am super angry and mad right now! 😡",
+      display: "ANGRY! >_<",
+      mood: "ANNOYED",
+      voice_clip: "LISTEN",
+      sound_sfx: "angry_growl",
+      eye_state: "ANGRY",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 5. Direct command: "ارقصي" / "ارقصيلي" / "dance"
+  if (msgNorm === "ارقصي" || msgNorm === "ارقصيلي" || msgNorm === "dance" || msgNorm.includes("يلا نرقص")) {
+    return {
+      reply: "يلا بينا نرقص ونهيص! المزيكا جامدة والجو رايق خالص! 💃🎶",
+      reply_en: "Let's dance and party sweetie! 💃🎶",
+      display: "DANCING! :D",
+      mood: "EXCITED",
+      voice_clip: "HELLO",
+      sound_sfx: "dance_beat",
+      eye_state: "MUSIC_DANCE",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 6. Direct command: "عيطي" / "احزني" / "ابكي" / "cry" / "sad"
+  if (msgNorm === "عيطي" || msgNorm === "احزني" || msgNorm === "ابكي" || msgNorm === "cry" || msgNorm === "sad") {
+    return {
+      reply: "حاسة إني زعلانة ومكسورة أوي النهاردة.. محتاجة طبطبة وحنان.. 🥺💔",
+      reply_en: "I feel so sad and broken today... 🥺💔",
+      display: "SAD :(",
+      mood: "SAD",
+      voice_clip: "LISTEN",
+      sound_sfx: "sad_sigh",
+      eye_state: "CRY",
+      movement: "STOP",
+      haptic_feedback: false
+    };
+  }
+
+  // 7. Direct command: "اكتبي على الشاشة X" / "اكتبي X" / "write on screen X"
+  const writeMatch = rawMsg.match(/^(?:اكتبي\s+علي\s+الشاشه|اكتبي\s+على\s+الشاشة|اكتبي\s+علي\s+الشاشة|اكتبي|write\s+on\s+screen|write)\s+(.+)$/i);
+  if (writeMatch && writeMatch[1]) {
+    const textToWrite = writeMatch[1].trim();
+    const cleanDisplay = toFranco(textToWrite, textToWrite.substring(0, 18));
+    return {
+      reply: `كتبتلك "${textToWrite}" على الشاشة يا قلبي! ✨`,
+      reply_en: `Written on screen: ${cleanDisplay}`,
+      display: cleanDisplay,
+      mood: "HAPPY",
+      voice_clip: "GOOD",
+      sound_sfx: "happy_beep",
+      eye_state: "HAPPY",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 8. Direct command: "اظبط منبه بعد X" / "منبه بعد X" / "set alarm in X" / "صحيني بعد X"
+  const alarmMatch = msgNorm.match(/(?:اظبط|ظبط|عمل|حط|set)\s*(?:لي|لينا)?\s*(?:منبه|انذار|alarm)\s*(?:بعد|كمان|in|after)?\s*(\d+)?\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)?/i) ||
+                     msgNorm.match(/(?:صحيني|فوقني|wake\s*me\s*up)\s*(?:بعد|كمان|in|after)?\s*(\d+)?\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)?/i);
+  if (alarmMatch && (msgNorm.includes("منبه") || msgNorm.includes("alarm") || msgNorm.includes("صحيني") || msgNorm.includes("فوقني"))) {
+    let amount = parseInt(alarmMatch[1], 10);
+    if (isNaN(amount) || amount <= 0) {
+      if (msgNorm.includes("نصف ساع") || msgNorm.includes("نص ساع")) amount = 30;
+      else if (msgNorm.includes("ربع ساع")) amount = 15;
+      else amount = 5; // Default 5 minutes
+    }
+    const unit = alarmMatch[2] || "دقيقة";
+    let durationMs = amount * 60 * 1000;
+    let durationStr = `${amount} دقيقة`;
+    let durationEnStr = `${amount} minutes`;
+
+    if (unit.startsWith("ساع") || unit.startsWith("hour") || unit === "h") {
+      durationMs = amount * 60 * 60 * 1000;
+      durationStr = `${amount} ساعة`;
+      durationEnStr = `${amount} hours`;
+    }
+
+    const alarmTimestamp = Date.now() + durationMs;
+    state.alarm_time = alarmTimestamp;
+    await saveState(state);
+
+    return {
+      reply: `منبهك اتظبط بنجاح بعد ${durationStr} يا قلبي! ⏰🔔 متقلقش هصحيك في ميعادك!`,
+      reply_en: `Alarm set for ${durationEnStr} from now! ⏰`,
+      display: "ALARM SET! ⏰",
+      mood: "HAPPY",
+      voice_clip: "GOOD",
+      sound_sfx: "alarm_beeps",
+      eye_state: "HAPPY",
       movement: "WIGGLE",
       haptic_feedback: true
     };
@@ -889,6 +1021,7 @@ const chatHandler = async (req, res) => {
 
 module.exports = chatHandler;
 module.exports.callGeminiReactive = callGeminiReactive;
+module.exports.processSmartDialogue = processSmartDialogue;
 module.exports.toFranco = toFranco;
 module.exports.SYSTEM_PROMPT = SYSTEM_PROMPT;
 module.exports.enforceEnglishScreenText = toFranco;
