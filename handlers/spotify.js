@@ -113,30 +113,6 @@ async function getSpotifyAccessToken() {
   }
 }
 
-async function fetchCurrentlyPlayingTrack() {
-  const now = Date.now();
-
-  // 1. Check 5-second in-memory cache (R11)
-  if (spotifyCache.data && now < spotifyCache.expiry) {
-    return spotifyCache.data;
-  }
-
-  const accessToken = await getSpotifyAccessToken();
-  if (!accessToken) {
-    const disconnectedData = { isConnected: false };
-    spotifyCache.data = disconnectedData;
-    spotifyCache.expiry = now + 5000;
-    return disconnectedData;
-  }
-
-  try {
-    const response = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      },
-      timeout: 5000
-    });
-
 function getCurrentLyricsLine(syncedLyrics, progressMs, fallbackTrack = "") {
   if (!syncedLyrics || typeof syncedLyrics !== 'string') {
     return fallbackTrack ? fallbackTrack.substring(0, 18) : "MUSIC DANCE :D";
@@ -162,6 +138,30 @@ function getCurrentLyricsLine(syncedLyrics, progressMs, fallbackTrack = "") {
   }
   return matched && matched.text ? matched.text : (fallbackTrack ? fallbackTrack.substring(0, 18) : "MUSIC DANCE :D");
 }
+
+async function fetchCurrentlyPlayingTrack() {
+  const now = Date.now();
+
+  // 1. Check 5-second in-memory cache (R11)
+  if (spotifyCache.data && now < spotifyCache.expiry) {
+    return spotifyCache.data;
+  }
+
+  const accessToken = await getSpotifyAccessToken();
+  if (!accessToken) {
+    const disconnectedData = { isConnected: false };
+    spotifyCache.data = disconnectedData;
+    spotifyCache.expiry = now + 5000;
+    return disconnectedData;
+  }
+
+  try {
+    const response = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      timeout: 5000
+    });
 
     if (response.status === 200 && response.data && response.data.item) {
       const trackName = response.data.item.name || '';
