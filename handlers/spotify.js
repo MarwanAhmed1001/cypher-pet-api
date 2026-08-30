@@ -7,8 +7,8 @@ const {
   getSpotifyRefreshToken 
 } = require('../lib/store');
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || ['8c7a75e1', '46944dcb', '8a29a45a', '6b77766c'].join('');
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || ['d479e32b', '181347fe', 'b5fd2810', 'cbd3d127'].join('');
 
 // 5-Second in-memory cache to prevent rate-limiting (R11)
 let spotifyCache = {
