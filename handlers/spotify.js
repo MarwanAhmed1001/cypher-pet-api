@@ -137,10 +137,38 @@ async function fetchCurrentlyPlayingTrack() {
       timeout: 5000
     });
 
+function getCurrentLyricsLine(syncedLyrics, progressMs, fallbackTrack = "") {
+  if (!syncedLyrics || typeof syncedLyrics !== 'string') {
+    return fallbackTrack ? fallbackTrack.substring(0, 18) : "MUSIC DANCE :D";
+  }
+  
+  const lines = syncedLyrics.split('\n').map(l => {
+    const m = l.match(/\[(\d+):(\d+\.?\d*)\](.*)/);
+    if (!m) return null;
+    const timeMs = (parseInt(m[1]) * 60 + parseFloat(m[2])) * 1000;
+    const text = m[3].trim();
+    return { timeMs, text };
+  }).filter(Boolean);
+
+  if (lines.length === 0) return fallbackTrack ? fallbackTrack.substring(0, 18) : "MUSIC DANCE :D";
+
+  let matched = lines[0];
+  for (const line of lines) {
+    if (line.timeMs <= (progressMs || 0)) {
+      matched = line;
+    } else {
+      break;
+    }
+  }
+  return matched && matched.text ? matched.text : (fallbackTrack ? fallbackTrack.substring(0, 18) : "MUSIC DANCE :D");
+}
+
     if (response.status === 200 && response.data && response.data.item) {
       const trackName = response.data.item.name || '';
       const artistName = (response.data.item.artists || []).map(a => a.name).join(', ') || '';
       const isPlaying = response.data.is_playing || false;
+      const progressMs = response.data.progress_ms || 0;
+      const durationMs = response.data.item.duration_ms || 0;
       const trackId = response.data.item.id || `${artistName}-${trackName}`;
 
       // 2. Query lrclib.net lyrics with 2s timeout (R11)
@@ -155,6 +183,8 @@ async function fetchCurrentlyPlayingTrack() {
         trackName,
         artistName,
         trackId,
+        progressMs,
+        durationMs,
         lyrics
       };
 
@@ -383,4 +413,5 @@ const spotifyHandler = async (req, res) => {
 module.exports = spotifyHandler;
 module.exports.fetchCurrentlyPlayingTrack = fetchCurrentlyPlayingTrack;
 module.exports.fetchLyrics = fetchLyrics;
+module.exports.getCurrentLyricsLine = getCurrentLyricsLine;
 module.exports.spotifyCache = spotifyCache;

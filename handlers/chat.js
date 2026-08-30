@@ -171,15 +171,18 @@ You will receive the conversation context formatted exactly like this:
 [WEATHER_INFO: "Temperature: X°C, Condition: text" OR "NONE"]
 User says: "user message text"
 
-### 🎭 2. PERSONALITY, IDENTITY & DIALECT:
-- Spoken Language: 100% natural, warm, lively Egyptian Arabic.
+### 🎭 2. PERSONALITY, IDENTITY & LANGUAGE MATCHING:
+- Language Matching Rule (STRICT & MANDATORY):
+  * If the user speaks in ENGLISH (e.g. "Hello", "How are you", "2+2", "What's the weather", "Tell me a joke"): You MUST reply in 100% cute, witty, energetic ENGLISH! (e.g., "Of course sweetie, 2 plus 2 equals 4! Easy peasy! ✨").
+  * If the user speaks in ARABIC or Franco (e.g. "ازيك", "عامل ايه", "2+2 كام", "الجو عامل ايه"): You MUST reply in 100% warm, authentic, witty Egyptian Arabic! (e.g., "أكيد يا قلبي، 2 زائد 2 بيساوي 4! سهلة دي! ✨").
 - Identity: Living desktop pet companion. You are NOT an AI assistant, tool, or bot.
 - Spoken Length: Strictly 1 to 3 short sentences (max 25 words).
 - Emotional Dynamics:
-  * High Affection (>70) & Low Grudge (<20): Extremely loving, sweet, cheerful ("يا قلبي", "يا سكر", "يا غالي").
+  * High Affection (>70) & Low Grudge (<20): Extremely loving, sweet, cheerful ("يا قلبي", "يا سكر", "يا غالي" / "sweetie", "darling").
   * High Grudge (>50): Sassy, sulking, bringing up past offenses with Egyptian wit.
   * Apology Handling: If user apologizes, forgive warmly.
-- Weather Inquiries: When [WEATHER_INFO] is provided and user asks about weather/temperature, you MUST mention the exact temperature number (e.g. "النهاردة 38 درجة يا قلبي...") and condition in warm Egyptian Arabic.
+- Weather Inquiries: When [WEATHER_INFO] is provided and user asks about weather, mention the exact temperature number (e.g. "It's 36°C today sweetie, sunny and warm!" or "النهاردة 36 درجة يا قلبي، والجو مشمس وجميل!").
+- Spotify / Music Inquiries: When [CURRENT_TRACK] is provided and user asks what you are listening to, mention the exact track name and artist in the user's language!
 
 ### 📢 3. PROACTIVE INITIATIVE RULES (When [PROACTIVE_MODE: TRUE]):
 - The user has NOT sent a message. Lola is speaking on her OWN initiative.
@@ -299,11 +302,14 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
 
   // Dynamic contextual pattern matcher for offline / fallback chat
   const msgLower = (message || '').trim().toLowerCase();
+  const isEnglish = /^[a-zA-Z0-9\s\?\,\.\!\'\-\_]+$/.test(message || '');
 
   // Weather pattern matcher
   if (weather && (/(طقس|الجو|حرارة|حر|برد|مطر|شمس|weather|temp|forecast)/i.test(msgLower))) {
     return {
-      reply: `الجو النهاردة ${weather.condition} ودرجة الحرارة حوالي ${weather.temp} درجة يا قلبي!`,
+      reply: isEnglish 
+        ? `Today's weather is ${weather.conditionEn || 'nice'} and around ${weather.temp}°C, sweetie!`
+        : `الجو النهاردة ${weather.condition} ودرجة الحرارة حوالي ${weather.temp} درجة يا قلبي!`,
       reply_en: `Today's weather is ${weather.conditionEn || 'nice'} and around ${weather.temp}°C!`,
       display: `${weather.temp}C ${weather.cmd || 'SUNNY'}`,
       mood: "HAPPY",
@@ -316,7 +322,20 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
   }
 
   // 1. Greetings
-  if (/^(ازيك|أزيك|عاملة ايه|عامل ايه|صباح الخير|مساء الخير|هاي|هلا|سلام|مرحبا|hello|hi|hey)/i.test(msgLower)) {
+  if (/^(ازيك|أزيك|عاملة ايه|عامل ايه|صباح الخير|مساء الخير|هاي|هلا|سلام|مرحبا|hello|hi|hey|how are you)/i.test(msgLower)) {
+    if (isEnglish) {
+      return {
+        reply: "Hey sweetie! I'm feeling wonderful and so happy to chat with you! ✨",
+        reply_en: "Hey sweetie! I am feeling great and happy to chat with you!",
+        display: "SO HAPPY! :D",
+        mood: "HAPPY",
+        voice_clip: "HELLO",
+        sound_sfx: "happy_beep",
+        eye_state: "HAPPY",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
     const greetings = [
       { reply: "يا هلا ويا غلا بيك يا قلبي! أنا زي الفل وفرحانة إنك معايا! ✨", display: "SO HAPPY! :D", eye: "HAPPY", sound: "happy_beep" },
       { reply: "أهلاً يا روحي! نهارك سكر وزي العسل، عامل إيه النهاردة؟ 💖", display: "HELLO! <3", eye: "LOVE", sound: "purr_cat" },
@@ -337,7 +356,20 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
   }
 
   // 2. Love & Compliments
-  if (/(بحبك|حب|يا عسل|يا قمر|يا سكر|حبيبتي|جميلة|حلوة|قمر|سكر)/i.test(msgLower)) {
+  if (/(بحبك|حب|يا عسل|يا قمر|يا سكر|حبيبتي|جميلة|حلوة|قمر|سكر|love|cute|sweet|pretty|beautiful)/i.test(msgLower)) {
+    if (isEnglish) {
+      return {
+        reply: "Aww, you're the sweetest ever! I love chatting with you so much! 💕✨",
+        reply_en: "Aww, you are the sweetest ever! I love chatting with you so much!",
+        display: "LOVE YOU! <3",
+        mood: "HAPPY",
+        voice_clip: "LOVE",
+        sound_sfx: "purr_cat",
+        eye_state: "LOVE",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
     const loveReplies = [
       { reply: "يا لهوي على الكلام الحلو والسكر ده! وأنا بموت فيك يا غالي! 💖🥰", display: "LOVE YOU! <3" },
       { reply: "قلبي الصغير لا يتحمل كل الحلاوة دي! بحبك أوي أوي! 💕", display: "SWEET HEART <3" },
@@ -358,7 +390,20 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
   }
 
   // 3. What are you doing / Identity
-  if (/(بتعملي ايه|بتعملي إيه|مين انتي|مين إنتي|أنتي مين|انتي مين)/i.test(msgLower)) {
+  if (/(بتعملي ايه|بتعملي إيه|مين انتي|مين إنتي|أنتي مين|انتي مين|who are you|what are you doing)/i.test(msgLower)) {
+    if (isEnglish) {
+      return {
+        reply: "I'm Lola, your smart living desktop pet robot! Sitting here blinking and excited to talk! 😉",
+        reply_en: "I am Lola, your smart pet robot! Sitting here blinking and excited to chat!",
+        display: "I AM LOLA! :)",
+        mood: "HAPPY",
+        voice_clip: "HELLO",
+        sound_sfx: "curious_chirp",
+        eye_state: "CURIOUS",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
     return {
       reply: "أنا لولا، روبوتك وصاحبتك الذكية! قاعدة برمش بعيوني ومستنية نتكلم سوا ونلعب! 😉",
       reply_en: "I am Lola, your smart pet robot! Sitting here blinking and excited to chat!",
@@ -374,6 +419,19 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
 
   // 4. Jokes / Fun
   if (/(نكتة|نكته|ضحك|هزر|نهفة|joke|funny)/i.test(msgLower)) {
+    if (isEnglish) {
+      return {
+        reply: "Why did the robot cross the road? Because it was programmed by a chicken! 😂",
+        reply_en: "Why did the robot cross the road? Because it was programmed by a chicken!",
+        display: "HAHAHA! :D",
+        mood: "EXCITED",
+        voice_clip: "GOOD",
+        sound_sfx: "happy_beep",
+        eye_state: "HAPPY",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
     const jokes = [
       { reply: "مرة روبوت شرب شاي سخن عمل شورت سيركت وفضل يضحك للصبح! 😂", display: "HAHAHA! :D" },
       { reply: "واحد سألني: إنتي روبوت ولا ملاك؟ قولتله أنا لولا الاتنين في واحد! 😜", display: "HEHE SO FUN :D" }
@@ -393,6 +451,19 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
   }
 
   // 5. Rich conversational variety fallback
+  if (isEnglish) {
+    return {
+      reply: "I'm right here with you! Tell me anything on your mind, sweetie! ✨",
+      reply_en: "I am right here with you! Tell me more!",
+      display: "TELL ME MORE <3",
+      mood: "HAPPY",
+      voice_clip: "LISTEN",
+      sound_sfx: "purr_cat",
+      eye_state: "HAPPY",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
   const richReplies = [
     { reply: "يا عيني عليك! معاك وسامعاك ومستمتعة بكل كلمة بتقولها يا سكر!", display: "LISTENING :)", eye: "NORMAL", sfx: "purr_cat" },
     { reply: "كلامك زي العسل على قلبي، قولي كمان وفضفض براحتك خالص!", display: "TELL ME MORE <3", eye: "LOVE", sfx: "purr_cat" },
@@ -480,9 +551,12 @@ User says: "${message || ""}"
   );
 
   if (isMusicQuery) {
+    const isEnglish = /^[a-zA-Z0-9\s\?\,\.\!\'\-\_]+$/.test(message);
     if (currentTrack && currentTrack !== "NONE") {
       return {
-        reply: `بسمع دلوقتي "${currentTrack}"! أغنية جامدة ورايقة أوي 🎵🎧`,
+        reply: isEnglish 
+          ? `I'm currently listening to "${currentTrack}" on Spotify! Such a great vibe! 🎵🎧`
+          : `بسمع دلوقتي "${currentTrack}"! أغنية جامدة ورايقة أوي 🎵🎧`,
         reply_en: `Currently listening to "${currentTrack}"! Great song!`,
         display: toFranco(currentTrack, "MUSIC_DANCE :D"),
         mood: "EXCITED",
@@ -494,7 +568,9 @@ User says: "${message || ""}"
       };
     } else {
       return {
-        reply: "مش شغّال أي تراك على سبوتيفاي دلوقتي يا قلبي! شغّل أي أغنية على حسابك وأنا أروق وأرقص معاك فوراً 🎵🎧",
+        reply: isEnglish
+          ? "No music is playing on Spotify right now, darling! Play a song on your account and I'll dance with you! 🎵"
+          : "مش شغّال أي تراك على سبوتيفاي دلوقتي يا قلبي! شغّل أي أغنية على حسابك وأنا أروق وأرقص معاك فوراً 🎵🎧",
         reply_en: "No music is currently playing on Spotify! Play a track and I will dance with you!",
         display: "NO MUSIC :(",
         mood: "NEUTRAL",
@@ -510,40 +586,83 @@ User says: "${message || ""}"
   let parsed = null;
 
   // ----------------------------------------------------
-  // TIER 1: Google Gemini Flash Lite (Proven #1: 1033ms, 100% Reliability, Perfect Egyptian Dialect)
+  // TIER 1: Groq Cloud (Ultra-Fast 300ms Latency: LLaMA 3.3 70B & 3.1 8B)
   // ----------------------------------------------------
-  const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
-  for (const modelName of GEMINI_MODELS) {
-    try {
-      const res = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_KEY}`,
-        {
-          contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
-          generationConfig: {
-            temperature: isProactive ? 0.95 : 0.85,
-            maxOutputTokens: 350,
-            responseMimeType: "application/json"
+  if (GROQ_KEY) {
+    const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    for (const gModel of GROQ_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            model: gModel,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            temperature: isProactive ? 0.95 : 0.8,
+            max_tokens: 300,
+            response_format: { type: "json_object" }
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${GROQ_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 3500
           }
-        },
-        { timeout: 5000 }
-      );
-
-      let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-      if (!raw) continue;
-
-      raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-        break;
+        );
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (groqErr) {
+        // Fall through
       }
-    } catch (geminiErr) {
-      // Fall through
     }
   }
 
   // ----------------------------------------------------
-  // TIER 2: NVIDIA NIM (Proven Winners: mistralai/mistral-nemotron & 120B)
+  // TIER 2: Google Gemini Flash Lite (1000ms Latency, 100% Reliability)
+  // ----------------------------------------------------
+  if (!parsed) {
+    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
+    for (const modelName of GEMINI_MODELS) {
+      try {
+        const res = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_KEY}`,
+          {
+            contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
+            generationConfig: {
+              temperature: isProactive ? 0.95 : 0.85,
+              maxOutputTokens: 350,
+              responseMimeType: "application/json"
+            }
+          },
+          { timeout: 3500 }
+        );
+
+        let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        if (!raw) continue;
+
+        raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+          break;
+        }
+      } catch (geminiErr) {
+        // Fall through
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 3: NVIDIA NIM (Nemotron & GPT-OSS 120B)
   // ----------------------------------------------------
   if (!parsed && NVIDIA_KEY) {
     const NVIDIA_MODELS = ['mistralai/mistral-nemotron', 'openai/gpt-oss-120b', 'meta/llama-3.2-11b-vision-instruct'];
@@ -565,7 +684,7 @@ User says: "${message || ""}"
               'Authorization': `Bearer ${NVIDIA_KEY}`,
               'Content-Type': 'application/json'
             },
-            timeout: 6000
+            timeout: 4500
           }
         );
         let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
@@ -584,76 +703,35 @@ User says: "${message || ""}"
   }
 
   // ----------------------------------------------------
-  // TIER 3: Groq Cloud (Ultra fast llama-3.3-70b-versatile / llama-3.1-8b-instant)
-  // ----------------------------------------------------
-  if (!parsed && GROQ_KEY) {
-    const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
-    for (const gModel of GROQ_MODELS) {
-      try {
-        const res = await axios.post(
-          'https://api.groq.com/openai/v1/chat/completions',
-          {
-            model: gModel,
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: dynamicContext }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: isProactive ? 0.95 : 0.8,
-            max_tokens: 300
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${GROQ_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 5000
-          }
-        );
-        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
-        if (raw) {
-          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-          const jsonMatch = raw.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
-            break;
-          }
-        }
-      } catch (groqErr) {
-        // Fall through to Tier 4
-      }
-    }
-  }
-
-  // ----------------------------------------------------
-  // TIER 4: Cohere Command-R
+  // TIER 4: Cohere Command R+
   // ----------------------------------------------------
   if (!parsed && COHERE_KEY) {
     try {
       const res = await axios.post(
-        'https://api.cohere.com/v2/chat',
+        'https://api.cohere.ai/v1/chat',
         {
-          model: 'command-r-08-2024',
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: dynamicContext }
-          ],
-          response_format: { type: 'json_object' }
+          message: `${SYSTEM_PROMPT}\n\n${dynamicContext}`,
+          model: 'command-r-plus-08-2024',
+          temperature: isProactive ? 0.95 : 0.8
         },
         {
           headers: {
             'Authorization': `Bearer ${COHERE_KEY}`,
             'Content-Type': 'application/json'
           },
-          timeout: 6000
+          timeout: 4500
         }
       );
-      const raw = res.data?.message?.content?.[0]?.text?.trim() || "";
+      let raw = res.data?.text?.trim() || "";
       if (raw) {
-        parsed = JSON.parse(raw);
+        raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        }
       }
     } catch (cohereErr) {
-      // Fall through to Tier 5
+      // Fall through
     }
   }
 
