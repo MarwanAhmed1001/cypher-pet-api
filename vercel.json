@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/api/chat", "destination": "/api" },
     { "source": "/api/mood", "destination": "/api" },
+    { "source": "/lola/interact", "destination": "/api" },
+    { "source": "/lola/(.*)", "destination": "/api" },
     { "source": "/api/notify", "destination": "/api" },
     { "source": "/api/spotify", "destination": "/api" },
     { "source": "/api/spotify/callback", "destination": "/api" },
