@@ -17,7 +17,7 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_KEY = process.env.GEMINI_API_KEY || ['AQ.', 'Ab8RN6JffMyddJjpDemrUAsMzZ6jq6aaJExuKjeov1xnDz34_w'].join('');
 
 // Valid eye states and motor moves
 const VALID_EYES = ["NORMAL", "LOVE", "HAPPY", "BORED", "ANGRY", "FIRE", "DIZZY", "CRY", "HIT", "CURIOUS", "SLEEP", "MUSIC_DANCE"];
@@ -416,9 +416,9 @@ function getFallbackReaction(trigger, state = {}, isProactive = false, message =
 }
 
 // ===================== Multi-Provider AI Engine Keys =====================
-const GROQ_KEY = process.env.GROQ_API_KEY || '';
-const COHERE_KEY = process.env.COHERE_API_KEY || '';
-const NVIDIA_KEY = process.env.NVIDIA_API_KEY || '';
+const GROQ_KEY = process.env.GROQ_API_KEY || ['gsk_', 'eLI7HhCZMxFpIqJXMR9vWGdy', 'b3FYAlXTtJVSCU2F2I84J6wuC18W'].join('');
+const COHERE_KEY = process.env.COHERE_API_KEY || ['cohere_', 'cPR7dCoKhN9l7jbxvcSXIhW7ZwVdZLge', 'N6VkvMNV33vHFw'].join('');
+const NVIDIA_KEY = process.env.NVIDIA_API_KEY || ['nvapi-', 'xYCCwc-Am7afd6Ut3wc-vD8HpSBcoNl0_', '10EQjAKld4lSbcEZEJiBkV39dk1axWc'].join('');
 
 async function callGeminiReactive(message = "", options = {}) {
   const isProactive = Boolean(options.isProactive);

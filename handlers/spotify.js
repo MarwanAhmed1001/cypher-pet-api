@@ -71,13 +71,15 @@ async function fetchLyrics(artistName, trackName) {
   return null;
 }
 
+const DEFAULT_REFRESH_TOKEN = 'AQC96e8f8UqqKxozIyFcyFK0KAARJqgrJCfnjG4LF-ZTiuLpnUtB_8hmcxNfJih9bRvSoMuZ6OvFW_cCDgmVOd-wbWyKbUrhPhVk9TSS2PBqMJc1V1hUHzyTfQC8vM7Df08';
+
 async function getSpotifyAccessToken() {
   const storedToken = getSpotifyRefreshToken();
   if (storedToken === 'UNLINKED') {
     return null; // Explicitly unlinked
   }
 
-  const refresh_token = storedToken || process.env.SPOTIFY_REFRESH_TOKEN;
+  const refresh_token = (storedToken && storedToken !== 'UNLINKED') ? storedToken : (process.env.SPOTIFY_REFRESH_TOKEN || DEFAULT_REFRESH_TOKEN);
 
   if (!CLIENT_ID || !CLIENT_SECRET || !refresh_token || refresh_token === 'UNLINKED') {
     return null;
