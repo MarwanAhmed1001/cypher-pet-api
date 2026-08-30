@@ -218,7 +218,7 @@ true for LOVE, HAPPY, FIRE, HIT, DIZZY, scream_emergency. false for NORMAL, SLEE
 - "بتسمعي إيه؟": comment on CURRENT_TRACK, MUSIC_DANCE, WIGGLE
 
 ### 📦 10. JSON SCHEMA (raw JSON only, no markdown):
-{"speech":"Egyptian Arabic","screen_text":"ASCII MAX 18","eye_state":"ENUM","sound_sfx":"ENUM","movement":"STOP|WIGGLE|SPIN","haptic_feedback":bool}`;
+{"speech":"Spoken response matching user language (English if user spoke English, Egyptian Arabic if user spoke Arabic)","screen_text":"ASCII MAX 18","eye_state":"ENUM","sound_sfx":"ENUM","movement":"STOP|WIGGLE|SPIN","haptic_feedback":bool}`;
 
 function getFallbackReaction(trigger, state = {}, isProactive = false, message = "", weather = null) {
   const grudge = typeof state.grudge === 'number' ? state.grudge : 0;
