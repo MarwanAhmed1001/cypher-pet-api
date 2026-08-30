@@ -505,6 +505,11 @@ async function callGeminiReactive(message = "", options = {}) {
     ? `${weather.temp}°C, ${weather.condition} (${weather.conditionEn || ''})`
     : "NONE";
 
+  const isEnglish = /^[a-zA-Z0-9\s\?\,\.\!\'\-\_]+$/.test(message || '');
+  const langPrompt = isEnglish 
+    ? `[LANGUAGE_REQUIREMENT: "USER SPOKE IN ENGLISH. YOUR 'speech' FIELD MUST BE 100% IN NATURAL ENGLISH ONLY!"]`
+    : `[LANGUAGE_REQUIREMENT: "USER SPOKE IN ARABIC. YOUR 'speech' FIELD MUST BE 100% IN EGYPTIAN ARABIC!"]`;
+
   // Dynamic context injection template (Section 1)
   const dynamicContext = `
 [AFFECTION_SCORE: ${typeof state.affection === 'number' ? state.affection : 50}]
@@ -515,6 +520,7 @@ async function callGeminiReactive(message = "", options = {}) {
 [LAST_EVENTS: ${JSON.stringify(lastEvents)}]
 [CURRENT_TRACK: "${currentTrack}"]
 [WEATHER_INFO: "${weatherStr}"]
+${langPrompt}
 User says: "${message || ""}"
 `.trim();
 
