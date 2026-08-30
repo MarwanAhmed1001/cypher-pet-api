@@ -1,4 +1,4 @@
-﻿const { setJoystick, getMoodState } = require('../lib/store');
+const { setJoystick, getMoodState } = require('../lib/store');
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    const currentState = getMoodState();
+    const currentState = await getMoodState();
     return res.status(200).json({ joystick: currentState.joystick });
   }
 

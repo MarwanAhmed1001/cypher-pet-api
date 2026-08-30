@@ -1,4 +1,4 @@
-﻿const { clearAllMemory } = require('../lib/store');
+const { clearAllMemory } = require('../lib/store');
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -16,6 +16,6 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const result = clearAllMemory();
+  const result = await clearAllMemory();
   return res.status(200).json(result);
 };

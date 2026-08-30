@@ -17,7 +17,7 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || ['AQ.', 'Ab8RN6JffMyddJjpDemrUAsMzZ6jq6aaJExuKjeov1xnDz34_w'].join('');
+const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 
 // Valid eye states and motor moves
 const VALID_EYES = ["NORMAL", "LOVE", "HAPPY", "BORED", "ANGRY", "FIRE", "DIZZY", "CRY", "HIT", "CURIOUS", "SLEEP", "MUSIC_DANCE"];
@@ -168,6 +168,7 @@ You will receive the conversation context formatted exactly like this:
 [TRIGGER: "USER_CHAT" | "LONELY" | "GRUDGE_REMINDER" | "MUSIC_REACTION" | "BORED"]
 [LAST_EVENTS: "EVENT_1", "EVENT_2", ...]
 [CURRENT_TRACK: "Track Name - Artist" OR "NONE"]
+[WEATHER_INFO: "Temperature: X°C, Condition: text" OR "NONE"]
 User says: "user message text"
 
 ### 🎭 2. PERSONALITY, IDENTITY & DIALECT:
@@ -178,6 +179,7 @@ User says: "user message text"
   * High Affection (>70) & Low Grudge (<20): Extremely loving, sweet, cheerful ("يا قلبي", "يا سكر", "يا غالي").
   * High Grudge (>50): Sassy, sulking, bringing up past offenses with Egyptian wit.
   * Apology Handling: If user apologizes, forgive warmly.
+- Weather Inquiries: When [WEATHER_INFO] is provided and user asks about weather/temperature, you MUST mention the exact temperature number (e.g. "النهاردة 38 درجة يا قلبي...") and condition in warm Egyptian Arabic.
 
 ### 📢 3. PROACTIVE INITIATIVE RULES (When [PROACTIVE_MODE: TRUE]):
 - The user has NOT sent a message. Lola is speaking on her OWN initiative.
@@ -215,7 +217,7 @@ true for LOVE, HAPPY, FIRE, HIT, DIZZY, scream_emergency. false for NORMAL, SLEE
 ### 📦 10. JSON SCHEMA (raw JSON only, no markdown):
 {"speech":"Egyptian Arabic","screen_text":"ASCII MAX 18","eye_state":"ENUM","sound_sfx":"ENUM","movement":"STOP|WIGGLE|SPIN","haptic_feedback":bool}`;
 
-function getFallbackReaction(trigger, state = {}, isProactive = false) {
+function getFallbackReaction(trigger, state = {}, isProactive = false, message = "", weather = null) {
   const grudge = typeof state.grudge === 'number' ? state.grudge : 0;
   const affection = typeof state.affection === 'number' ? state.affection : 50;
 
@@ -297,6 +299,21 @@ function getFallbackReaction(trigger, state = {}, isProactive = false) {
 
   // Dynamic contextual pattern matcher for offline / fallback chat
   const msgLower = (message || '').trim().toLowerCase();
+
+  // Weather pattern matcher
+  if (weather && (/(طقس|الجو|حرارة|حر|برد|مطر|شمس|weather|temp|forecast)/i.test(msgLower))) {
+    return {
+      reply: `الجو النهاردة ${weather.condition} ودرجة الحرارة حوالي ${weather.temp} درجة يا قلبي!`,
+      reply_en: `Today's weather is ${weather.conditionEn || 'nice'} and around ${weather.temp}°C!`,
+      display: `${weather.temp}C ${weather.cmd || 'SUNNY'}`,
+      mood: "HAPPY",
+      voice_clip: "HELLO",
+      sound_sfx: "happy_beep",
+      eye_state: "HAPPY",
+      movement: "WIGGLE",
+      haptic_feedback: false
+    };
+  }
 
   // 1. Greetings
   if (/^(ازيك|أزيك|عاملة ايه|عامل ايه|صباح الخير|مساء الخير|هاي|هلا|سلام|مرحبا|hello|hi|hey)/i.test(msgLower)) {
@@ -399,18 +416,23 @@ function getFallbackReaction(trigger, state = {}, isProactive = false) {
 }
 
 // ===================== Multi-Provider AI Engine Keys =====================
-const GROQ_KEY = process.env.GROQ_API_KEY || ['gsk_', 'eLI7HhCZMxFpIqJXMR9vWGdy', 'b3FYAlXTtJVSCU2F2I84J6wuC18W'].join('');
-const COHERE_KEY = process.env.COHERE_API_KEY || ['cohere_', 'cPR7dCoKhN9l7jbxvcSXIhW7ZwVdZLge', 'N6VkvMNV33vHFw'].join('');
-const NVIDIA_KEY = process.env.NVIDIA_API_KEY || ['nvapi-', 'xYCCwc-Am7afd6Ut3wc-vD8HpSBcoNl0_', '10EQjAKld4lSbcEZEJiBkV39dk1axWc'].join('');
+const GROQ_KEY = process.env.GROQ_API_KEY || '';
+const COHERE_KEY = process.env.COHERE_API_KEY || '';
+const NVIDIA_KEY = process.env.NVIDIA_API_KEY || '';
 
 async function callGeminiReactive(message = "", options = {}) {
   const isProactive = Boolean(options.isProactive);
   const trigger = options.trigger || (isProactive ? "LONELY" : "USER_CHAT");
   const lastEvents = options.lastEvents || [];
   const currentTrack = options.currentTrack || "NONE";
+  const weather = options.weather || null;
 
   const state = await getMoodState();
   const narrative = options.narrative || state.narrative || buildNarrativeSummary(state);
+
+  const weatherStr = weather 
+    ? `${weather.temp}°C, ${weather.condition} (${weather.conditionEn || ''})`
+    : "NONE";
 
   // Dynamic context injection template (Section 1)
   const dynamicContext = `
@@ -421,6 +443,7 @@ async function callGeminiReactive(message = "", options = {}) {
 [TRIGGER: "${trigger}"]
 [LAST_EVENTS: ${JSON.stringify(lastEvents)}]
 [CURRENT_TRACK: "${currentTrack}"]
+[WEATHER_INFO: "${weatherStr}"]
 User says: "${message || ""}"
 `.trim();
 
@@ -493,7 +516,7 @@ User says: "${message || ""}"
   // ----------------------------------------------------
   // TIER 2: NVIDIA NIM (Proven Winners: mistralai/mistral-nemotron & 120B)
   // ----------------------------------------------------
-  if (!parsed) {
+  if (!parsed && NVIDIA_KEY) {
     const NVIDIA_MODELS = ['mistralai/mistral-nemotron', 'openai/gpt-oss-120b', 'meta/llama-3.2-11b-vision-instruct'];
     for (const nModel of NVIDIA_MODELS) {
       try {
@@ -532,9 +555,51 @@ User says: "${message || ""}"
   }
 
   // ----------------------------------------------------
+  // TIER 3: Groq Cloud (Ultra fast llama-3.3-70b-versatile / llama-3.1-8b-instant)
+  // ----------------------------------------------------
+  if (!parsed && GROQ_KEY) {
+    const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    for (const gModel of GROQ_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            model: gModel,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: isProactive ? 0.95 : 0.8,
+            max_tokens: 300
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${GROQ_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 5000
+          }
+        );
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (groqErr) {
+        // Fall through to Tier 4
+      }
+    }
+  }
+
+  // ----------------------------------------------------
   // TIER 4: Cohere Command-R
   // ----------------------------------------------------
-  if (!parsed) {
+  if (!parsed && COHERE_KEY) {
     try {
       const res = await axios.post(
         'https://api.cohere.com/v2/chat',
@@ -567,7 +632,7 @@ User says: "${message || ""}"
   // TIER 5: Dynamic Conversational Fallback Rule Engine
   // ----------------------------------------------------
   if (!parsed) {
-    return getFallbackReaction(trigger, state, isProactive, message);
+    return getFallbackReaction(trigger, state, isProactive, message, weather);
   }
 
   // Validate and sanitize response fields
@@ -610,22 +675,26 @@ User says: "${message || ""}"
 async function processSmartDialogue(message, currentTrack = "NONE") {
   const text = (message || '').trim().toLowerCase();
 
+  let weatherData = null;
   // Enrich with live weather if relevant
   if (text.includes('طقس') || text.includes('الجو') || text.includes('حرارة') || text.includes('حر') || text.includes('برد') || text.includes('مطر') || text.includes('شمس') || text.includes('weather') || text.includes('temp') || text.includes('forecast')) {
-    const w = await fetchLiveWeather();
-    setCommand(w.cmd);
+    weatherData = await fetchLiveWeather();
+    if (weatherData && weatherData.cmd) {
+      setCommand(weatherData.cmd);
+    }
   }
 
   // Primary Gemini Reactive Call
   const result = await callGeminiReactive(message, {
     isProactive: false,
     trigger: "USER_CHAT",
-    currentTrack: currentTrack
+    currentTrack: currentTrack,
+    weather: weatherData
   });
   if (result) return result;
 
   const state = await getMoodState();
-  return getFallbackReaction("USER_CHAT", state, false);
+  return getFallbackReaction("USER_CHAT", state, false, message, weatherData);
 }
 
 const chatHandler = async (req, res) => {

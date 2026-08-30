@@ -47,7 +47,7 @@ Gets the current mood state, dominant daily accumulated mood, and last reply.
 ## 🛠️ Environment Variables
 Set these variables in Vercel Dashboard -> Settings -> Environment Variables:
 
-- `GEMINI_API_KEY`: `AQ.Ab8RN6IRu-t-PKpHjJUklwxJCpxKli1CU2qIi7UgSbxjaoTQBA`
+- `GEMINI_API_KEY`: Your Google Gemini API key
 - `WEATHER_API_KEY`: OpenWeatherMap API key (e.g. for Cairo weather data)
 
 ---

@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
     let textToSpeak = queryText;
 
     if (!textToSpeak) {
-      const currentState = getMoodState();
+      const currentState = await getMoodState();
       textToSpeak = currentState.last_reply_en || currentState.last_reply || "Hello! I am Lola, your cute robot pet!";
     }
 
