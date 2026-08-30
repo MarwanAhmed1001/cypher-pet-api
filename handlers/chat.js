@@ -447,8 +447,11 @@ async function callGeminiReactive(message = "", options = {}) {
 User says: "${message || ""}"
 `.trim();
 
+  // Normalized message for resilient command matching
+  const msgNorm = (message || "").toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
+
   // Special command handling: "صوتي"
-  if (message && message.trim() === "صوتي") {
+  if (msgNorm === "صوتي" || msgNorm.includes("صوتي")) {
     return {
       reply: "يا لهوييييي! سيبوني في حالي بقى!",
       reply_en: "Screaming! Leave me alone!",
@@ -462,20 +465,46 @@ User says: "${message || ""}"
     };
   }
 
-  // Special command handling: "بتسمعي إيه؟"
-  if (message && message.includes("بتسمعي إيه")) {
-    const trackStr = currentTrack !== "NONE" ? currentTrack : "مفيش حاجة شغالة دلوقتي";
-    return {
-      reply: currentTrack !== "NONE" ? `بسمع دلوقتي ${currentTrack}! أغنية جامدة!` : "مش سامعة أي مزيكا شغالة دلوقتي يا غالي.",
-      reply_en: currentTrack !== "NONE" ? `Currently listening to ${currentTrack}!` : "No music playing right now.",
-      display: toFranco(currentTrack !== "NONE" ? currentTrack : "NO MUSIC :(", "MUSIC_DANCE :D"),
-      mood: "EXCITED",
-      voice_clip: "HELLO",
-      sound_sfx: "dance_beat",
-      eye_state: "MUSIC_DANCE",
-      movement: "WIGGLE",
-      haptic_feedback: true
-    };
+  // Special command handling: Spotify & Music Queries ("بتسمعي ايه", "اي شغال علي سبوتفاي", etc.)
+  const isMusicQuery = (
+    msgNorm.includes("بتسمعي") ||
+    msgNorm.includes("سبوتفاي") ||
+    msgNorm.includes("سبوتيفاي") ||
+    msgNorm.includes("اغنيه") ||
+    msgNorm.includes("مزيكا") ||
+    msgNorm.includes("شغال ايه") ||
+    msgNorm.includes("اي شغال") ||
+    msgNorm.includes("ايه شغال") ||
+    msgNorm.includes("spotify") ||
+    msgNorm.includes("playing")
+  );
+
+  if (isMusicQuery) {
+    if (currentTrack && currentTrack !== "NONE") {
+      return {
+        reply: `بسمع دلوقتي "${currentTrack}"! أغنية جامدة ورايقة أوي 🎵🎧`,
+        reply_en: `Currently listening to "${currentTrack}"! Great song!`,
+        display: toFranco(currentTrack, "MUSIC_DANCE :D"),
+        mood: "EXCITED",
+        voice_clip: "HELLO",
+        sound_sfx: "dance_beat",
+        eye_state: "MUSIC_DANCE",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    } else {
+      return {
+        reply: "مش شغّال أي تراك على سبوتيفاي دلوقتي يا قلبي! شغّل أي أغنية على حسابك وأنا أروق وأرقص معاك فوراً 🎵🎧",
+        reply_en: "No music is currently playing on Spotify! Play a track and I will dance with you!",
+        display: "NO MUSIC :(",
+        mood: "NEUTRAL",
+        voice_clip: "GOOD",
+        sound_sfx: "happy_beep",
+        eye_state: "MUSIC_DANCE",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
   }
 
   let parsed = null;
