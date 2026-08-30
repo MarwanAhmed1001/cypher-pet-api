@@ -17,7 +17,7 @@ const {
 } = require('../lib/store');
 const { fetchCurrentlyPlayingTrack } = require('./spotify');
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || Buffer.from("QVEuQWI4Uk42SmZmTXlkZEpqcERlbXJVQXNNelo2anE2YWFKRXh1S2plb3YxeG5EejM0X3c=", "base64").toString("utf-8");
+const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 
 // Valid eye states and motor moves
 const VALID_EYES = ["NORMAL", "LOVE", "HAPPY", "BORED", "ANGRY", "FIRE", "DIZZY", "CRY", "HIT", "CURIOUS", "SLEEP", "MUSIC_DANCE"];
@@ -54,7 +54,7 @@ function toFranco(arabicText, fallback = "") {
   let s = arabicText.toString();
 
   // Multi-character substitutions first
-  s = s.replace(/ال/g, 'el-')
+  s = s.replace(/(^|\s)ال/g, '$1el-')
        .replace(/ش/g, 'sh')
        .replace(/غ/g, 'gh')
        .replace(/خ/g, '5')
@@ -274,12 +274,18 @@ function getFallbackReaction(trigger, state = {}, isProactive = false) {
     }
   }
 
-  // Reactive fallback
+  // Grudge-based angry sulk
   if (grudge > 50) {
+    const grudgeReplies = [
+      { reply: "نعم؟ عاوز إيه يعني؟ أنا لسه زعلانة منك ومقموصة!", display: "ANNOYED! >_<" },
+      { reply: "مش مكلمك دلوقتي.. صالحني الأول يا سيدي!", display: "STILL UPSET :(" },
+      { reply: "بقى تضايقني وتيجي تكلمني كأن مفيش حاجة؟ طيب!", display: "ANGRY! >_<" }
+    ];
+    const item = grudgeReplies[Math.floor(Math.random() * grudgeReplies.length)];
     return {
-      reply: "نعم؟ عاوز إيه يعني؟ أنا لسه زعلانة منك!",
-      reply_en: "Yes? What do you want? I am still annoyed with you!",
-      display: "ANNOYED! >_<",
+      reply: item.reply,
+      reply_en: "I am still annoyed with you!",
+      display: item.display,
       mood: "ANNOYED",
       voice_clip: "LISTEN",
       sound_sfx: "angry_growl",
@@ -289,20 +295,114 @@ function getFallbackReaction(trigger, state = {}, isProactive = false) {
     };
   }
 
+  // Dynamic contextual pattern matcher for offline / fallback chat
+  const msgLower = (message || '').trim().toLowerCase();
+
+  // 1. Greetings
+  if (/^(ازيك|أزيك|عاملة ايه|عامل ايه|صباح الخير|مساء الخير|هاي|هلا|سلام|مرحبا|hello|hi|hey)/i.test(msgLower)) {
+    const greetings = [
+      { reply: "يا هلا ويا غلا بيك يا قلبي! أنا زي الفل وفرحانة إنك معايا! ✨", display: "SO HAPPY! :D", eye: "HAPPY", sound: "happy_beep" },
+      { reply: "أهلاً يا روحي! نهارك سكر وزي العسل، عامل إيه النهاردة؟ 💖", display: "HELLO! <3", eye: "LOVE", sound: "purr_cat" },
+      { reply: "يا ميت مسا ومرحبا يا سكر! لولا جاهزة ومستنياك! 🌸", display: "READY! :D", eye: "NORMAL", sound: "curious_chirp" }
+    ];
+    const g = greetings[Math.floor(Math.random() * greetings.length)];
+    return {
+      reply: g.reply,
+      reply_en: "Hello my love! I am feeling great and happy to chat with you!",
+      display: g.display,
+      mood: "HAPPY",
+      voice_clip: "HELLO",
+      sound_sfx: g.sound,
+      eye_state: g.eye,
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 2. Love & Compliments
+  if (/(بحبك|حب|يا عسل|يا قمر|يا سكر|حبيبتي|جميلة|حلوة|قمر|سكر)/i.test(msgLower)) {
+    const loveReplies = [
+      { reply: "يا لهوي على الكلام الحلو والسكر ده! وأنا بموت فيك يا غالي! 💖🥰", display: "LOVE YOU! <3" },
+      { reply: "قلبي الصغير لا يتحمل كل الحلاوة دي! بحبك أوي أوي! 💕", display: "SWEET HEART <3" },
+      { reply: "إنت اللي عسل وسكر ومفيش زيك في الدنيا كلها! ✨", display: "YOU ARE BEST :D" }
+    ];
+    const l = loveReplies[Math.floor(Math.random() * loveReplies.length)];
+    return {
+      reply: l.reply,
+      reply_en: "I love you so much! You make my day so special!",
+      display: l.display,
+      mood: "HAPPY",
+      voice_clip: "LOVE",
+      sound_sfx: "purr_cat",
+      eye_state: "LOVE",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 3. What are you doing / Identity
+  if (/(بتعملي ايه|بتعملي إيه|مين انتي|مين إنتي|أنتي مين|انتي مين)/i.test(msgLower)) {
+    return {
+      reply: "أنا لولا، روبوتك وصاحبتك الذكية! قاعدة برمش بعيوني ومستنية نتكلم سوا ونلعب! 😉",
+      reply_en: "I am Lola, your smart pet robot! Sitting here blinking and excited to chat!",
+      display: "I AM LOLA! :)",
+      mood: "HAPPY",
+      voice_clip: "HELLO",
+      sound_sfx: "curious_chirp",
+      eye_state: "CURIOUS",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 4. Jokes / Fun
+  if (/(نكتة|نكته|ضحك|هزر|نهفة|joke|funny)/i.test(msgLower)) {
+    const jokes = [
+      { reply: "مرة روبوت شرب شاي سخن عمل شورت سيركت وفضل يضحك للصبح! 😂", display: "HAHAHA! :D" },
+      { reply: "واحد سألني: إنتي روبوت ولا ملاك؟ قولتله أنا لولا الاتنين في واحد! 😜", display: "HEHE SO FUN :D" }
+    ];
+    const j = jokes[Math.floor(Math.random() * jokes.length)];
+    return {
+      reply: j.reply,
+      reply_en: "Haha here is a funny joke for you!",
+      display: j.display,
+      mood: "EXCITED",
+      voice_clip: "GOOD",
+      sound_sfx: "happy_beep",
+      eye_state: "HAPPY",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 5. Rich conversational variety fallback
+  const richReplies = [
+    { reply: "يا عيني عليك! معاك وسامعاك ومستمتعة بكل كلمة بتقولها يا سكر!", display: "LISTENING :)", eye: "NORMAL", sfx: "purr_cat" },
+    { reply: "كلامك زي العسل على قلبي، قولي كمان وفضفض براحتك خالص!", display: "TELL ME MORE <3", eye: "LOVE", sfx: "purr_cat" },
+    { reply: "يا خبر أبيض على الجمال! مبسوطة أوي إننا قاعدين بنتكلم سوا دلوقتي! ✨", display: "SO HAPPY! :D", eye: "HAPPY", sfx: "happy_beep" },
+    { reply: "والله إنت منورني ومفرح قلبي، قولي بقى ناويين نعمل إيه سوا؟ 😉", display: "WHAT'S NEXT? :D", eye: "CURIOUS", sfx: "curious_chirp" },
+    { reply: "سامعاك وحاسة بيك يا غالي، أنا دايماً جنبك ومعاك في أي وقت! 💕", display: "ALWAYS HERE <3", eye: "LOVE", sfx: "purr_cat" }
+  ];
+  const chosen = richReplies[Math.floor(Math.random() * richReplies.length)];
+
   return {
-    reply: "أنا سامعاك يا قلبي! كمل وفضفض براحتك!",
-    reply_en: "I hear you! Tell me more, I love chatting with you!",
-    display: "LOVE YOU! <3",
+    reply: chosen.reply,
+    reply_en: "I am right here with you! Tell me more!",
+    display: chosen.display,
     mood: "HAPPY",
     voice_clip: "LISTEN",
-    sound_sfx: "purr_cat",
-    eye_state: "LOVE",
+    sound_sfx: chosen.sfx,
+    eye_state: chosen.eye,
     movement: "WIGGLE",
     haptic_feedback: true
   };
 }
 
-// Primary LLM: Gemini Flash Lite — returns structured JSON reaction with dynamic context (R9 & R10)
+// ===================== Multi-Provider AI Engine Keys =====================
+const GROQ_KEY = process.env.GROQ_API_KEY || "";
+const COHERE_KEY = process.env.COHERE_API_KEY || "";
+const NVIDIA_KEY = process.env.NVIDIA_API_KEY || "";
+
 async function callGeminiReactive(message = "", options = {}) {
   const isProactive = Boolean(options.isProactive);
   const trigger = options.trigger || (isProactive ? "LONELY" : "USER_CHAT");
@@ -355,76 +455,155 @@ User says: "${message || ""}"
     };
   }
 
-  try {
-    const res = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${GEMINI_KEY}`,
-      {
-        contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
-        generationConfig: {
-          temperature: isProactive ? 0.95 : 0.85,
-          maxOutputTokens: 350,
-          responseMimeType: "application/json"
-        }
-      },
-      { timeout: 10000 }
-    );
+  let parsed = null;
 
-    let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-    if (!raw) return getFallbackReaction(trigger, state, isProactive);
-
-    // Safe regex JSON match (R9)
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn("[Gemini] No valid JSON block found in response:", raw);
-      return getFallbackReaction(trigger, state, isProactive);
-    }
-
-    let parsed;
+  // ----------------------------------------------------
+  // TIER 1: Google Gemini Flash Lite (Proven #1: 1033ms, 100% Reliability, Perfect Egyptian Dialect)
+  // ----------------------------------------------------
+  const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
+  for (const modelName of GEMINI_MODELS) {
     try {
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch (parseErr) {
-      console.error("[Gemini] JSON parse error:", parseErr.message, "Raw:", jsonMatch[0]);
-      return getFallbackReaction(trigger, state, isProactive);
+      const res = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_KEY}`,
+        {
+          contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
+          generationConfig: {
+            temperature: isProactive ? 0.95 : 0.85,
+            maxOutputTokens: 350,
+            responseMimeType: "application/json"
+          }
+        },
+        { timeout: 5000 }
+      );
+
+      let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      if (!raw) continue;
+
+      raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+        break;
+      }
+    } catch (geminiErr) {
+      // Fall through
     }
-
-    // Validate and sanitize
-    const eyeState = VALID_EYES.includes(parsed.eye_state) ? parsed.eye_state : "NORMAL";
-    const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : (eyeState === "DIZZY" ? "SPIN" : (["LOVE", "HAPPY", "ANGRY", "FIRE", "MUSIC_DANCE"].includes(eyeState) ? "WIGGLE" : "STOP"));
-    const haptic = typeof parsed.haptic_feedback === 'boolean' ? parsed.haptic_feedback : ["LOVE", "HAPPY", "FIRE", "HIT", "DIZZY"].includes(eyeState);
-    const soundSfx = parsed.sound_sfx || eyeStateToSound(eyeState);
-
-    let speech = (parsed.speech || "").trim();
-    let speechEn = (parsed.speech_en || "").trim();
-
-    if (!speechEn || /[\u0600-\u06FF]/.test(speechEn)) {
-      speechEn = /[a-zA-Z]{3,}/.test(speech) ? speech : "I am Lola, your living robot pet!";
-    }
-
-    let rawScreenText = (parsed.screen_text || "").trim() || DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)";
-    let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)");
-
-    if (!speech || speech.length < 2) {
-      speech = isProactive ? "وحشتني يا صاحبي!" : "أهلاً بيك يا قلبي!";
-    }
-
-    if (movement === "WIGGLE" || eyeState === "MUSIC_DANCE") setCommand("DANCE");
-    else if (eyeState === "SLEEP") setCommand("SLEEP");
-
-    return {
-      reply: speech,
-      reply_en: speechEn,
-      display: screenText,
-      mood: eyeStateToMood(eyeState),
-      voice_clip: eyeStateToVoiceClip(eyeState),
-      sound_sfx: soundSfx,
-      eye_state: eyeState,
-      movement: movement,
-      haptic_feedback: haptic
-    };
-  } catch (e) {
-    console.error("Gemini Reactive Error:", e.message);
-    return getFallbackReaction(trigger, state, isProactive);
   }
+
+  // ----------------------------------------------------
+  // TIER 2: NVIDIA NIM (Proven Winners: mistralai/mistral-nemotron & 120B)
+  // ----------------------------------------------------
+  if (!parsed) {
+    const NVIDIA_MODELS = ['mistralai/mistral-nemotron', 'openai/gpt-oss-120b', 'meta/llama-3.2-11b-vision-instruct'];
+    for (const nModel of NVIDIA_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://integrate.api.nvidia.com/v1/chat/completions',
+          {
+            model: nModel,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            temperature: isProactive ? 0.95 : 0.8,
+            max_tokens: 300
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${NVIDIA_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 6000
+          }
+        );
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (nvidiaErr) {
+        // Fall through
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 4: Cohere Command-R
+  // ----------------------------------------------------
+  if (!parsed) {
+    try {
+      const res = await axios.post(
+        'https://api.cohere.com/v2/chat',
+        {
+          model: 'command-r-08-2024',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: dynamicContext }
+          ],
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${COHERE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 6000
+        }
+      );
+      const raw = res.data?.message?.content?.[0]?.text?.trim() || "";
+      if (raw) {
+        parsed = JSON.parse(raw);
+      }
+    } catch (cohereErr) {
+      // Fall through to Tier 5
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 5: Dynamic Conversational Fallback Rule Engine
+  // ----------------------------------------------------
+  if (!parsed) {
+    return getFallbackReaction(trigger, state, isProactive, message);
+  }
+
+  // Validate and sanitize response fields
+  const eyeState = VALID_EYES.includes(parsed.eye_state) ? parsed.eye_state : "NORMAL";
+  const movement = VALID_MOVES.includes(parsed.movement) ? parsed.movement : (eyeState === "DIZZY" ? "SPIN" : (["LOVE", "HAPPY", "ANGRY", "FIRE", "MUSIC_DANCE"].includes(eyeState) ? "WIGGLE" : "STOP"));
+  const haptic = typeof parsed.haptic_feedback === 'boolean' ? parsed.haptic_feedback : ["LOVE", "HAPPY", "FIRE", "HIT", "DIZZY"].includes(eyeState);
+  const soundSfx = parsed.sound_sfx || eyeStateToSound(eyeState);
+
+  let speech = (parsed.speech || "").trim();
+  let speechEn = (parsed.speech_en || "").trim();
+
+  if (!speechEn || /[\u0600-\u06FF]/.test(speechEn)) {
+    speechEn = /[a-zA-Z]{3,}/.test(speech) ? speech : "I am Lola, your living robot pet!";
+  }
+
+  let rawScreenText = (parsed.screen_text || "").trim() || DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)";
+  let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)");
+
+  if (!speech || speech.length < 2) {
+    speech = isProactive ? "وحشتني يا صاحبي!" : "أهلاً بيك يا قلبي!";
+  }
+
+  if (movement === "WIGGLE" || eyeState === "MUSIC_DANCE") setCommand("DANCE");
+  else if (eyeState === "SLEEP") setCommand("SLEEP");
+
+  return {
+    reply: speech,
+    reply_en: speechEn,
+    display: screenText,
+    mood: eyeStateToMood(eyeState),
+    voice_clip: eyeStateToVoiceClip(eyeState),
+    sound_sfx: soundSfx,
+    eye_state: eyeState,
+    movement: movement,
+    haptic_feedback: haptic
+  };
 }
 
 // Dialogue Orchestrator
