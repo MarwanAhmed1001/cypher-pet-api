@@ -1027,6 +1027,8 @@ const chatHandler = async (req, res) => {
   }
 
   try {
+    const { message = '' } = req.body || {};
+
     // 1. Fetch current playing track ONLY if message is related to music/spotify
     let currentTrackStr = "NONE";
     const msgLower = (message || '').toLowerCase();
