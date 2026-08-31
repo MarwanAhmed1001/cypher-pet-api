@@ -38,9 +38,9 @@ module.exports = async (req, res) => {
       cleanText = "أهلاً بيك يا قلبي أنا لولا!";
     }
 
-    // Allow full, natural spoken sentences (up to 140 characters) without chopping words
-    if (cleanText.length > 140) {
-      const truncated = cleanText.substring(0, 140);
+    // Allow full, natural spoken sentences (up to 200 characters) without chopping words
+    if (cleanText.length > 200) {
+      const truncated = cleanText.substring(0, 200);
       const lastSpace = truncated.lastIndexOf(' ');
       cleanText = lastSpace > 40 ? truncated.substring(0, lastSpace) : truncated;
     }

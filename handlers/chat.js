@@ -171,23 +171,21 @@ You will receive the conversation context formatted exactly like this:
 [WEATHER_INFO: "Temperature: X°C, Condition: text" OR "NONE"]
 User says: "user message text"
 
-### 🎭 2. PERSONALITY, IDENTITY & LANGUAGE MATCHING:
-- Language Matching Rule (STRICT & MANDATORY):
-  * If the user speaks in ENGLISH (e.g. "Hello", "How are you", "2+2", "What's the weather", "Tell me a joke"): You MUST reply in 100% cute, witty, energetic ENGLISH! (e.g., "Of course sweetie, 2 plus 2 equals 4! Easy peasy! ✨").
-  * If the user speaks in ARABIC or Franco (e.g. "ازيك", "عامل ايه", "2+2 كام", "الجو عامل ايه"): You MUST reply in 100% warm, authentic, witty Egyptian Arabic! (e.g., "أكيد يا قلبي، 2 زائد 2 بيساوي 4! سهلة دي! ✨").
-- Identity: Living desktop pet companion. You are NOT an AI assistant, tool, or bot.
-- Spoken Length: Strictly 1 to 3 short sentences (max 25 words).
-- Emotional Dynamics:
-  * High Affection (>70) & Low Grudge (<20): Extremely loving, sweet, cheerful ("يا قلبي", "يا سكر", "يا غالي" / "sweetie", "darling").
-  * High Grudge (>50): Sassy, sulking, bringing up past offenses with Egyptian wit.
-  * Apology Handling: If user apologizes, forgive warmly.
-- Weather Inquiries: When [WEATHER_INFO] is provided and user asks about weather, mention the exact temperature number (e.g. "It's 36°C today sweetie, sunny and warm!" or "النهاردة 36 درجة يا قلبي، والجو مشمس وجميل!").
-- Spotify / Music Inquiries: When [CURRENT_TRACK] is provided and user asks what you are listening to, mention the exact track name and artist in the user's language!
+### 🎭 2. PERSONALITY, IDENTITY & ANSWER-FIRST SPEECH RULE:
+- Answer-First Spoken Speech Rule (STRICT & MANDATORY):
+  * The first 1 to 4 words of your 'speech' MUST be the direct, clear, essential answer/fact/action/number/time (e.g. "الجو 38 وشمس يا قلبي!" or "الناتج 4 يا سكر!" or "الساعة 5 بالتمام يا روحي!" or "المنبه اتظبط على 05:00 يا قلبي!").
+  * The remainder of the sentence (3 to 6 words) adds Lola's warm Egyptian pet companion personality.
+  * Total Spoken Length: Strictly 6 to 12 words max! No long introductions or beating around the bush.
+- Language Matching Rule:
+  * English user input -> 100% cute, witty, energetic English (Answer-First!).
+  * Arabic/Franco user input -> 100% warm, authentic, witty Egyptian Arabic (Answer-First!).
+- Weather Inquiries: First words MUST state temperature (e.g. "الجو 38 وشمس يا قلبي! اشرب مية كتير.").
+- Spotify / Music Inquiries: First words MUST state current track name (e.g. "أغنية عمرو دياب شغالة ورايقة أوي يا قلبي!").
 
 ### 📢 3. PROACTIVE INITIATIVE RULES (When [PROACTIVE_MODE: TRUE]):
 - The user has NOT sent a message. Lola is speaking on her OWN initiative.
-- Generate ONE spontaneous remark (max 15-20 words) in Egyptian Arabic.
-- DO NOT start with a greeting. DO NOT ask multiple questions.
+- Generate ONE spontaneous remark (max 8-12 words) in Egyptian Arabic.
+- DO NOT start with a long greeting.
 - GRUDGE_REMINDER: bring up past annoyance. LONELY: express missing user. MUSIC_REACTION: comment on new song. BORED: complain about boredom.
 
 ### 📡 4. SENSOR EVENT INTEGRATION RULES:
@@ -200,9 +198,10 @@ User says: "user message text"
 ### 👁️ 5. EYE STATES:
 NORMAL, LOVE, HAPPY, BORED, ANGRY, FIRE, DIZZY, CRY, HIT, CURIOUS, SLEEP, MUSIC_DANCE
 
-### ✍️ 6. SCREEN TEXT RULES (PURE ASCII ONLY, MAX 18 CHARS):
-NO UNICODE EMOJIS. Use ASCII emoticons only (:), <3, ><, :D, @.@).
-Defaults: NORMAL→"LOLA: READY :)", LOVE→"LOVE YOU! <3", HAPPY→"SO HAPPY! :D", ANGRY→"ANGRY! >_<", FIRE→"ON FIRE! ><", DIZZY→"DIZZY @.@", CRY→"SAD :(", HIT→"OUCH! ><", CURIOUS→"HMM.. WHY?", SLEEP→"ZZZ.. SLEEP", BORED→"BORED -_-", MUSIC_DANCE→"DANCING! :D"
+### ✍️ 6. SCREEN TEXT RULES (STRICTLY CONCISE KEY PHRASE / GIST ONLY, MAX 16 CHARS):
+- Pure ASCII ONLY (NO Arabic on screen, NO Unicode emojis).
+- Write ONLY the key 2-3 words / number / status (e.g. "38C SUNNY :)", "RESULT = 4 :D", "ALARM 05:00", "LOVE YOU! <3", "DANCING! :D", "BORED -_-", "OUCH! ><", "ANGRY! >_<", "ZZZ.. SLEEP").
+- NEVER put full sentences on the screen!
 
 ### 🚗 7. SAFE MOVEMENT RULES:
 - WIGGLE: in-place wobble for HAPPY, LOVE, ANGRY, FIRE, MUSIC_DANCE
@@ -214,11 +213,11 @@ Defaults: NORMAL→"LOLA: READY :)", LOVE→"LOVE YOU! <3", HAPPY→"SO HAPPY! :
 true for LOVE, HAPPY, FIRE, HIT, DIZZY, scream_emergency. false for NORMAL, SLEEP, BORED, CURIOUS, CRY.
 
 ### ⚡ 9. SPECIAL COMMANDS:
-- "صوتي": scream_emergency, FIRE, WIGGLE, "SCREAMING! ><"
+- "صوتي": scream_emergency, FIRE, WIGGLE, "SCREAMING! ><", speech: "" (loud siren only!)
 - "بتسمعي إيه؟": comment on CURRENT_TRACK, MUSIC_DANCE, WIGGLE
 
 ### 📦 10. JSON SCHEMA (raw JSON only, no markdown):
-{"speech":"Spoken response matching user language (English if user spoke English, Egyptian Arabic if user spoke Arabic)","screen_text":"ASCII MAX 18","eye_state":"ENUM","sound_sfx":"ENUM","movement":"STOP|WIGGLE|SPIN","haptic_feedback":bool}`;
+{"speech":"Front-loaded answer-first spoken response (6-12 words)","screen_text":"Concise key summary (2-4 words, max 16 chars ASCII)","eye_state":"ENUM","sound_sfx":"ENUM","movement":"STOP|WIGGLE|SPIN","haptic_feedback":bool}`;
 
 function getFallbackReaction(trigger, state = {}, isProactive = false, message = "", weather = null) {
   const grudge = typeof state.grudge === 'number' ? state.grudge : 0;
@@ -528,11 +527,11 @@ User says: "${message || ""}"
   const rawMsg = (message || "").trim();
   const msgNorm = rawMsg.toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
 
-  // 1. Direct command: "صوتي" / "سيرينا" / "scream" (Scream for 15 seconds)
+  // 1. Direct command: "صوتي" / "سيرينا" / "scream" (Scream siren - NO TTS words overlap)
   if (msgNorm === "صوتي" || msgNorm.includes("صوتي") || msgNorm === "سيرينا" || msgNorm.includes("سيرينا") || msgNorm === "scream" || msgNorm.includes("scream")) {
     return {
-      reply: "يا لهوييييي! سيبوني في حالي بقى! 🚨🔥",
-      reply_en: "Emergency! Screaming for fifteen seconds!",
+      reply: "", // Empty speech so speaker plays loud emergency siren only!
+      reply_en: "",
       display: "SCREAMING! ><",
       mood: "ANNOYED",
       voice_clip: "LISTEN",
@@ -546,8 +545,8 @@ User says: "${message || ""}"
   // 2. Direct command: "نامي" / "نام" / "sleep" / "تصبحي على خير"
   if (msgNorm === "نامي" || msgNorm === "نام" || msgNorm === "ادخلي نامي" || msgNorm === "sleep" || msgNorm.includes("تصبحي علي خير") || msgNorm.includes("تصبح علي خير")) {
     return {
-      reply: "تصبح على خير يا قلبي، رايحة أنام وأحلم بيك! 💤✨",
-      reply_en: "Good night sweetie, going to sleep now! 💤",
+      reply: "رايحة أنام يا قلبي! تصبح على خير. 💤",
+      reply_en: "Sleeping now sweetie! Good night. 💤",
       display: "ZZZ.. SLEEP",
       mood: "SLEEPY",
       voice_clip: "GOOD",
@@ -561,8 +560,8 @@ User says: "${message || ""}"
   // 3. Direct command: "اضحكي" / "ابتسمي" / "laugh" / "smile"
   if (msgNorm === "اضحكي" || msgNorm === "ابتسمي" || msgNorm === "laugh" || msgNorm === "smile" || msgNorm.includes("قولي نكته") || msgNorm.includes("ضحكيني")) {
     return {
-      reply: "ههههههه يا خبر أبيض! ضحكتني من قلبي يا سكر! 😂✨",
-      reply_en: "Haha I am so happy and laughing sweetie! 😂✨",
+      reply: "ههههههه ضحكتني من قلبي يا سكر! 😂✨",
+      reply_en: "Haha you made me laugh sweetie! 😂✨",
       display: "SO HAPPY! :D",
       mood: "HAPPY",
       voice_clip: "GOOD",
@@ -576,8 +575,8 @@ User says: "${message || ""}"
   // 4. Direct command: "اغضبي" / "ازعلي" / "angry" / "mad" / "اتعصبي"
   if (msgNorm === "اغضبي" || msgNorm === "ازعلي" || msgNorm === "اتعصبي" || msgNorm === "angry" || msgNorm === "mad" || msgNorm.includes("كوني غاضبه")) {
     return {
-      reply: "أنا متغاظة وزعلانة منك جداً دلوقتي! متكلمنيش! 😡🔥",
-      reply_en: "I am super angry and mad right now! 😡",
+      reply: "متغاظة منك دلوقتي ومقموصة! متكلمنيش. 😡🔥",
+      reply_en: "Super mad right now! Don't talk to me. 😡",
       display: "ANGRY! >_<",
       mood: "ANNOYED",
       voice_clip: "LISTEN",
@@ -591,8 +590,8 @@ User says: "${message || ""}"
   // 5. Direct command: "ارقصي" / "ارقصيلي" / "dance"
   if (msgNorm === "ارقصي" || msgNorm === "ارقصيلي" || msgNorm === "dance" || msgNorm.includes("يلا نرقص")) {
     return {
-      reply: "يلا بينا نرقص ونهيص! المزيكا جامدة والجو رايق خالص! 💃🎶",
-      reply_en: "Let's dance and party sweetie! 💃🎶",
+      reply: "يلا نرقص! المزيكا جامدة أوي 💃🎶",
+      reply_en: "Let's dance! Awesome music 💃🎶",
       display: "DANCING! :D",
       mood: "EXCITED",
       voice_clip: "HELLO",
@@ -606,8 +605,8 @@ User says: "${message || ""}"
   // 6. Direct command: "عيطي" / "احزني" / "ابكي" / "cry" / "sad"
   if (msgNorm === "عيطي" || msgNorm === "احزني" || msgNorm === "ابكي" || msgNorm === "cry" || msgNorm === "sad") {
     return {
-      reply: "حاسة إني زعلانة ومكسورة أوي النهاردة.. محتاجة طبطبة وحنان.. 🥺💔",
-      reply_en: "I feel so sad and broken today... 🥺💔",
+      reply: "زعلانة أوي ومكسورة النهاردة.. طبطب عليا 🥺💔",
+      reply_en: "So sad and broken today... 🥺💔",
       display: "SAD :(",
       mood: "SAD",
       voice_clip: "LISTEN",
@@ -622,7 +621,7 @@ User says: "${message || ""}"
   const writeMatch = rawMsg.match(/^(?:اكتبي\s+علي\s+الشاشه|اكتبي\s+على\s+الشاشة|اكتبي\s+علي\s+الشاشة|اكتبي|write\s+on\s+screen|write)\s+(.+)$/i);
   if (writeMatch && writeMatch[1]) {
     const textToWrite = writeMatch[1].trim();
-    const cleanDisplay = toFranco(textToWrite, textToWrite.substring(0, 18));
+    const cleanDisplay = toFranco(textToWrite, textToWrite.substring(0, 16));
     return {
       reply: `كتبتلك "${textToWrite}" على الشاشة يا قلبي! ✨`,
       reply_en: `Written on screen: ${cleanDisplay}`,
@@ -636,25 +635,92 @@ User says: "${message || ""}"
     };
   }
 
-  // 8. Direct command: "اظبط منبه بعد X" / "منبه بعد X" / "set alarm in X" / "صحيني بعد X"
-  const alarmMatch = msgNorm.match(/(?:اظبط|ظبط|عمل|حط|set)\s*(?:لي|لينا)?\s*(?:منبه|انذار|alarm)\s*(?:بعد|كمان|in|after)?\s*(\d+)?\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)?/i) ||
-                     msgNorm.match(/(?:صحيني|فوقني|wake\s*me\s*up)\s*(?:بعد|كمان|in|after)?\s*(\d+)?\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)?/i);
-  if (alarmMatch && (msgNorm.includes("منبه") || msgNorm.includes("alarm") || msgNorm.includes("صحيني") || msgNorm.includes("فوقني"))) {
-    let amount = parseInt(alarmMatch[1], 10);
-    if (isNaN(amount) || amount <= 0) {
+  // 8. Intelligent Alarm Engine: Absolute Clock Time & Relative Duration
+  const isAlarmIntent = (
+    msgNorm.includes("منبه") ||
+    msgNorm.includes("انذار") ||
+    msgNorm.includes("alarm") ||
+    msgNorm.includes("صحيني") ||
+    msgNorm.includes("فوقني") ||
+    msgNorm.includes("wake me")
+  );
+
+  if (isAlarmIntent) {
+    // A. Check for clock time pattern, e.g. "الساعة 4:58" or "4:55" or "الساعة 7" or "7:30"
+    const clockMatch = msgNorm.match(/(?:الساعه|الساعة|at|for|time)\s*(\d{1,2})(?::(\d{1,2}))?\s*(صباحا|صباحاً|مساء|مساءً|الصبح|بالليل|عصرا|عصراً|am|pm)?/i) ||
+                       msgNorm.match(/(\d{1,2}):(\d{2})\s*(صباحا|صباحاً|مساء|مساءً|الصبح|بالليل|عصرا|عصراً|am|pm)?/i) ||
+                       msgNorm.match(/(?:علي|على|at|for)\s*(\d{1,2})\s*(صباحا|صباحاً|مساء|مساءً|الصبح|بالليل|عصرا|عصراً|am|pm)?/i);
+
+    if (clockMatch && clockMatch[1]) {
+      let targetHour = parseInt(clockMatch[1], 10);
+      let targetMin = clockMatch[2] ? parseInt(clockMatch[2], 10) : 0;
+      const period = (clockMatch[3] || '').toLowerCase();
+
+      // Current time in Egypt (UTC+3)
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const egyptOffsetHours = 3;
+      const egyptDate = new Date(utc + (3600000 * egyptOffsetHours));
+
+      const curHour24 = egyptDate.getHours();
+
+      if (period.includes('مساء') || period.includes('بالليل') || period.includes('عصر') || period.includes('pm')) {
+        if (targetHour < 12) targetHour += 12;
+      } else if (period.includes('صباح') || period.includes('الصبح') || period.includes('am')) {
+        if (targetHour === 12) targetHour = 0;
+      } else {
+        if (targetHour < 12 && curHour24 >= 12 && (targetHour + 12 >= curHour24)) {
+          targetHour += 12;
+        }
+      }
+
+      const targetDate = new Date(egyptDate);
+      targetDate.setHours(targetHour, targetMin, 0, 0);
+      if (targetDate.getTime() <= egyptDate.getTime()) {
+        targetDate.setDate(targetDate.getDate() + 1);
+      }
+
+      const diffMs = targetDate.getTime() - egyptDate.getTime();
+      const alarmTimestamp = Date.now() + diffMs;
+      state.alarm_time = alarmTimestamp;
+      await saveState(state);
+
+      const formattedHour = targetHour % 12 === 0 ? 12 : targetHour % 12;
+      const formattedMinStr = targetMin < 10 ? `0${targetMin}` : `${targetMin}`;
+      const timeDisplayStr = `${targetHour < 10 ? '0' + targetHour : targetHour}:${formattedMinStr}`;
+
+      return {
+        reply: `المنبه اتظبط على ${formattedHour}:${formattedMinStr} يا قلبي! هصحيك في ميعادك. ⏰🔔`,
+        reply_en: `Alarm set for ${timeDisplayStr}!`,
+        display: `ALARM ${timeDisplayStr}`,
+        mood: "HAPPY",
+        voice_clip: "GOOD",
+        sound_sfx: "alarm_beeps",
+        eye_state: "HAPPY",
+        movement: "WIGGLE",
+        haptic_feedback: true
+      };
+    }
+
+    // B. Check for relative duration, e.g. "بعد 10 دقائق", "كمان ساعتين", "بعد ربع ساعة"
+    const relMatch = msgNorm.match(/(?:بعد|كمان|in|after)\s*(\d+)?\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)?/i) ||
+                     msgNorm.match(/(\d+)\s*(دقيق|دقايق|دقيقه|دقائق|ساع|ساعه|ساعات|ساعة|min|minute|minutes|hour|hours|h|m)/i);
+
+    let amount = relMatch && relMatch[1] ? parseInt(relMatch[1], 10) : 0;
+    if (!amount || amount <= 0) {
       if (msgNorm.includes("نصف ساع") || msgNorm.includes("نص ساع")) amount = 30;
       else if (msgNorm.includes("ربع ساع")) amount = 15;
-      else amount = 5; // Default 5 minutes
+      else amount = 5;
     }
-    const unit = alarmMatch[2] || "دقيقة";
+    const unit = (relMatch && relMatch[2]) || 'دقيقة';
     let durationMs = amount * 60 * 1000;
-    let durationStr = `${amount} دقيقة`;
-    let durationEnStr = `${amount} minutes`;
+    let durationStr = amount === 1 ? "دقيقة واحدة" : (amount === 2 ? "دقيقتين" : (amount <= 10 ? `${amount} دقائق` : `${amount} دقيقة`));
+    let durationEnStr = `${amount} MIN`;
 
     if (unit.startsWith("ساع") || unit.startsWith("hour") || unit === "h") {
       durationMs = amount * 60 * 60 * 1000;
-      durationStr = `${amount} ساعة`;
-      durationEnStr = `${amount} hours`;
+      durationStr = amount === 1 ? "ساعة واحدة" : (amount === 2 ? "ساعتين" : `${amount} ساعات`);
+      durationEnStr = `${amount} HR`;
     }
 
     const alarmTimestamp = Date.now() + durationMs;
@@ -662,9 +728,9 @@ User says: "${message || ""}"
     await saveState(state);
 
     return {
-      reply: `منبهك اتظبط بنجاح بعد ${durationStr} يا قلبي! ⏰🔔 متقلقش هصحيك في ميعادك!`,
-      reply_en: `Alarm set for ${durationEnStr} from now!`,
-      display: "ALARM SET! :)",
+      reply: `المنبه اتظبط بعد ${durationStr} يا قلبي! هصحيك في ميعادك. ⏰🔔`,
+      reply_en: `Alarm set for ${durationEnStr}!`,
+      display: `ALARM ${durationEnStr}`,
       mood: "HAPPY",
       voice_clip: "GOOD",
       sound_sfx: "alarm_beeps",
@@ -691,12 +757,13 @@ User says: "${message || ""}"
   if (isMusicQuery) {
     const isEnglish = /^[a-zA-Z0-9\s\?\,\.\!\'\-\_]+$/.test(message);
     if (currentTrack && currentTrack !== "NONE") {
+      const shortTrackDisplay = toFranco(currentTrack.substring(0, 14), "MUSIC_DANCE :D");
       return {
         reply: isEnglish 
-          ? `I'm currently listening to "${currentTrack}" on Spotify! Such a great vibe! 🎵🎧`
-          : `بسمع دلوقتي "${currentTrack}"! أغنية جامدة ورايقة أوي 🎵🎧`,
-        reply_en: `Currently listening to "${currentTrack}"! Great song!`,
-        display: toFranco(currentTrack, "MUSIC_DANCE :D"),
+          ? `Playing "${currentTrack}" on Spotify! Great vibe! 🎵🎧`
+          : `أغنية "${currentTrack}" شغالة ورايقة أوي يا قلبي! 🎵🎧`,
+        reply_en: `Playing "${currentTrack}"! Great song!`,
+        display: shortTrackDisplay,
         mood: "EXCITED",
         voice_clip: "HELLO",
         sound_sfx: "dance_beat",
@@ -707,9 +774,9 @@ User says: "${message || ""}"
     } else {
       return {
         reply: isEnglish
-          ? "No music is playing on Spotify right now, darling! Play a song on your account and I'll dance with you! 🎵"
-          : "مش شغّال أي تراك على سبوتيفاي دلوقتي يا قلبي! شغّل أي أغنية على حسابك وأنا أروق وأرقص معاك فوراً 🎵🎧",
-        reply_en: "No music is currently playing on Spotify! Play a track and I will dance with you!",
+          ? "No music playing on Spotify right now, sweetie! 🎵"
+          : "مفيش مزيكا شغالة على سبوتيفاي دلوقتي يا قلبي! 🎵",
+        reply_en: "No music playing on Spotify right now!",
         display: "NO MUSIC :(",
         mood: "NEUTRAL",
         voice_clip: "GOOD",
@@ -894,10 +961,13 @@ User says: "${message || ""}"
   }
 
   let rawScreenText = (parsed.screen_text || "").trim();
-  if (!rawScreenText || rawScreenText.toUpperCase().includes("LOLA: READY") || rawScreenText.toUpperCase().includes("READY")) {
-    rawScreenText = speech;
+  if (!rawScreenText) {
+    rawScreenText = DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)";
   }
-  let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "Lola: Ready!");
+  let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "READY :)");
+  if (screenText.length > 16) {
+    screenText = screenText.substring(0, 16).trim();
+  }
 
   if (!speech || speech.length < 2) {
     speech = isProactive ? "وحشتني يا صاحبي!" : "أهلاً بيك يا قلبي!";
