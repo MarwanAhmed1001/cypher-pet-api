@@ -791,51 +791,10 @@ User says: "${message || ""}"
   let parsed = null;
 
   // ----------------------------------------------------
-  // TIER 1: Groq Cloud (Ultra-Fast 300ms Latency: LLaMA 3.3 70B & 3.1 8B)
+  // TIER 1: Google Gemini 3.5 Flash Lite & Gemini Flash Lite (Primary - Ultra Smart & Fast)
   // ----------------------------------------------------
-  if (GROQ_KEY) {
-    const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
-    for (const gModel of GROQ_MODELS) {
-      try {
-        const res = await axios.post(
-          'https://api.groq.com/openai/v1/chat/completions',
-          {
-            model: gModel,
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: dynamicContext }
-            ],
-            temperature: isProactive ? 0.95 : 0.8,
-            max_tokens: 300,
-            response_format: { type: "json_object" }
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${GROQ_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 3500
-          }
-        );
-        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
-        if (raw) {
-          const jsonMatch = raw.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
-            break;
-          }
-        }
-      } catch (groqErr) {
-        // Fall through
-      }
-    }
-  }
-
-  // ----------------------------------------------------
-  // TIER 2: Google Gemini Flash Lite (1000ms Latency, 100% Reliability)
-  // ----------------------------------------------------
-  if (!parsed) {
-    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
+  if (GEMINI_KEY) {
+    const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash'];
     for (const modelName of GEMINI_MODELS) {
       try {
         const res = await axios.post(
@@ -844,11 +803,11 @@ User says: "${message || ""}"
             contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
             generationConfig: {
               temperature: isProactive ? 0.95 : 0.85,
-              maxOutputTokens: 350,
+              maxOutputTokens: 300,
               responseMimeType: "application/json"
             }
           },
-          { timeout: 3500 }
+          { timeout: 2500 }
         );
 
         let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
@@ -861,7 +820,48 @@ User says: "${message || ""}"
           break;
         }
       } catch (geminiErr) {
-        // Fall through
+        // Fall through to next Gemini model or Groq fallback
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 2: Groq Cloud (Emergency Backup if Google is down)
+  // ----------------------------------------------------
+  if (!parsed && GROQ_KEY) {
+    const GROQ_MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'groq/compound-mini', 'allam-2-7b'];
+    for (const gModel of GROQ_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            model: gModel,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            temperature: isProactive ? 0.95 : 0.8,
+            max_tokens: 300
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${GROQ_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 2500
+          }
+        );
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (groqErr) {
+        // Fall through to next tier
       }
     }
   }
