@@ -48,7 +48,7 @@ function setCorsHeaders(res) {
   );
 }
 
-// Deterministic Egyptian Franco transliteration engine (R9)
+// Deterministic Egyptian Romanized Arabic transliteration engine (pure letters, no digits)
 function toFranco(arabicText, fallback = "") {
   if (!arabicText) return fallback;
   let s = arabicText.toString();
@@ -57,26 +57,26 @@ function toFranco(arabicText, fallback = "") {
   s = s.replace(/(^|\s)ال/g, '$1el-')
        .replace(/ش/g, 'sh')
        .replace(/غ/g, 'gh')
-       .replace(/خ/g, '5')
+       .replace(/خ/g, 'kh')
        .replace(/ث/g, 'th')
        .replace(/ذ/g, 'z')
        .replace(/ض/g, 'd')
        .replace(/ص/g, 's');
 
-  // Single-character substitutions
+  // Single-character letter mappings (NO DIGITS)
   const map = {
-    'ع': '3',
-    'ح': '7',
-    'ق': '2',
-    'ط': '6',
-    'ظ': '6',
+    'ع': 'a',
+    'ح': 'h',
+    'ق': 'k',
+    'ط': 't',
+    'ظ': 'z',
     'ة': 'a',
-    'ء': '2',
-    'أ': '2',
-    'إ': '2',
-    'آ': '2',
-    'ؤ': '2',
-    'ئ': '2',
+    'ء': '',
+    'أ': 'a',
+    'إ': 'e',
+    'آ': 'a',
+    'ؤ': 'o',
+    'ئ': 'y',
     'ا': 'a',
     'ب': 'b',
     'ت': 't',
@@ -102,7 +102,7 @@ function toFranco(arabicText, fallback = "") {
   s = s.replace(/[^\x20-\x7E]/g, '').replace(/\s+/g, ' ').trim();
 
   if (s.length === 0) return fallback;
-  if (s.length > 18) return s.substring(0, 18);
+  if (s.length > 24) return s.substring(0, 24);
   return s;
 }
 
@@ -893,8 +893,11 @@ User says: "${message || ""}"
     speechEn = /[a-zA-Z]{3,}/.test(speech) ? speech : "I am Lola, your living robot pet!";
   }
 
-  let rawScreenText = (parsed.screen_text || "").trim() || DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)";
-  let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "LOLA: READY :)");
+  let rawScreenText = (parsed.screen_text || "").trim();
+  if (!rawScreenText || rawScreenText.toUpperCase().includes("LOLA: READY") || rawScreenText.toUpperCase().includes("READY")) {
+    rawScreenText = speech;
+  }
+  let screenText = toFranco(rawScreenText, DEFAULT_SCREEN_TEXT[eyeState] || "Lola: Ready!");
 
   if (!speech || speech.length < 2) {
     speech = isProactive ? "وحشتني يا صاحبي!" : "أهلاً بيك يا قلبي!";
