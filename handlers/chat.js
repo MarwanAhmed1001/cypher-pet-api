@@ -663,8 +663,8 @@ User says: "${message || ""}"
 
     return {
       reply: `منبهك اتظبط بنجاح بعد ${durationStr} يا قلبي! ⏰🔔 متقلقش هصحيك في ميعادك!`,
-      reply_en: `Alarm set for ${durationEnStr} from now! ⏰`,
-      display: "ALARM SET! ⏰",
+      reply_en: `Alarm set for ${durationEnStr} from now!`,
+      display: "ALARM SET! :)",
       mood: "HAPPY",
       voice_clip: "GOOD",
       sound_sfx: "alarm_beeps",
