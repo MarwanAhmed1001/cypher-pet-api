@@ -42,11 +42,11 @@ module.exports = async (req, res) => {
       cleanText = "Hello! I am Lola, your cute robot pet!";
     }
 
-    // Limit to 120 characters without cutting words (guarantees audio is ~12-16KB, well under 24KB buffer)
-    if (cleanText.length > 120) {
-      const truncated = cleanText.substring(0, 120);
+    // Limit to 80 characters without cutting words (guarantees audio is ~12-14KB, perfectly fitting the 24KB static buffer)
+    if (cleanText.length > 80) {
+      const truncated = cleanText.substring(0, 80);
       const lastSpace = truncated.lastIndexOf(' ');
-      cleanText = lastSpace > 40 ? truncated.substring(0, lastSpace) : truncated;
+      cleanText = lastSpace > 25 ? truncated.substring(0, lastSpace) : truncated;
     }
 
     // Physical speaker audio is strictly English (en) as requested by user
