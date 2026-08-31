@@ -1088,11 +1088,12 @@
         const data = await res.json();
         typingRow.classList.remove('active');
 
-        if (res.ok && data.reply) {
-          appendMessage('cypher', data.reply, null, data.mood, data.data_type);
+        if (res.ok && (data.success || data.reply !== undefined)) {
+          const displayMsg = data.reply || (data.eye_state === 'FIRE' ? '🚨🚨🚨 (صراخ إنذار عالي)' : (data.reply_display || 'Lola: Ready!'));
+          appendMessage('cypher', displayMsg, null, data.mood, data.data_type);
           updateTopBarUI(data.mood, data.daily_mood);
 
-          chatHistory.push({ role: 'assistant', content: data.reply });
+          chatHistory.push({ role: 'assistant', content: displayMsg });
           if (chatHistory.length > 10) chatHistory.shift();
         } else {
           const fallback = 'أنا لولا! 💖 عاملة إيه يا روحي؟ تعالي نقعد سوا ونتكلم ونتعرف على بعض أكتر! 🌸✨';
