@@ -22,13 +22,9 @@ module.exports = async (req, res) => {
     const { text: queryText, lang: queryLang } = req.query || {};
     let textToSpeak = queryText;
 
-    if (!textToSpeak || /[\u0600-\u06FF]/.test(textToSpeak)) {
+    if (!textToSpeak) {
       const currentState = await getMoodState();
-      textToSpeak = currentState.last_reply_en || queryText || "Hello! I am Lola, your cute robot pet!";
-      // If still contains Arabic, use clean English fallback
-      if (/[\u0600-\u06FF]/.test(textToSpeak)) {
-        textToSpeak = currentState.last_reply_display || "I am Lola, your living robot pet!";
-      }
+      textToSpeak = currentState.last_reply || currentState.last_reply_en || "Hello! I am Lola, your cute robot pet!";
     }
 
     // Clean text of emojis and special characters for TTS
@@ -39,18 +35,19 @@ module.exports = async (req, res) => {
       .trim();
 
     if (!cleanText || cleanText.length < 2) {
-      cleanText = "Hello! I am Lola, your cute robot pet!";
+      cleanText = "أهلاً بيك يا قلبي أنا لولا!";
     }
 
-    // Limit to 36 characters without cutting words (guarantees audio is strictly ~18-24KB, fitting the 32KB buffer)
-    if (cleanText.length > 36) {
-      const truncated = cleanText.substring(0, 36);
+    // Allow full, natural spoken sentences (up to 140 characters) without chopping words
+    if (cleanText.length > 140) {
+      const truncated = cleanText.substring(0, 140);
       const lastSpace = truncated.lastIndexOf(' ');
-      cleanText = lastSpace > 12 ? truncated.substring(0, lastSpace) : truncated;
+      cleanText = lastSpace > 40 ? truncated.substring(0, lastSpace) : truncated;
     }
 
-    // Physical speaker audio is strictly English (en) as requested by user
-    const lang = queryLang === 'ar' ? 'ar' : 'en';
+    // Auto-detect Arabic vs English based on character contents if not explicitly overridden
+    const isArabic = /[\u0600-\u06FF]/.test(cleanText);
+    const lang = queryLang || (isArabic ? 'ar' : 'en');
 
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
 
