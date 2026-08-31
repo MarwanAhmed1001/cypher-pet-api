@@ -1027,17 +1027,19 @@ const chatHandler = async (req, res) => {
   }
 
   try {
-    const { message = '' } = req.body || {};
-
-    // 1. Fetch current playing track for dynamic context
+    // 1. Fetch current playing track ONLY if message is related to music/spotify
     let currentTrackStr = "NONE";
-    try {
-      const nowPlaying = await fetchCurrentlyPlayingTrack();
-      if (nowPlaying && nowPlaying.isPlaying && nowPlaying.trackName) {
-        currentTrackStr = `${nowPlaying.trackName} - ${nowPlaying.artistName || 'Unknown'}`;
+    const msgLower = (message || '').toLowerCase();
+    const isMusicRelated = msgLower.includes('سبوت') || msgLower.includes('اغني') || msgLower.includes('أغني') || msgLower.includes('مزيك') || msgLower.includes('شغال') || msgLower.includes('spotify') || msgLower.includes('song') || msgLower.includes('music');
+    if (isMusicRelated) {
+      try {
+        const nowPlaying = await fetchCurrentlyPlayingTrack();
+        if (nowPlaying && nowPlaying.isPlaying && nowPlaying.trackName) {
+          currentTrackStr = `${nowPlaying.trackName} - ${nowPlaying.artistName || 'Unknown'}`;
+        }
+      } catch (err) {
+        // Graceful fallback
       }
-    } catch (err) {
-      // Graceful fallback
     }
 
     // 2. Apology detection & relationship mutation
