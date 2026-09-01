@@ -49,21 +49,48 @@ module.exports = async (req, res) => {
     const isArabic = /[\u0600-\u06FF]/.test(cleanText);
     const lang = queryLang || (isArabic ? 'ar' : 'en');
 
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
+    // Split into clean sentence chunks (< 70 chars) to prevent Google TTS from cutting off
+    const rawParts = cleanText.split(/([.!؟,\n]+)/);
+    const chunks = [];
+    let current = '';
 
-    const audioRes = await axios.get(ttsUrl, {
-      responseType: 'arraybuffer',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      },
-      timeout: 8000
+    for (let i = 0; i < rawParts.length; i++) {
+      const part = rawParts[i].trim();
+      if (!part) continue;
+      if (current.length + part.length < 70) {
+        current += (current ? ' ' : '') + part;
+      } else {
+        if (current) chunks.push(current);
+        current = part;
+      }
+    }
+    if (current) chunks.push(current);
+
+    if (chunks.length === 0) chunks.push(cleanText.substring(0, 70));
+
+    // Fetch all audio chunks concurrently
+    const fetchPromises = chunks.map(async (c) => {
+      const cleanChunk = c.replace(/[.!؟,]/g, '').trim();
+      if (!cleanChunk) return null;
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanChunk)}&tl=${lang}&client=tw-ob`;
+      const audioRes = await axios.get(ttsUrl, {
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        },
+        timeout: 6000
+      });
+      return Buffer.from(audioRes.data);
     });
 
-    const buffer = Buffer.from(audioRes.data);
+    const results = await Promise.all(fetchPromises);
+    const validBuffers = results.filter(Boolean);
+    const combinedBuffer = Buffer.concat(validBuffers);
+
     res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Length', combinedBuffer.length);
     res.setHeader('Cache-Control', 'no-cache');
-    res.status(200).send(buffer);
+    res.status(200).send(combinedBuffer);
   } catch (err) {
     console.error("TTS Handler Error:", err.message);
     res.status(500).json({ error: "Failed to generate TTS audio", details: err.message });
