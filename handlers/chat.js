@@ -794,7 +794,7 @@ User says: "${message || ""}"
   // TIER 1: Google Gemini 3.5 (Flash Lite & Flash - Ultra Smart, Fast & Multimodal)
   // ----------------------------------------------------
   if (GEMINI_KEY) {
-    const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash'];
+    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
     for (const modelName of GEMINI_MODELS) {
       try {
         const res = await axios.post(
