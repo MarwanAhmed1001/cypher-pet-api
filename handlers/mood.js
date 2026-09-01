@@ -90,7 +90,7 @@ const moodHandler = async (req, res) => {
     }
 
     // 2. Fetch fresh persistent relationship state (with lazy decay applied)
-    const currentState = await getMoodState();
+    const currentState = await getMoodState(true);
 
     // 3. Query Spotify cache for currently playing track & synced lyrics (R11)
     let currentTrackInfo = null;

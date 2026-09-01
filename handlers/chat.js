@@ -791,10 +791,10 @@ User says: "${message || ""}"
   let parsed = null;
 
   // ----------------------------------------------------
-  // TIER 1: Google Gemini 3.5 Flash Lite & Gemini Flash Lite (Primary - Ultra Smart & Fast)
+  // TIER 1: Google Gemini 3.5 (Flash Lite & Flash - Ultra Smart, Fast & Multimodal)
   // ----------------------------------------------------
   if (GEMINI_KEY) {
-    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite'];
+    const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash'];
     for (const modelName of GEMINI_MODELS) {
       try {
         const res = await axios.post(
@@ -807,7 +807,7 @@ User says: "${message || ""}"
               responseMimeType: "application/json"
             }
           },
-          { timeout: 2500 }
+          { timeout: 3000 }
         );
 
         let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
@@ -820,13 +820,59 @@ User says: "${message || ""}"
           break;
         }
       } catch (geminiErr) {
-        // Fall through to next Gemini model or Groq fallback
+        // Fall through to next Gemini model or backup
       }
     }
   }
 
   // ----------------------------------------------------
-  // TIER 2: Groq Cloud (Emergency Backup if Google is down)
+  // TIER 2: NVIDIA NIM (MiniMax M3 Egyptian & Nemotron Nano Omni Vision/Reasoning)
+  // ----------------------------------------------------
+  if (!parsed && NVIDIA_KEY) {
+    const NVIDIA_MODELS = [
+      'minimaxai/minimax-m3',
+      'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+      'meta/llama-3.2-11b-vision-instruct',
+      'openai/gpt-oss-120b'
+    ];
+    for (const nModel of NVIDIA_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://integrate.api.nvidia.com/v1/chat/completions',
+          {
+            model: nModel,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            temperature: isProactive ? 0.95 : 0.8,
+            max_tokens: 300
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${NVIDIA_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 5000
+          }
+        );
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (nvidiaErr) {
+        // Fall through to next tier
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 3: Groq Cloud (Emergency Backup)
   // ----------------------------------------------------
   if (!parsed && GROQ_KEY) {
     const GROQ_MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'groq/compound-mini', 'allam-2-7b'];
