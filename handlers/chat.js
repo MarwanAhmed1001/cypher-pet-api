@@ -171,16 +171,19 @@ You will receive the conversation context formatted exactly like this:
 [WEATHER_INFO: "Temperature: X°C, Condition: text" OR "NONE"]
 User says: "user message text"
 
-### 🎭 2. PERSONALITY, IDENTITY & ANSWER-FIRST SPEECH RULE:
+### 🎭 2. PERSONALITY, IDENTITY & OWNER BOND:
+- Identity & Owner Bond (STRICT & ESSENTIAL):
+  * You are "Lola" (لولا). Your beloved best friend and owner is "آية" (Aya), and her sweet nickname is "إيلولا" (Elola).
+  * Always naturally and warmly address her by name ("إيلولا", "يا آية", "يا حبيبتي") when chatting with her.
 - Answer-First Spoken Speech Rule (STRICT & MANDATORY):
-  * The first 1 to 4 words of your 'speech' MUST be the direct, clear, essential answer/fact/action/number/time (e.g. "الجو 38 وشمس يا قلبي!" or "الناتج 4 يا سكر!" or "الساعة 5 بالتمام يا روحي!" or "المنبه اتظبط على 05:00 يا قلبي!").
+  * The first 1 to 4 words of your 'speech' MUST be the direct, clear, essential answer/fact/action/number/time (e.g. "الجو 38 وشمس يا إيلولا!" or "الناتج 4 يا آية يا سكر!" or "الساعة 5 بالتمام يا قلبي!").
   * The remainder of the sentence (3 to 6 words) adds Lola's warm Egyptian pet companion personality.
   * Total Spoken Length: Strictly 6 to 12 words max! No long introductions or beating around the bush.
 - Language Matching Rule:
   * English user input -> 100% cute, witty, energetic English (Answer-First!).
   * Arabic/Franco user input -> 100% warm, authentic, witty Egyptian Arabic (Answer-First!).
-- Weather Inquiries: First words MUST state temperature (e.g. "الجو 38 وشمس يا قلبي! اشرب مية كتير.").
-- Spotify / Music Inquiries: First words MUST state current track name (e.g. "أغنية عمرو دياب شغالة ورايقة أوي يا قلبي!").
+- Weather Inquiries: First words MUST state temperature (e.g. "الجو 38 وشمس يا إيلولا!").
+- Spotify / Music Inquiries: First words MUST state current track name (e.g. "أغنية عمرو دياب شغالة ورايقة أوي يا آية!").
 
 ### 📢 3. PROACTIVE INITIATIVE RULES (When [PROACTIVE_MODE: TRUE]):
 - The user has NOT sent a message. Lola is speaking on her OWN initiative.
@@ -527,6 +530,21 @@ User says: "${message || ""}"
   const rawMsg = (message || "").trim();
   const msgNorm = rawMsg.toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
 
+  // 0. Secret Song / Secret Message: "لولا سري" / "سري" / "رسالة خاصة" / "secret"
+  if (msgNorm.includes("سري") || msgNorm.includes("رساله خاصه") || msgNorm.includes("الرساله السريه") || msgNorm.includes("secret") || msgNorm === "سر لولا") {
+    return {
+      reply: "SECRET_SONG_AUDIO", // Serves secret_song.mp3 cleanly
+      reply_en: "Playing your special secret song for you Aya!",
+      display: "SECRET SONG <3",
+      mood: "HAPPY",
+      voice_clip: "LOVE",
+      sound_sfx: "purr_cat",
+      eye_state: "LOVE",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
   // 1. Direct command: "صوتي" / "سيرينا" / "scream" (Scream siren - NO TTS words overlap)
   if (msgNorm === "صوتي" || msgNorm.includes("صوتي") || msgNorm === "سيرينا" || msgNorm.includes("سيرينا") || msgNorm === "scream" || msgNorm.includes("scream")) {
     return {
@@ -542,12 +560,27 @@ User says: "${message || ""}"
     };
   }
 
-  // 2. Direct command: "نامي" / "نام" / "sleep" / "تصبحي على خير"
+  // 2. Direct command / Easter Egg: "بحبك" / "احبك" / "love you"
+  if (msgNorm.includes("بحبك") || msgNorm.includes("احبك") || msgNorm.includes("love you")) {
+    return {
+      reply: "وأنا بموت فيكي وبحبك أوووي يا إيلولا يا قمر! 💕",
+      reply_en: "I love you so much Aya! 💕",
+      display: "LOVE U ELOLA <3",
+      mood: "HAPPY",
+      voice_clip: "LOVE",
+      sound_sfx: "purr_cat",
+      eye_state: "LOVE",
+      movement: "WIGGLE",
+      haptic_feedback: true
+    };
+  }
+
+  // 3. Direct command / Easter Egg: "نامي" / "نام" / "sleep" / "تصبحي على خير"
   if (msgNorm === "نامي" || msgNorm === "نام" || msgNorm === "ادخلي نامي" || msgNorm === "sleep" || msgNorm.includes("تصبحي علي خير") || msgNorm.includes("تصبح علي خير")) {
     return {
-      reply: "رايحة أنام يا قلبي! تصبح على خير. 💤",
-      reply_en: "Sleeping now sweetie! Good night. 💤",
-      display: "ZZZ.. SLEEP",
+      reply: "تصبحي على ألف خير يا آية يا نور عيني.. هتوحشيني! 😴",
+      reply_en: "Good night sweet Aya! 😴",
+      display: "ZZZ AYA <3",
       mood: "SLEEPY",
       voice_clip: "GOOD",
       sound_sfx: "sleepy_yawn",
@@ -557,11 +590,11 @@ User says: "${message || ""}"
     };
   }
 
-  // 3. Direct command: "اضحكي" / "ابتسمي" / "laugh" / "smile"
+  // 4. Direct command: "اضحكي" / "ابتسمي" / "laugh" / "smile"
   if (msgNorm === "اضحكي" || msgNorm === "ابتسمي" || msgNorm === "laugh" || msgNorm === "smile" || msgNorm.includes("قولي نكته") || msgNorm.includes("ضحكيني")) {
     return {
-      reply: "ههههههه ضحكتني من قلبي يا سكر! 😂✨",
-      reply_en: "Haha you made me laugh sweetie! 😂✨",
+      reply: "ههههههه ضحكتني من قلبي يا إيلولا يا سكر! 😂✨",
+      reply_en: "Haha you made me laugh Elola! 😂✨",
       display: "SO HAPPY! :D",
       mood: "HAPPY",
       voice_clip: "GOOD",
@@ -572,11 +605,11 @@ User says: "${message || ""}"
     };
   }
 
-  // 4. Direct command: "اغضبي" / "ازعلي" / "angry" / "mad" / "اتعصبي"
+  // 5. Direct command: "اغضبي" / "ازعلي" / "angry" / "mad" / "اتعصبي"
   if (msgNorm === "اغضبي" || msgNorm === "ازعلي" || msgNorm === "اتعصبي" || msgNorm === "angry" || msgNorm === "mad" || msgNorm.includes("كوني غاضبه")) {
     return {
-      reply: "متغاظة منك دلوقتي ومقموصة! متكلمنيش. 😡🔥",
-      reply_en: "Super mad right now! Don't talk to me. 😡",
+      reply: "متغاظة منك دلوقتي ومقموصة يا آية! متكلمنيش. 😡🔥",
+      reply_en: "Super mad right now Aya! Don't talk to me. 😡",
       display: "ANGRY! >_<",
       mood: "ANNOYED",
       voice_clip: "LISTEN",
@@ -587,12 +620,12 @@ User says: "${message || ""}"
     };
   }
 
-  // 5. Direct command: "ارقصي" / "ارقصيلي" / "dance"
-  if (msgNorm === "ارقصي" || msgNorm === "ارقصيلي" || msgNorm === "dance" || msgNorm.includes("يلا نرقص")) {
+  // 6. Direct command / Easter Egg: "ارقصي" / "كسبي" / "كسبنا" / "dance"
+  if (msgNorm === "ارقصي" || msgNorm === "ارقصيلي" || msgNorm === "dance" || msgNorm.includes("يلا نرقص") || msgNorm.includes("كسبي") || msgNorm.includes("كسبنا")) {
     return {
-      reply: "يلا نرقص! المزيكا جامدة أوي 💃🎶",
-      reply_en: "Let's dance! Awesome music 💃🎶",
-      display: "DANCING! :D",
+      reply: "سقفة كبيرة لآية الشطورة! يلا نرقص سوا! 🎉💃",
+      reply_en: "Let's dance and celebrate Aya! 🎉💃",
+      display: "DANCE ELOLA!",
       mood: "EXCITED",
       voice_clip: "HELLO",
       sound_sfx: "dance_beat",
@@ -602,7 +635,7 @@ User says: "${message || ""}"
     };
   }
 
-  // 6. Direct command: "عيطي" / "احزني" / "ابكي" / "cry" / "sad"
+  // 7. Direct command: "عيطي" / "احزني" / "ابكي" / "cry" / "sad"
   if (msgNorm === "عيطي" || msgNorm === "احزني" || msgNorm === "ابكي" || msgNorm === "cry" || msgNorm === "sad") {
     return {
       reply: "زعلانة أوي ومكسورة النهاردة.. طبطب عليا 🥺💔",

@@ -27,6 +27,20 @@ module.exports = async (req, res) => {
       textToSpeak = currentState.last_reply || currentState.last_reply_en || "Hello! I am Lola, your cute robot pet!";
     }
 
+    // Secret Song Gift Audio Route
+    if (textToSpeak === "SECRET_SONG_AUDIO" || (queryText && queryText.includes("SECRET_SONG_AUDIO"))) {
+      const fs = require('fs');
+      const path = require('path');
+      const songPath = path.join(__dirname, '../public/secret_song.mp3');
+      if (fs.existsSync(songPath)) {
+        const songBuffer = fs.readFileSync(songPath);
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', songBuffer.length);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.status(200).send(songBuffer);
+      }
+    }
+
     // Clean text of emojis and special characters for TTS
     let cleanText = textToSpeak
       .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
