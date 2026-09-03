@@ -190,6 +190,12 @@ const moodHandler = async (req, res) => {
       narrative: currentState.narrative || buildNarrativeSummary(currentState)
     };
 
+    // Once SECRET_SONG_AUDIO is dispatched to the robot, consume it from DB so it never replays on reboot
+    if (currentState.last_reply === "SECRET_SONG_AUDIO") {
+      const consumeState = { ...currentState, last_reply: "", msg_id: `consumed_${Date.now()}` };
+      saveState(consumeState).catch(() => {});
+    }
+
     return res.status(200).json(responsePayload);
   } catch (error) {
     console.error('Mood API Error:', error);
