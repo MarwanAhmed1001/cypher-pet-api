@@ -27,46 +27,19 @@ module.exports = async (req, res) => {
       textToSpeak = currentState.last_reply || currentState.last_reply_en || "Hello! I am Lola, your cute robot pet!";
     }
 
-    // Secret Song Gift Audio Route - Stream full 2m 43s Eyedress track directly from Redis DB (with fallback)
+    // Secret Song Gift Audio Route - Direct Edge CDN stream without serverless timeout
     if (textToSpeak === "SECRET_SONG_AUDIO" || (queryText && queryText.includes("SECRET_SONG_AUDIO"))) {
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-
-      try {
-        const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || 'https://intent-caiman-241308.upstash.io';
-        const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || ['gQAAAAAAA66cAAIgcDIwNTI3Yzdl', 'YzliZGU0NDJkOTI4ZDZhMjc0YzBmYWQ0Yg'].join('');
-
-        const songRes = await axios.post(REDIS_URL, ['GET', 'secret_song_full_base64'], {
-          headers: { Authorization: 'Bearer ' + REDIS_TOKEN, 'Content-Type': 'application/json' },
-          timeout: 8000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity
-        });
-
-        if (songRes.data && songRes.data.result) {
-          const songBuffer = Buffer.from(songRes.data.result, 'base64');
-          res.setHeader('Content-Length', songBuffer.length);
-          
-          // Stream in 4KB chunks
-          const CHUNK_SZ = 4096;
-          for (let offset = 0; offset < songBuffer.length; offset += CHUNK_SZ) {
-            const chunk = songBuffer.subarray(offset, Math.min(offset + CHUNK_SZ, songBuffer.length));
-            res.write(chunk);
-          }
-          return res.end();
-        }
-      } catch (redisErr) {
-        console.warn('[TTS] Redis song stream fallback:', redisErr.message);
-      }
-
-      // Local fallback
       const fs = require('fs');
       const path = require('path');
       const songPath = path.join(__dirname, '../public/secret_song.mp3');
       if (fs.existsSync(songPath)) {
         const songBuffer = fs.readFileSync(songPath);
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', songBuffer.length);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
         return res.status(200).send(songBuffer);
       }
+      return res.redirect(302, '/secret_song.mp3');
     }
 
     // Clean text of emojis and special characters for TTS
