@@ -91,15 +91,33 @@ module.exports = async (req, res) => {
     const isArabic = /[\u0600-\u06FF]/.test(cleanText);
     const lang = queryLang || (isArabic ? 'ar' : 'en');
 
-    // Split into clean sentence chunks (< 70 chars) to prevent Google TTS from cutting off
-    const rawParts = cleanText.split(/([.!؟,\n]+)/);
+    // For natural sentences (up to 140 chars), send in a single clean request for 100% complete, flawless pronunciation
+    if (cleanText.length <= 140) {
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
+      const audioRes = await axios.get(ttsUrl, {
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        },
+        timeout: 6000
+      });
+
+      const singleBuffer = Buffer.from(audioRes.data);
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', singleBuffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.status(200).send(singleBuffer);
+    }
+
+    // Split longer sentences cleanly on sentence boundaries only
+    const sentences = cleanText.split(/([.!؟\n]+)/).filter(s => s.trim().length > 0);
     const chunks = [];
     let current = '';
 
-    for (let i = 0; i < rawParts.length; i++) {
-      const part = rawParts[i].trim();
+    for (let i = 0; i < sentences.length; i++) {
+      const part = sentences[i].trim();
       if (!part) continue;
-      if (current.length + part.length < 70) {
+      if (current.length + part.length < 100) {
         current += (current ? ' ' : '') + part;
       } else {
         if (current) chunks.push(current);
@@ -107,12 +125,11 @@ module.exports = async (req, res) => {
       }
     }
     if (current) chunks.push(current);
-
-    if (chunks.length === 0) chunks.push(cleanText.substring(0, 70));
+    if (chunks.length === 0) chunks.push(cleanText.substring(0, 100));
 
     // Fetch all audio chunks concurrently
     const fetchPromises = chunks.map(async (c) => {
-      const cleanChunk = c.replace(/[.!؟,]/g, '').trim();
+      const cleanChunk = c.trim();
       if (!cleanChunk) return null;
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanChunk)}&tl=${lang}&client=tw-ob`;
       const audioRes = await axios.get(ttsUrl, {
@@ -131,8 +148,8 @@ module.exports = async (req, res) => {
 
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Content-Length', combinedBuffer.length);
-    res.setHeader('Cache-Control', 'no-cache');
-    res.status(200).send(combinedBuffer);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.status(200).send(combinedBuffer);
   } catch (err) {
     console.error("TTS Handler Error:", err.message);
     res.status(500).json({ error: "Failed to generate TTS audio", details: err.message });
