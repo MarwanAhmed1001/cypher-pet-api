@@ -134,10 +134,18 @@ function eyeStateToSound(eyeState) {
   return map[eyeState] || "happy_beep";
 }
 
-// Live Weather Engine via Open-Meteo
+// Live Weather Engine via Open-Meteo (Cached for 15 minutes in memory)
+let s_weatherCache = null;
+let s_weatherCacheTime = 0;
+
 async function fetchLiveWeather() {
+  const now = Date.now();
+  if (s_weatherCache && (now - s_weatherCacheTime) < 15 * 60 * 1000) {
+    return s_weatherCache;
+  }
+
   try {
-    const res = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true', { timeout: 3500 });
+    const res = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current_weather=true', { timeout: 1500 });
     if (res.data && res.data.current_weather) {
       const cw = res.data.current_weather;
       const temp = Math.round(cw.temperature);
@@ -150,10 +158,17 @@ async function fetchLiveWeather() {
       else if (code >= 71 && code <= 77) { condition = "بارد وفيه ثلج"; conditionEn = "Snowy"; cmd = "SNOWY"; }
       else if (code >= 80) { condition = "فيه عاصفة ومطر"; conditionEn = "Stormy"; cmd = "STORM"; }
       else if (code >= 1 && code <= 3) { condition = "معتدل مع غيوم خفيفة"; conditionEn = "Partly Cloudy"; cmd = "SUNNY"; }
-      return { temp, condition, conditionEn, cmd };
+      s_weatherCache = { temp, condition, conditionEn, cmd };
+      s_weatherCacheTime = now;
+      return s_weatherCache;
     }
   } catch (err) {}
-  return { temp: 28, condition: "مشمس وجميل", conditionEn: "Sunny & Warm", cmd: "SUNNY" };
+
+  if (!s_weatherCache) {
+    s_weatherCache = { temp: 28, condition: "مشمس وجميل", conditionEn: "Sunny & Warm", cmd: "SUNNY" };
+    s_weatherCacheTime = now;
+  }
+  return s_weatherCache;
 }
 
 // Exact 10-Section Authoritative System Prompt (R9)
