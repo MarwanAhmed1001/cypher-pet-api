@@ -530,8 +530,12 @@ User says: "${message || ""}"
   const rawMsg = (message || "").trim();
   const msgNorm = rawMsg.toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
 
-  // 0. Secret Song / Secret Message: "لولا سري" / "سري" / "رسالة خاصة" / "secret"
-  if (msgNorm.includes("سري") || msgNorm.includes("رساله خاصه") || msgNorm.includes("الرساله السريه") || msgNorm.includes("secret") || msgNorm === "سر لولا") {
+  // 0. Secret Song / Secret Message: "لولا سري" / "سري" / "رسالة خاصة" / "secret" (exact word match, avoid "سريعة/سريع")
+  const isSecretCmd = /(?:^|\s)(?:سري|سر|السر|secret|سر لولا)(?:\s|$)/i.test(msgNorm) ||
+                      msgNorm === "سري" || msgNorm === "سر" || msgNorm === "secret" ||
+                      msgNorm.includes("رساله خاصه") || msgNorm.includes("الرساله السريه") || msgNorm.includes("اغنيه سريه");
+
+  if (isSecretCmd) {
     return {
       reply: "SECRET_SONG_AUDIO", // Serves secret_song.mp3 cleanly
       reply_en: "Playing your special secret song for you Aya!",
@@ -824,10 +828,10 @@ User says: "${message || ""}"
   let parsed = null;
 
   // ----------------------------------------------------
-  // TIER 1: Google Gemini 3.5 (Flash Lite & Flash - Ultra Smart, Fast & Multimodal)
+  // TIER 1: Google Gemini 3.1 & 3.5 Flash Lite (Ultra Fast ~500ms, Smart & Multimodal)
   // ----------------------------------------------------
   if (GEMINI_KEY) {
-    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+    const GEMINI_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
     for (const modelName of GEMINI_MODELS) {
       try {
         const res = await axios.post(
@@ -836,11 +840,11 @@ User says: "${message || ""}"
             contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${dynamicContext}` }] }],
             generationConfig: {
               temperature: isProactive ? 0.95 : 0.85,
-              maxOutputTokens: 300,
+              maxOutputTokens: 250,
               responseMimeType: "application/json"
             }
           },
-          { timeout: 3000 }
+          { timeout: 2500 }
         );
 
         let raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
@@ -853,7 +857,7 @@ User says: "${message || ""}"
           break;
         }
       } catch (geminiErr) {
-        // Fall through to next Gemini model or backup
+        // Fall through to next fast model or backup
       }
     }
   }
@@ -1129,19 +1133,11 @@ const chatHandler = async (req, res) => {
       clearAnnoyedState();
     }
 
-    // 3. Process dialogue
+    // 3. Process dialogue (AI inference)
     const dialogueResult = await processSmartDialogue(message, currentTrackStr);
 
-    // 4. Update affection (+5 for chat)
-    await updateAffection(+5);
-
-    // 5. Update user message tracking for proactive silence engine
-    const state = await getMoodState();
-    state.lastUserMessage = message;
-    state.lastUserMessageTime = Date.now();
-    await saveState(state);
-
-    const recorded = await recordInteraction(
+    // 4. Record interaction and update state concurrently
+    const recordedPromise = recordInteraction(
       dialogueResult.reply,
       dialogueResult.mood,
       'chat',
@@ -1154,6 +1150,8 @@ const chatHandler = async (req, res) => {
       dialogueResult.reply_en || dialogueResult.reply
     );
 
+    const recorded = await recordedPromise;
+
     return res.status(200).json({
       success: true,
       reply: recorded.reply,
@@ -1164,10 +1162,7 @@ const chatHandler = async (req, res) => {
       msg_id: recorded.msg_id,
       eye_state: recorded.eye_state,
       movement: recorded.movement,
-      haptic_feedback: recorded.haptic_feedback,
-      affection: state.affection,
-      grudge: state.grudge,
-      narrative: state.narrative
+      haptic_feedback: recorded.haptic_feedback
     });
   } catch (err) {
     console.error("Chat Handler Error:", err);
