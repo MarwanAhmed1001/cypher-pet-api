@@ -828,9 +828,49 @@ User says: "${message || ""}"
   let parsed = null;
 
   // ----------------------------------------------------
-  // TIER 1: Google Gemini 3.1 & 3.5 Flash Lite (Ultra Fast ~500ms, Smart & Multimodal)
+  // TIER 1: Groq Ultra-Fast LPUs (~250ms Instant Inference)
   // ----------------------------------------------------
-  if (GEMINI_KEY) {
+  if (GROQ_KEY) {
+    const GROQ_MODELS = ['qwen/qwen3.8-27b', 'allam-2-7b', 'groq/compound-mini'];
+    for (const model of GROQ_MODELS) {
+      try {
+        const res = await axios.post(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            model: model,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: dynamicContext }
+            ],
+            response_format: { type: 'json_object' },
+            max_tokens: 200,
+            temperature: isProactive ? 0.95 : 0.8
+          },
+          {
+            headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+            timeout: 2000
+          }
+        );
+
+        let raw = res.data?.choices?.[0]?.message?.content?.trim() || "";
+        if (raw) {
+          raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+            break;
+          }
+        }
+      } catch (groqErr) {
+        // Fall through to next Groq model or Gemini
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // TIER 2: Google Gemini 3.1 & 3.5 Flash Lite (Ultra Fast ~500ms, Smart & Multimodal)
+  // ----------------------------------------------------
+  if (!parsed && GEMINI_KEY) {
     const GEMINI_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
     for (const modelName of GEMINI_MODELS) {
       try {
