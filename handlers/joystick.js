@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
 
   if (req.method === 'POST') {
     const { left, right } = req.body || {};
-    setJoystick(left, right);
+    await setJoystick(left, right);
     return res.status(200).json({ success: true, joystick: { left, right } });
   }
 
