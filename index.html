@@ -748,13 +748,13 @@
         <!-- Quick Direction Buttons -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; width: 100%;">
           <div></div>
-          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(200,200)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(200,200)" ontouchend="sendDirectDrive(0,0)">⬆️ للأمام</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="startDrive(200,200)" onmouseup="stopDrive()" ontouchstart="startDrive(200,200)" ontouchend="stopDrive()">⬆️ للأمام</button>
           <div></div>
-          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(-180,180)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(-180,180)" ontouchend="sendDirectDrive(0,0)">⬅️ يسار</button>
-          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0; background: #FF6B57; color: #fff;" onclick="sendDirectDrive(0,0)">⏹️ إيقاف</button>
-          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(180,-180)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(180,-180)" ontouchend="sendDirectDrive(0,0)">➡️ يمين</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="startDrive(-180,180)" onmouseup="stopDrive()" ontouchstart="startDrive(-180,180)" ontouchend="stopDrive()">⬅️ يسار</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0; background: #FF6B57; color: #fff;" onclick="emergencyStop()">⏹️ إيقاف</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="startDrive(180,-180)" onmouseup="stopDrive()" ontouchstart="startDrive(180,-180)" ontouchend="stopDrive()">➡️ يمين</button>
           <div></div>
-          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="sendDirectDrive(-200,-200)" onmouseup="sendDirectDrive(0,0)" ontouchstart="sendDirectDrive(-200,-200)" ontouchend="sendDirectDrive(0,0)">⬇️ للخلف</button>
+          <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="startDrive(-200,-200)" onmouseup="stopDrive()" ontouchstart="startDrive(-200,-200)" ontouchend="stopDrive()">⬇️ للخلف</button>
           <div></div>
         </div>
       </div>
@@ -1130,6 +1130,33 @@
 
     function closeJoystickModal() {
       document.getElementById('joystickModal').classList.remove('active');
+      sendDirectDrive(0, 0);
+    }
+
+    let driveInterval = null;
+    let driveStopTimeout = null;
+
+    function startDrive(left, right) {
+      if (driveStopTimeout) { clearTimeout(driveStopTimeout); driveStopTimeout = null; }
+      if (driveInterval) { clearInterval(driveInterval); }
+      sendDirectDrive(left, right);
+      driveInterval = setInterval(() => {
+        sendDirectDrive(left, right);
+      }, 300);
+    }
+
+    function stopDrive() {
+      if (driveInterval) { clearInterval(driveInterval); driveInterval = null; }
+      if (driveStopTimeout) { clearTimeout(driveStopTimeout); }
+      driveStopTimeout = setTimeout(() => {
+        sendDirectDrive(0, 0);
+        driveStopTimeout = null;
+      }, 1500);
+    }
+
+    function emergencyStop() {
+      if (driveInterval) { clearInterval(driveInterval); driveInterval = null; }
+      if (driveStopTimeout) { clearTimeout(driveStopTimeout); driveStopTimeout = null; }
       sendDirectDrive(0, 0);
     }
 
