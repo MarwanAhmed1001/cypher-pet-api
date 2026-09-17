@@ -545,9 +545,10 @@ User says: "${message || ""}"
   const rawMsg = (message || "").trim();
   const msgNorm = rawMsg.toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ي/g, 'ي').trim();
 
-  // 0. Secret Song / Secret Message: "لولا سري" / "سري" / "رسالة خاصة" / "secret" (exact word match, avoid "سريعة/سريع")
-  const isSecretCmd = /(?:^|\s)(?:سري|سر|السر|secret|سر لولا)(?:\s|$)/i.test(msgNorm) ||
-                      msgNorm === "سري" || msgNorm === "سر" || msgNorm === "secret" ||
+  // 0. Secret Song / Singing triggers: "سري", "غني", "غنيلي", "شغل اغنية", "اغنيه", "song", "sing"
+  const isSecretCmd = /(?:^|\s)(?:سري|سر|السر|secret|سر لولا|غني|غنيلي|غني لي|اغنيه|اغنية|شغل اغنيه|شغل اغنية|سمعني اغنيه|sing|song)(?:\s|$)/i.test(msgNorm) ||
+                      msgNorm.includes("غني") || msgNorm.includes("غنيلي") || msgNorm.includes("اغنيه") || msgNorm.includes("اغنية") ||
+                      msgNorm === "سري" || msgNorm === "سر" || msgNorm === "secret" || msgNorm === "sing" || msgNorm === "song" ||
                       msgNorm.includes("رساله خاصه") || msgNorm.includes("الرساله السريه") || msgNorm.includes("اغنيه سريه");
 
   if (isSecretCmd) {
