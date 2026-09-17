@@ -159,6 +159,11 @@ const moodHandler = async (req, res) => {
       }
     }
 
+    // Never let autonomous animations fight or override the manual wheels joystick
+    if (currentState.joystick && (currentState.joystick.left !== 0 || currentState.joystick.right !== 0)) {
+      moveOutput = "STOP";
+    }
+
     const responsePayload = {
       status: "ok",
       mood: currentState.mood,
