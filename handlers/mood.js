@@ -164,8 +164,8 @@ const moodHandler = async (req, res) => {
       mood: currentState.mood,
       energy: currentState.energy,
       daily_mood: currentState.daily_mood,
-      last_reply: proactivePayload ? proactivePayload.speech : currentState.last_reply,
-      last_reply_en: proactivePayload ? proactivePayload.speech_en : currentState.last_reply_en,
+      last_reply: (currentState.last_reply === "SECRET_SONG_AUDIO") ? "SECRET_SONG_AUDIO" : (proactivePayload ? proactivePayload.speech : currentState.last_reply),
+      last_reply_en: (currentState.last_reply === "SECRET_SONG_AUDIO") ? "SECRET_SONG_AUDIO" : (proactivePayload ? proactivePayload.speech_en : currentState.last_reply_en),
       last_reply_display: displayOutput,
       screen_text: displayOutput,
       voice_clip: currentState.voice_clip,
@@ -190,8 +190,10 @@ const moodHandler = async (req, res) => {
       narrative: currentState.narrative || buildNarrativeSummary(currentState)
     };
 
-    // Once SECRET_SONG_AUDIO is dispatched to the robot, consume it from DB so it never replays on reboot
-    if (currentState.last_reply === "SECRET_SONG_AUDIO") {
+    // Once SECRET_SONG_AUDIO is dispatched to the physical ESP32 robot, consume it from DB so it never replays on reboot
+    const userAgent = req.headers['user-agent'] || '';
+    const isESP32 = req.query.client === 'esp32' || userAgent.includes('ESP32');
+    if (isESP32 && currentState.last_reply === "SECRET_SONG_AUDIO") {
       const consumeState = { ...currentState, last_reply: "", msg_id: `consumed_${Date.now()}` };
       saveState(consumeState).catch(() => {});
     }
