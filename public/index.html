@@ -757,6 +757,10 @@
           <button class="snap-btn" style="padding: 10px; font-size: 13px; margin: 0;" onmousedown="startDrive(-200,-200)" onmouseup="stopDrive()" ontouchstart="startDrive(-200,-200)" ontouchend="stopDrive()">⬇️ للخلف</button>
           <div></div>
         </div>
+
+        <a href="http://192.168.100.236" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #00E676, #00B0FF); color: #000; font-weight: bold; border-radius: 12px; text-decoration: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); text-align: center;">
+          ⚡ فتح لوحة التحكم المباشرة (0ms استجابة لحظية)
+        </a>
       </div>
     </div>
   </div>
@@ -1147,11 +1151,8 @@
 
     function stopDrive() {
       if (driveInterval) { clearInterval(driveInterval); driveInterval = null; }
-      if (driveStopTimeout) { clearTimeout(driveStopTimeout); }
-      driveStopTimeout = setTimeout(() => {
-        sendDirectDrive(0, 0);
-        driveStopTimeout = null;
-      }, 1500);
+      if (driveStopTimeout) { clearTimeout(driveStopTimeout); driveStopTimeout = null; }
+      sendDirectDrive(0, 0);
     }
 
     function emergencyStop() {
